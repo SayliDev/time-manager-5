@@ -9,3 +9,23 @@ Trinity Market est une entreprise de commerce numérique de 600 salariés, répa
 Time Manager a pour objectif de permettre aux employés d’enregistrer leurs arrivées et leurs départs et de consulter leurs heures travaillées. Les managers disposent de fonctionnalités de gestion des équipes et d’indicateurs pour suivre leur activité.
 
 Le projet intègre dès sa conception les enjeux de protection des données personnelles, de droit du travail, de sécurité et d’accessibilité.
+
+
+# Structure
+project/
+│
+├── app/
+├── main.py
+│
+├── dockerfile/
+│   ├── dev/
+│   │   ├── Dockerfile
+│   │   ├── docker-compose.yml
+│   │   ├── requirements.txt
+│   │   └── database
+|   |           └── database_scema.sql
+│   │
+│   ├── preprod/
+│   └── prod/
+│
+└── README.md
