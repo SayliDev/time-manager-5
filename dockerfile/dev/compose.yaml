@@ -1,71 +1,71 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
-version: "1.0"
+name: time-manager-install
 
 services:
-  app:
-    build:
-      context: ../..
-      dockerfile: dockerfile/dev/Dockerfile
-
-    container_name: python_app_time_manager
-
-    ports:
-      - "8000:8000"
-
-    volumes:
-      - ../..:/app
-
-    environment:
-      PYTHONUNBUFFERED: "1"
-
-    command:
-      [
-        "uvicorn",
-        "main:app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--reload"
-      ]
-
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
   db:
     image: postgres:18
-    container_name: dev_db_time_manager
-    restart: unless-stopped
 
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PSWD}
+      POSTGRES_DB: ${POSTGRES_DB:?Variable POSTGRES_DB manquante}
+      POSTGRES_USER: ${POSTGRES_USER:?Variable POSTGRES_USER manquante}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Variable POSTGRES_PASSWORD manquante}
 
     ports:
-      - ${DATABASE_PORT}:5432
+      - "127.0.0.1:${DATABASE_PORT:-5434}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+      - type: bind
+        source: ./database/init
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        bind:
+          create_host_path: false
 
     healthcheck:
       test:
         - CMD-SHELL
-        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+        - pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
       interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 12
+      start_period: 30s
+
+  app:
+    build:
+      context: ../../apps/api
+      dockerfile: ../../dockerfile/dev/Dockerfile
+
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "127.0.0.1:${APP_PORT:-8001}:8000"
+
+    volumes:
+      - type: bind
+        source: ../../apps/api
+        target: /app
+        bind:
+          create_host_path: false
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
 
 volumes:
   postgres_data:
