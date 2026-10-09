@@ -1,13 +1,12 @@
-#!/usr/bin/env node
-/**
- * Validates commit subjects in a PR range (used by CI).
- * Format: <type>: <description>
- */
-
 import { execSync } from 'node:child_process';
 
-const COMMIT_RE =
-  /^(feat|fix|chore|docs|style|refactor|test|ci|build|perf)(\([a-z0-9._-]+\))?: .+/;
+const TYPES = 'feat|fix|chore|docs|style|refactor|test|ci|build|perf';
+const COMMIT_RE = new RegExp(`^(${TYPES}): [a-z0-9].*$`);
+const ACCENT_RE =
+  /[àáâãäåāăąæçćčđďèéêëēĕėęěìíîïĩīĭįıłńñňņòóôõöøōŏőœřśšşťțùúûüũūŭůűųýÿžźżÀÁÂÃÄÅĀĂĄÆÇĆČĐĎÈÉÊËĒĔĖĘĚÌÍÎÏĨĪĬĮİŁŃÑŇŅÒÓÔÕÖØŌŎŐŒŘŚŠŞŤȚÙÚÛÜŨŪŬŮŰŲÝŸŽŹŻ]/;
+const EMOJI_RE =
+  /\p{Extended_Pictographic}|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+const MERGE_RE = /^Merge /;
 
 const base = process.env.BASE_SHA;
 const head = process.env.HEAD_SHA || 'HEAD';
@@ -26,8 +25,19 @@ if (!log) {
   process.exit(0);
 }
 
-const subjects = log.split('\n').filter(Boolean);
-const invalid = subjects.filter((s) => !COMMIT_RE.test(s));
+const subjects = log
+  .split('\n')
+  .filter(Boolean)
+  .filter((s) => !MERGE_RE.test(s));
+
+const invalid = subjects.filter((s) => {
+  if (!COMMIT_RE.test(s)) return true;
+  if (s.includes('(') && s.indexOf('(') < s.indexOf(':')) return true;
+  if (EMOJI_RE.test(s)) return true;
+  if (ACCENT_RE.test(s)) return true;
+  if (s.length > 122) return true;
+  return false;
+});
 
 if (invalid.length) {
   console.error('❌ Invalid commit message(s):');
@@ -36,7 +46,13 @@ if (invalid.length) {
 Expected format:
   <type>: <description>
 
-Types: feat, fix, chore, docs, style, refactor, test, ci, build, perf
+Rules:
+  - types: feat, fix, chore, docs, style, refactor, test, ci, build, perf
+  - no scope (feat(api): ... is forbidden)
+  - no emoji
+  - no accents (é è à ç ...)
+  - description in lower-case
+  - max 122 characters
 
 Examples:
   feat: add employee clock-in endpoint
