@@ -1,68 +1,68 @@
 -- Schema compatible PostgreSQL 18. Conserve le nom historique 'depatement'.
 BEGIN;
 
-CREATE TABLE utilisateur (
-    id_utilisateur INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    prenom VARCHAR(50) NOT NULL,
-    nom VARCHAR(50) NOT NULL,
+CREATE TABLE users (
+    id_user INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash TEXT,
     role VARCHAR(50),
-    telephone VARCHAR(50),
-    cree_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    phone VARCHAR(50),
+    creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     desactive_at TIMESTAMPTZ
 );
 
-CREATE TABLE session_travail (
-    id_session_travail INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    debut_at TIMESTAMPTZ NOT NULL,
-    fin_at TIMESTAMPTZ,
-    annulee_at TIMESTAMPTZ,
-    cree_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateur(id_utilisateur),
-    CHECK (fin_at IS NULL OR fin_at >= debut_at)
+CREATE TABLE work_session (
+    id_work_session INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    start_at TIMESTAMPTZ NOT NULL,
+    end_at TIMESTAMPTZ,
+    cancel_at TIMESTAMPTZ,
+    creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_user INTEGER NOT NULL REFERENCES users(id_user),
+    CHECK (end_at IS NULL OR end_at >= start_at)
 );
 
-CREATE TABLE depatement (
+CREATE TABLE departement (
     id_depatement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nom VARCHAR(50)
+    name VARCHAR(50)
 );
 
-CREATE TABLE equipe (
-    id_equipe INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nom VARCHAR(50) NOT NULL,
+CREATE TABLE team (
+    id_team INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
     description TEXT,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateur(id_utilisateur),
-    id_depatement INTEGER NOT NULL REFERENCES depatement(id_depatement)
+    id_user INTEGER NOT NULL REFERENCES users(id_user),
+    id_departement INTEGER NOT NULL REFERENCES departement(id_departement)
 );
 
-CREATE TABLE affectation_equipe (
-    id_affectation_equipe INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    debut_at DATE NOT NULL,
-    fin_at DATE,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateur(id_utilisateur),
-    id_equipe INTEGER NOT NULL REFERENCES equipe(id_equipe),
-    CHECK (fin_at IS NULL OR fin_at >= debut_at)
+CREATE TABLE team_allocation (
+    id_team_allocation INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    start_at DATE NOT NULL,
+    end_at DATE,
+    id_user INTEGER NOT NULL REFERENCES users(id_user),
+    id_team INTEGER NOT NULL REFERENCES team(id_team),
+    CHECK (end_at IS NULL OR end_at >= start_at)
 );
 
-CREATE TABLE contrat (
-    id_contrat INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    type_contrat VARCHAR(50),
-    date_debut DATE NOT NULL,
-    date_fin DATE,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateur(id_utilisateur),
-    CHECK (date_fin IS NULL OR date_fin >= date_debut)
+CREATE TABLE contract (
+    id_contract INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    contract_type VARCHAR(50),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    id_user INTEGER NOT NULL REFERENCES users(id_user),
+    CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
-CREATE TABLE correction_pointage (
-    id_correction_pointage INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    debut_propose TIMESTAMPTZ,
-    fin_propose TIMESTAMPTZ,
+CREATE TABLE timekeeping_correction (
+    id_timekeeping_correction INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    date_asked TIMESTAMPTZ,
+    end_asked TIMESTAMPTZ,
     motif TEXT,
-    statut VARCHAR(50),
-    traite_par INTEGER REFERENCES utilisateur(id_utilisateur),
-    id_session_travail INTEGER REFERENCES session_travail(id_session_travail),
-    CHECK (fin_propose IS NULL OR debut_propose IS NULL OR fin_propose >= debut_propose)
+    status VARCHAR(50),
+    process_by INTEGER REFERENCES utilisateur(id_utilisateur),
+    id_work_session INTEGER REFERENCES work_session(id_work_session),
+    CHECK (end_asked IS NULL OR start_asked IS NULL OR end_asked >= start_asked)
 );
 
 COMMIT;
