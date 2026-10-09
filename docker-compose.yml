@@ -1,15 +1,19 @@
 services:
   db:
     image: postgres:18
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-time_manager}
       POSTGRES_USER: ${POSTGRES_USER:-time_manager}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-time_manager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "127.0.0.1:${DATABASE_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seeds/02-donnees-test.sql:/docker-entrypoint-initdb.d/02-donnees-test.sql:ro
+      # - ./database/init/03-triggers.sql:/docker-entrypoint-initdb.d/03-triggers.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -20,6 +24,8 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-time_manager}:${POSTGRES_PASSWORD:-time_manager}@db:5432/${POSTGRES_DB:-time_manager}
       SECRET_KEY: ${SECRET_KEY:-local-development-key}
@@ -35,6 +41,8 @@ services:
     build:
       context: ./apps/client
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     environment:
       VITE_API_URL: http://localhost:${API_PORT:-8001}
     ports:
