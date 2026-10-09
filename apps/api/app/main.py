@@ -61,11 +61,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 def connexion():
     return psycopg.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ["DB_PORT"]),
-        dbname=os.environ["DB_NAME"],
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
+        os.environ["DATABASE_URL"],
         connect_timeout=5,
         row_factory=dict_row,
     )
