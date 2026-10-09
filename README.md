@@ -608,7 +608,3 @@ WHERE u.email LIKE '%.demo@example.com'
 GROUP BY u.id_utilisateur, u.prenom, u.nom
 ORDER BY u.id_utilisateur;
 
-
-
-
-
