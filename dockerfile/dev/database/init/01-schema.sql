@@ -24,7 +24,7 @@ CREATE TABLE work_session (
 );
 
 CREATE TABLE departement (
-    id_depatement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_departement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(50)
 );
 
@@ -56,11 +56,11 @@ CREATE TABLE contract (
 
 CREATE TABLE timekeeping_correction (
     id_timekeeping_correction INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    date_asked TIMESTAMPTZ,
+    start_asked TIMESTAMPTZ,
     end_asked TIMESTAMPTZ,
     motif TEXT,
     status VARCHAR(50),
-    process_by INTEGER REFERENCES utilisateur(id_utilisateur),
+    process_by INTEGER REFERENCES users(id_user),
     id_work_session INTEGER REFERENCES work_session(id_work_session),
     CHECK (end_asked IS NULL OR start_asked IS NULL OR end_asked >= start_asked)
 );
