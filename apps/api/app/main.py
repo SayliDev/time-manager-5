@@ -7,6 +7,7 @@ import psycopg
 
 from fastapi import (
     Depends,
+    FastAPI,
     HTTPException,
     status,
 )
