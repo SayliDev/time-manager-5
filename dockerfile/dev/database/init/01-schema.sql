@@ -23,8 +23,8 @@ CREATE TABLE session_travail (
     CHECK (fin_at IS NULL OR fin_at >= debut_at)
 );
 
-CREATE TABLE depatement (
-    id_depatement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE departement (
+    id_departement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom VARCHAR(50)
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE equipe (
     nom VARCHAR(50) NOT NULL,
     description TEXT,
     id_utilisateur INTEGER NOT NULL REFERENCES utilisateur(id_utilisateur),
-    id_depatement INTEGER NOT NULL REFERENCES depatement(id_depatement)
+    id_departement INTEGER NOT NULL REFERENCES departement(id_departement)
 );
 
 CREATE TABLE affectation_equipe (
@@ -55,7 +55,7 @@ CREATE TABLE contrat (
 );
 
 CREATE TABLE correction_pointage (
-    id_correction_pointage INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    -- id_correction_pointage INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     debut_propose TIMESTAMPTZ,
     fin_propose TIMESTAMPTZ,
     motif TEXT,
