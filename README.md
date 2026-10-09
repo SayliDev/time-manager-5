@@ -1,31 +1,47 @@
 Time Manager
 
-Application de gestion du temps de travail destinée aux employés et aux managers de Trinity Market, développée dans le cadre du projet Trinity.
+Application de gestion du temps de travail pour les employés et managers de Trinity Market.
 
-Présentation
+## Architecture
+apps/api/       FastAPI, domaine, routes, services et tests
+apps/client/    React + Vite
+database/       Schéma et données de développement PostgreSQL
+docker-compose.yml       environnement local
+docker-compose.prod.yml  assemblage de production avec nginx
+nginx/          reverse proxy `/api` vers l'API
+docs/           décisions, tests et diagrammes du projet
 
-Trinity Market est une entreprise de commerce numérique de 600 salariés, répartis dans cinq départements et travaillant en mode hybride. Sa croissance, avec plus de 2 000 collaborateurs attendus d’ici trois ans, nécessite une solution centralisée pour fiabiliser le suivi des horaires et faciliter la gestion des équipes.
 
-Time Manager a pour objectif de permettre aux employés d’enregistrer leurs arrivées et leurs départs et de consulter leurs heures travaillées. Les managers disposent de fonctionnalités de gestion des équipes et d’indicateurs pour suivre leur activité.
+Le nouvel entrypoint backend est `apps/api/app/main.py`. L'ancien `apps/api/main.py` est conservé temporairement pour faciliter la migration.
 
-Le projet intègre dès sa conception les enjeux de protection des données personnelles, de droit du travail, de sécurité et d’accessibilité.
+## Lancement local
 
+1. Copier `.env.example` vers `.env` et remplacer les secrets.
+2. Lancer `docker compose up --build`.
+3. Ouvrir le frontend sur <http://localhost:5173> et la documentation API sur <http://localhost:8001/docs>.
 
-# Structure
-project/
-│
-├── app/
-├── main.py
-│
-├── dockerfile/
-│   ├── dev/
-│   │   ├── Dockerfile
-│   │   ├── docker-compose.yml
-│   │   ├── requirements.txt
-│   │   └── database
-|   |           └── database_scema.sql
-│   │
-│   ├── preprod/
-│   └── prod/
-│
-└── README.md
+La base PostgreSQL écoute sur le port `5434` par défaut. Les scripts de `database/init` sont exécutés à la création du volume.
+
+## Développement sans Docker
+
+```bash
+cd apps/api
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload
+```
+
+```bash
+cd apps/client
+npm install
+npm run dev
+```
+
+## Qualité
+
+```bash
+cd apps/api && ruff check . && pytest
+cd apps/client && npm run lint && npm run build
+```
+
+Les contributions doivent conserver les données personnelles hors des logs et des fichiers de configuration versionnés.

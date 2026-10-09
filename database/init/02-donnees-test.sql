@@ -49,15 +49,15 @@ BEGIN
         utilisateurs_ids := array_append(utilisateurs_ids, utilisateur_id);
     END LOOP;
 
-    INSERT INTO depatement (nom) VALUES ('Informatique - DEMO')
-        RETURNING id_depatement INTO departement_info;
-    INSERT INTO depatement (nom) VALUES ('Services clients - DEMO')
-        RETURNING id_depatement INTO departement_support;
+    INSERT INTO departement (nom) VALUES ('Informatique - DEMO')
+        RETURNING id_departement INTO departement_info;
+    INSERT INTO departement (nom) VALUES ('Services clients - DEMO')
+        RETURNING id_departement INTO departement_support;
 
-    INSERT INTO equipe (nom, description, id_utilisateur, id_depatement)
+    INSERT INTO equipe (nom, description, id_utilisateur, id_departement)
     VALUES ('Developpement - DEMO', 'Equipe fictive de developpement logiciel', utilisateurs_ids[2], departement_info)
         RETURNING id_equipe INTO equipe_dev;
-    INSERT INTO equipe (nom, description, id_utilisateur, id_depatement)
+    INSERT INTO equipe (nom, description, id_utilisateur, id_departement)
     VALUES ('Support - DEMO', 'Equipe fictive de support technique', utilisateurs_ids[3], departement_support)
         RETURNING id_equipe INTO equipe_support;
 

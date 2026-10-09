@@ -1,4 +1,4 @@
--- Schema compatible PostgreSQL 18. Conserve le nom historique 'depatement'.
+-- Schema compatible PostgreSQL 18.
 BEGIN;
 
 CREATE TABLE utilisateur (
