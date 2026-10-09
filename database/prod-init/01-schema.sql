@@ -55,7 +55,7 @@ CREATE TABLE contrat (
 );
 
 CREATE TABLE correction_pointage (
-    debut_propose TIMESTAMPTZ,
+    id_correction_pointage INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     fin_propose TIMESTAMPTZ,
     motif TEXT,
     statut VARCHAR(50),
