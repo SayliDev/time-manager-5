@@ -6,6 +6,8 @@ from jose import jwt
 
 from app.core.config import settings
 
+ALGORITHM = "HS256"
+
 
 def create_access_token(subject: str) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(
@@ -14,5 +16,13 @@ def create_access_token(subject: str) -> str:
     return jwt.encode(
         {"sub": subject, "exp": expires_at},
         settings.secret_key,
-        algorithm="HS256",
+        algorithm=ALGORITHM,
+    )
+
+
+def decode_access_token(token: str) -> dict:
+    return jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[ALGORITHM],
     )

@@ -3,7 +3,7 @@
 ## Backend
 
 - `cd apps/api && pytest`: unit and API tests.
-- `ruff check apps/api`: static checks.
+- `cd apps/api && ruff check .`: static checks.
 
 ## Frontend
 

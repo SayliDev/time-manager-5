@@ -1,12 +1,13 @@
 """FastAPI application entry point."""
-from fastapi import FastAPI
+
 import logging
 import os
 
 import psycopg
 
 from fastapi import (
-    Depends, FastAPI,
+    Depends,
+    FastAPI,
     HTTPException,
     status,
 )
@@ -14,23 +15,22 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
 )
-from jose import JWTError, jwt
+from jose import JWTError
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from core.security import (
-    SECRET_KEY,
-    ALGORITHM,
+from app.core.security import (
     create_access_token,
+    decode_access_token,
 )
 
-API_ROOT_PATH = os.getenv("API_ROOT_PATH", "").rstrip("/")
-AUTH_LOGIN_PATH = f"{API_ROOT_PATH}/auth/login" or "/auth/login"
+# -----------------------------------------------------------------------------
+# Application
+# -----------------------------------------------------------------------------
 
 app = FastAPI(
     title="Time Manager API",
     version="1.0.0",
-    root_path=API_ROOT_PATH,
     swagger_ui_parameters={
         "persistAuthorization": True
     },
@@ -52,7 +52,7 @@ TABLES = (
 
 # Route utilisée par Swagger pour récupérer un token
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=AUTH_LOGIN_PATH
+    tokenUrl="/api/auth/login"
 )
 
 # -----------------------------------------------------------------------------
@@ -61,11 +61,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 def connexion():
     return psycopg.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ["DB_PORT"]),
-        dbname=os.environ["DB_NAME"],
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
+        os.environ["DATABASE_URL"],
         connect_timeout=5,
         row_factory=dict_row,
     )
@@ -84,11 +80,7 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
-        )
+        payload = decode_access_token(token)
 
         username = payload.get("sub")
 
@@ -112,7 +104,7 @@ def accueil():
         "documentation": "/docs",
     }
 
-@app.post("/auth/login",
+@app.post("/api/auth/login",
     tags=["Authentication"],
 )
 def login(
@@ -132,11 +124,7 @@ def login(
             detail="Identifiants invalides",
         )
 
-    access_token = create_access_token(
-        {
-            "sub": form_data.username
-        }
-    )
+    access_token = create_access_token(form_data.username)
 
     return {
         "access_token": access_token,
