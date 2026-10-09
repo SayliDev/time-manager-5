@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/prod-init:/docker-entrypoint-initdb.d:ro # ne pas copier les additifs de développement (speudo user)
 
   api:
     build:
