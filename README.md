@@ -607,3 +607,6 @@ WHERE u.email LIKE '%.demo@example.com'
   AND s.debut_at < TIMESTAMPTZ '2026-10-05 00:00:00+02'
 GROUP BY u.id_utilisateur, u.prenom, u.nom
 ORDER BY u.id_utilisateur;
+
+
+
