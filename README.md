@@ -12,7 +12,7 @@ nginx/          reverse proxy `/api` vers l'API
 docs/           décisions, tests et diagrammes du projet
 
 
-Le nouvel entrypoint backend est `apps/api/app/main.py`. L'ancien `apps/api/main.py` est conservé temporairement pour faciliter la migration.
+Le nouvel entrypoint backend est `apps/api/app/main.py`. L'ancien `apps/api/main.py` a été supprimé.
 
 ## Lancement local
 
