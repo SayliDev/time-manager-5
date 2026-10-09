@@ -1,0 +1,2 @@
+-- Development-only test data.
+-- Keep production seed data out of this directory.
