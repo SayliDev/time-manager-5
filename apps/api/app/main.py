@@ -1,5 +1,4 @@
 """FastAPI application entry point."""
-
 from fastapi import FastAPI
 import logging
 import os
@@ -7,8 +6,7 @@ import os
 import psycopg
 
 from fastapi import (
-    Depends,
-    FastAPI,
+    Depends, FastAPI,
     HTTPException,
     status,
 )
@@ -26,13 +24,13 @@ from core.security import (
     create_access_token,
 )
 
-# -----------------------------------------------------------------------------
-# Application
-# -----------------------------------------------------------------------------
+API_ROOT_PATH = os.getenv("API_ROOT_PATH", "").rstrip("/")
+AUTH_LOGIN_PATH = f"{API_ROOT_PATH}/auth/login" or "/auth/login"
 
 app = FastAPI(
     title="Time Manager API",
     version="1.0.0",
+    root_path=API_ROOT_PATH,
     swagger_ui_parameters={
         "persistAuthorization": True
     },
@@ -54,7 +52,7 @@ TABLES = (
 
 # Route utilisée par Swagger pour récupérer un token
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login"
+    tokenUrl=AUTH_LOGIN_PATH
 )
 
 # -----------------------------------------------------------------------------
@@ -114,7 +112,7 @@ def accueil():
         "documentation": "/docs",
     }
 
-@app.post("/api/auth/login",
+@app.post("/auth/login",
     tags=["Authentication"],
 )
 def login(
