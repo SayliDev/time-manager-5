@@ -6,6 +6,7 @@
  *   main
  *   dev | develop
  *   feature/TM-<num>-<slug>
+ *   config/TM-<num>-<slug>
  *   bugfix/TM-<num>-<slug>
  *   hotfix/TM-<num>-<slug>
  */
@@ -13,7 +14,7 @@
 import { execSync } from 'node:child_process';
 
 const ALLOWED =
-  /^(main|dev|develop|feature\/TM-\d+-[a-z0-9]+(?:-[a-z0-9]+)*|bugfix\/TM-\d+-[a-z0-9]+(?:-[a-z0-9]+)*|hotfix\/TM-\d+-[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+  /^(main|dev|develop|(?:feature|config|bugfix|hotfix)\/TM-\d+-[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 function currentBranch() {
   if (process.env.GITHUB_HEAD_REF) return process.env.GITHUB_HEAD_REF;
