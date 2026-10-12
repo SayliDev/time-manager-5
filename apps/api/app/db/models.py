@@ -1,0 +1,1 @@
+"""Database models placeholder for the domain entities."""
