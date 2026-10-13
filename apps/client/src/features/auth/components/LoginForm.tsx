@@ -11,8 +11,8 @@ import {
   Separator,
   TextField,
 } from '@heroui/react';
-function LoginForm({ MicrosoftLogo, onSubmit }: { MicrosoftLogo: React.ElementType, onSubmit: () => void }) {
-
+import MicrosoftSignInButton from './MicrosoftSignInButton';
+function LoginForm({ onSignIn }: { onSignIn: () => void }) {
   return (
     <main className='relative flex flex-col px-6 py-8 sm:px-12'>
       <div className='flex items-center justify-between lg:justify-end'>
@@ -28,15 +28,7 @@ function LoginForm({ MicrosoftLogo, onSubmit }: { MicrosoftLogo: React.ElementTy
           Entrez vos identifiants pour accéder à votre espace.
         </p>
 
-        <Button
-          className='mt-8 w-full'
-          size='lg'
-          variant='secondary'
-          onPress={onSubmit}
-        >
-          <MicrosoftLogo />
-          Continuer avec Microsoft
-        </Button>
+        <MicrosoftSignInButton onSignIn={onSignIn} />
 
         <div className='my-6 flex items-center gap-3 text-xs text-muted'>
           <Separator className='flex-1' />
@@ -48,7 +40,7 @@ function LoginForm({ MicrosoftLogo, onSubmit }: { MicrosoftLogo: React.ElementTy
           className='flex flex-col gap-4'
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmit();
+            onSignIn();
           }}
         >
           <TextField isRequired name='email' type='email'>
@@ -97,7 +89,7 @@ function LoginForm({ MicrosoftLogo, onSubmit }: { MicrosoftLogo: React.ElementTy
 
       <p className='text-center text-xs text-muted'>© 2026 Time Manager</p>
     </main>
-  )
+  );
 }
 
 export default LoginForm;
