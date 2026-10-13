@@ -13,13 +13,15 @@ from typing import Any
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from apps.api.app.db.database_conn import get_connection
+from app.db.database_conn import get_connection
 
 
 PUBLIC_COLUMNS = sql.SQL(
     "id_user, first_name, last_name, email, "
     "role, phone, creat_at, desactive_at"
 )
+
+TABLE = sql.Identifier("users")
 
 MODIFIABLE_FIELDS = frozenset({
     "first_name",
@@ -35,8 +37,8 @@ MODIFIABLE_FIELDS = frozenset({
 def get_all() -> list[dict[str, Any]]:
     """Retourne tous les utilisateurs, y compris ceux désactivés."""
     query = sql.SQL(
-        "SELECT {} FROM public.users ORDER BY id_user"
-    ).format(PUBLIC_COLUMNS)
+        "SELECT {} FROM {} ORDER BY id_user"
+    ).format(PUBLIC_COLUMNS, TABLE)
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
@@ -47,8 +49,8 @@ def get_all() -> list[dict[str, Any]]:
 def get_by_id(record_id: int) -> dict[str, Any] | None:
     """Retourne un utilisateur sans hash, ou None s'il n'existe pas."""
     query = sql.SQL(
-        "SELECT {} FROM public.users WHERE id_user = %s"
-    ).format(PUBLIC_COLUMNS)
+        "SELECT {} FROM {} WHERE id_user = %s"
+    ).format(PUBLIC_COLUMNS, TABLE)
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
@@ -56,7 +58,7 @@ def get_by_id(record_id: int) -> dict[str, Any] | None:
             return cursor.fetchone()
 
 
-def create(
+def create_User(
     *,
     first_name: str,
     last_name: str,
@@ -66,14 +68,13 @@ def create(
     phone: str | None = None,
 ) -> dict[str, Any]:
     """Crée un utilisateur et retourne ses données sans le hash.
-
     password_hash doit être déjà haché, ou None.
     creat_at reçoit la valeur par défaut de PostgreSQL.
     Un email déjà présent provoque une erreur UniqueViolation.
     """
     query = sql.SQL(
         """
-        INSERT INTO public.users (
+        INSERT INTO {} (
             first_name,
             last_name,
             email,
@@ -84,7 +85,7 @@ def create(
         VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING {}
         """
-    ).format(PUBLIC_COLUMNS)
+    ).format(TABLE, PUBLIC_COLUMNS)
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
@@ -110,7 +111,7 @@ def create(
             return user
 
 
-def update(
+def update_User(
     record_id: int,
     **changes: Any,
 ) -> dict[str, Any] | None:
@@ -138,12 +139,12 @@ def update(
 
     query = sql.SQL(
         """
-        UPDATE public.users
+        UPDATE {}
         SET {}
         WHERE id_user = %s
         RETURNING {}
         """
-    ).format(assignments, PUBLIC_COLUMNS)
+    ).format(TABLE, assignments, PUBLIC_COLUMNS)
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
@@ -154,7 +155,7 @@ def update(
             return cursor.fetchone()
 
 
-def delete(record_id: int) -> bool:
+def delete_User(record_id: int) -> bool:
     """Supprime définitivement l'utilisateur ; True s'il existait.
 
     Une référence depuis une autre table peut bloquer la suppression
@@ -164,17 +165,19 @@ def delete(record_id: int) -> bool:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                """
-                DELETE FROM public.users
-                WHERE id_user = %s
-                RETURNING id_user
-                """,
+                sql.SQL(
+                    """
+                    DELETE FROM {}
+                    WHERE id_user = %s
+                    RETURNING id_user
+                    """
+                ).format(TABLE),
                 (record_id,),
             )
             return cursor.fetchone() is not None
 
 
-def deactivate(record_id: int) -> dict[str, Any] | None:
+def deactivate_User(record_id: int) -> dict[str, Any] | None:
     """Désactive le compte sans supprimer son historique.
 
     Conserve la date existante si le compte est déjà désactivé.
@@ -183,12 +186,12 @@ def deactivate(record_id: int) -> dict[str, Any] | None:
     """
     query = sql.SQL(
         """
-        UPDATE public.users
+        UPDATE {}
         SET desactive_at = COALESCE(desactive_at, CURRENT_TIMESTAMP)
         WHERE id_user = %s
         RETURNING {}
         """
-    ).format(PUBLIC_COLUMNS)
+    ).format(TABLE, PUBLIC_COLUMNS)
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:

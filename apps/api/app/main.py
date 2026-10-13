@@ -2,28 +2,16 @@
 
 import logging
 import os
-
 import psycopg
 
-from fastapi import (
-    Depends,
-    FastAPI,
-    HTTPException,
-    status,
-)
-from fastapi.security import (
-    OAuth2PasswordBearer,
-    OAuth2PasswordRequestForm,
-)
+from fastapi import (Depends,FastAPI,HTTPException,status,)
+from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
 from jose import JWTError
 from psycopg import sql
 from psycopg.rows import dict_row
-
-from app.core.security import (
-    create_access_token,
-    decode_access_token,
-)
-
+from core.security import (create_access_token,decode_access_token,)
+from app.routers.users_routers import router as users_router
+from app.db.database_conn import DATABASE_URL
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
@@ -35,6 +23,12 @@ app = FastAPI(
         "persistAuthorization": True
     },
 )
+
+# -----------------------------------------------------------------------------
+# Include router
+# ----------------------------------------------------------------------------- 
+app.include_router(users_router)
+
 
 # -----------------------------------------------------------------------------
 # Constantes
@@ -61,7 +55,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 def connexion():
     return psycopg.connect(
-        os.environ["DATABASE_URL"],
+        DATABASE_URL,
         connect_timeout=5,
         row_factory=dict_row,
     )
