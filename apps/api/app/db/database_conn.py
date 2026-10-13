@@ -1,8 +1,7 @@
 """API locale de demonstration. Sans authentification, donnees fictives uniquement."""
-import psycopg     
 from psycopg import Connection
 from psycopg.rows import DictRow,dict_row
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
 app = FastAPI(title="Time Manager - verification locale")
 TABLES = (
