@@ -9,7 +9,9 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       >
         <Clock className='size-5' />
       </span>
-      {compact ? null : (
+      {compact ? (
+        <span className='sr-only'>Time Manager — TrinityMarket</span>
+      ) : (
         <div className='leading-tight'>
           <p className='text-sm font-semibold tracking-tight text-foreground'>
             Time Manager
