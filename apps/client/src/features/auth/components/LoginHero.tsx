@@ -1,7 +1,7 @@
 import { Clock, Shield } from '@gravity-ui/icons';
+import { loginFeatures } from '@/features/auth/constants/loginFeatures';
 
-function LoginHero({ features }: { features: { icon: React.ElementType, title: string, text: string }[] }) {
-
+function LoginHero() {
   return (
     <aside className='tm-hero-bg relative hidden flex-col justify-between overflow-hidden p-12 text-white lg:flex'>
       <div className='flex items-center gap-2.5'>
@@ -26,7 +26,7 @@ function LoginHero({ features }: { features: { icon: React.ElementType, title: s
         </p>
 
         <ul className='mt-10 flex flex-col gap-5'>
-          {features.map(({ icon: Icon, title, text }) => (
+          {loginFeatures.map(({ icon: Icon, title, text }) => (
             <li className='flex items-start gap-4' key={title}>
               <span className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15 backdrop-blur'>
                 <Icon className='size-5' />
@@ -45,7 +45,7 @@ function LoginHero({ features }: { features: { icon: React.ElementType, title: s
         Données chiffrées · Conforme RGPD · Authentification sécurisée
       </p>
     </aside>
-  )
+  );
 }
 
 export default LoginHero;
