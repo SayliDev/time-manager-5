@@ -61,7 +61,7 @@ def get_user_endpoint(user_id: int):
     try:
         user = get_user_by_id(user_id=user_id)
 
-        logger.info("User retrieved: %s", user)
+        logger.info("User retrieved: id=%s", user_id)
 
         if not user:
             raise HTTPException(
