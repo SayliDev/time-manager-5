@@ -44,7 +44,7 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
           }}
         >
           <TextField isRequired name='email' type='email'>
-            <Label>Email professionnel</Label>
+            <Label className='after:content-none'>Email professionnel</Label>
             <Input
               autoComplete='username'
               placeholder='prenom.nom@trinitymarket.com'
