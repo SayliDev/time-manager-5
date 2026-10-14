@@ -1,7 +1,7 @@
 """Tests de l'utilitaire de hachage des mots de passe."""
 import pytest
 
-from app.core.passwords import hash_password, verify_password
+from core.passwords import hash_password, verify_password
 
 
 def test_hash_is_not_plaintext_and_verifies():
