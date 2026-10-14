@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 from jose import jwt
+from passlib.context import CryptContext
 
 # ----------------------------------------------------
 # create_access_token function for generating JWT tokens
@@ -31,7 +32,7 @@ def decode_access_token(token: str) -> dict:
         algorithms=[ALGORITHM],
     )
 
-from passlib.context import CryptContext
+
 
 pwd_context = CryptContext(
     schemes=["argon2"],

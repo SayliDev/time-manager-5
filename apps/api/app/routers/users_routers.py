@@ -1,13 +1,14 @@
 
 import logging
-logger = logging.getLogger(__name__)
+
 
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from app.services.users_service import create_user, get_user_by_id, get_all_users
+from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user
 
+logger = logging.getLogger(__name__)
 
 class UserCreate(BaseModel):
     first_name: str
@@ -89,8 +90,6 @@ def get_all_users_endpoint():
 
 @router.delete("/deactivateUser/{user_id}",status_code=status.HTTP_204_NO_CONTENT,)
 def deactivate_user_endpoint(user_id: int):
-    from app.services.users_service import deactivate_user
-
     try:
         deactivate_user(user_id=user_id)
     except RuntimeError as error:
@@ -102,8 +101,6 @@ def deactivate_user_endpoint(user_id: int):
 
 @router.put("/updateUser/{user_id}",response_model=UserResponse,status_code=status.HTTP_200_OK,)
 def update_user_endpoint(user_id: int, payload: UserCreate):
-    from app.services.users_service import update_user
-
     try:
         user = update_user(
             user_id=user_id,
