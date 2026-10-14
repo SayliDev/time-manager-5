@@ -55,8 +55,8 @@ def update_user(
 
     try:
         return update_User(
-            user_id=user_id,
-            first_name=first_name,
+            record_id=user_id,
+            first_name=first_name
             last_name=last_name,
             email=email,
             password_hash=hash_password(password) if password else None,

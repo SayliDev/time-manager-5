@@ -62,7 +62,7 @@ def get_user_endpoint(user_id: int):
     try:
         user = get_user_by_id(user_id=user_id)
 
-        logger.info("User retrieved: %s", user)
+        logger.info("User retrieved: id=%s", user_id)
 
         if not user:
             raise HTTPException(
@@ -112,6 +112,11 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
             phone=payload.phone,
         )
 
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
         return user
     except ValueError as error:
         raise HTTPException(
