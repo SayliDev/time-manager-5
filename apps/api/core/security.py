@@ -33,7 +33,6 @@ def decode_access_token(token: str) -> dict:
     )
 
 
-
 pwd_context = CryptContext(
     schemes=["argon2"],
     deprecated="auto",

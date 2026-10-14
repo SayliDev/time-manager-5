@@ -1,7 +1,6 @@
 """FastAPI application entry point."""
 
 import logging
-import os
 import psycopg
 
 from fastapi import (Depends,FastAPI,HTTPException,status,)
