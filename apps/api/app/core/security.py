@@ -30,7 +30,7 @@ def decode_access_token(token: str) -> dict:
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["argon2"],
     deprecated="auto",
 )
 
