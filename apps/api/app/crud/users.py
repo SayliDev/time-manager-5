@@ -13,7 +13,7 @@ from typing import Any
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from apps.api.app.db.database_conn import get_connection
+from app.db.database_conn import get_connection
 
 
 PUBLIC_COLUMNS = sql.SQL(
