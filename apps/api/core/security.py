@@ -1,7 +1,8 @@
+from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 import os
 from jose import jwt
-from passlib.context import CryptContext
+
 
 # ----------------------------------------------------
 # create_access_token function for generating JWT tokens

@@ -3,7 +3,6 @@ from psycopg.errors import UniqueViolation
 from app.repositories.users_repository import create_User, get_by_id, get_all, update_User, deactivate_User
 from core.security import hash_password
 
-
 def create_user(
     *,
     first_name: str,
@@ -51,8 +50,7 @@ def update_user(
     role: str | None = None,
     phone: str | None = None,
 ):
-    from app.repositories.users_repository import update_User
-
+    
     try:
         return update_User(
             record_id=user_id,
@@ -70,12 +68,7 @@ def update_user(
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la mise à jour de l'utilisateur : {e}")
 
-def deactivate_user(
-    *,
-    user_id: int,
-):
-    from app.repositories.users_repository import deactivate_User
-
+def deactivate_user(*,user_id: int,):
     try:
         return deactivate_User(record_id=user_id)
     except Exception as e:
