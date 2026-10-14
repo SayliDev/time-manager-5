@@ -18,11 +18,7 @@ f"{os.getenv('POSTGRES_PORT')}/"
 f"{os.getenv('POSTGRES_DB')}"
 )
 
-print("HOST =", os.getenv("POSTGRES_HOST"))
-print("PORT =", os.getenv("POSTGRES_PORT"))
-print("DB =", os.getenv("POSTGRES_DB"))
-print("USER =", os.getenv("POSTGRES_USER"))
-print("DATABASE_URL =", DATABASE_URL)
+# Connection details are intentionally not logged because they contain credentials.
 
 def get_connection() -> Connection[DictRow]:
     return Connection[DictRow].connect(
