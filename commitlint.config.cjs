@@ -50,7 +50,7 @@ module.exports = {
     'subject-case': [0],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never'],
-    'header-max-length': [2, 'always', 72],
+    'header-max-length': [2, 'always', 92],
     'body-max-line-length': [2, 'always', 100],
     'header-no-emoji': [2, 'always'],
     'header-no-accent': [2, 'always'],

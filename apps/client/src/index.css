@@ -9,6 +9,40 @@
 
 .dark,
 [data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Dont worry about the commented variables below, they are used in the future */
+  /* --background: oklch(0.16 0.02 255);
+  --foreground: oklch(0.96 0.01 255);
+
+  --surface: oklch(0.21 0.02 255);
+  --surface-foreground: var(--foreground);
+  --surface-secondary: oklch(0.25 0.02 255);
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: oklch(0.29 0.02 255);
+  --surface-tertiary-foreground: var(--foreground);
+
+  --overlay: oklch(0.23 0.02 255);
+  --overlay-foreground: var(--foreground);
+
+  --muted: oklch(0.72 0.02 255);
+  --default: oklch(0.28 0.02 255);
+  --default-foreground: var(--foreground);
+
+  --field-background: oklch(0.2 0.02 255);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --field-border: oklch(0.35 0.03 255);
+
+  --accent: oklch(0.72 0.14 250);
+  --accent-foreground: oklch(0.18 0.03 255);
+  --link: var(--accent);
+  --focus: var(--accent);
+
+  --border: oklch(0.32 0.02 255);
+  --separator: oklch(0.28 0.02 255);
+
+  --backdrop: oklch(0.1 0.02 255 / 65%); */
 }
 
 @theme inline {
@@ -84,6 +118,25 @@ body {
       color-mix(in oklch, var(--accent) 16%, oklch(0.44 0.25 265.09))
     );
   animation: tm-hero-drift 18s ease-in-out infinite alternate;
+}
+
+.dark .tm-hero-bg,
+[data-theme='dark'] .tm-hero-bg {
+  background: radial-gradient(
+      58rem 36rem at var(--tm-hero-x1) var(--tm-hero-y1),
+      color-mix(in oklch, var(--accent) 48%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      42rem 32rem at var(--tm-hero-x2) var(--tm-hero-y2),
+      color-mix(in oklch, var(--accent) 28%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      var(--tm-hero-angle),
+      color-mix(in oklch, var(--accent) 28%, oklch(0.22 0.04 255)),
+      color-mix(in oklch, var(--accent) 18%, oklch(0.14 0.05 265))
+    );
 }
 
 @keyframes tm-hero-drift {
