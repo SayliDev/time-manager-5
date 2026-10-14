@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Brand } from '@/shared/branding/Brand';
 import { ThemeToggle } from '@/theme/ThemeToggle';
 import {
@@ -12,7 +14,63 @@ import {
   TextField,
 } from '@heroui/react';
 import MicrosoftSignInButton from './MicrosoftSignInButton';
+
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
+
 function LoginForm({ onSignIn }: { onSignIn: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    const username = formData.get('email');
+    const password = formData.get('password');
+
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      setError('Veuillez renseigner votre email et votre mot de passe.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ username, password }),
+      });
+
+      if (!response.ok) {
+        setError('Identifiants invalides.');
+        return;
+      }
+
+      const result: unknown = await response.json();
+
+      if (
+        typeof result !== 'object' ||
+        result === null ||
+        !('access_token' in result) ||
+        typeof result.access_token !== 'string'
+      ) {
+        setError('Réponse de connexion invalide.');
+        return;
+      }
+
+      localStorage.setItem('access_token', result.access_token);
+      onSignIn();
+    } catch {
+      setError('Impossible de contacter le serveur.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className='relative flex flex-col px-6 py-8 sm:px-12'>
       <div className='flex items-center justify-between lg:justify-end'>
@@ -38,10 +96,7 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
 
         <Form
           className='flex flex-col gap-4'
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSignIn();
-          }}
+          onSubmit={handleSubmit}
         >
           <TextField isRequired name='email' type='email'>
             <Label>Email professionnel</Label>
@@ -75,9 +130,15 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
             </Checkbox.Content>
           </Checkbox>
 
-          <Button className='mt-2 w-full' size='lg' type='submit'>
+          <Button
+            className='mt-2 w-full'
+            isDisabled={isSubmitting}
+            size='lg'
+            type='submit'
+          >
             Se connecter
           </Button>
+          {error && <FieldError>{error}</FieldError>}
         </Form>
 
         <p className='mt-8 text-center text-xs text-muted'>
