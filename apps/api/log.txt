@@ -1,0 +1,11 @@
+2026-10-14 12:44:34,095 - INFO - time_manager - Password verification completed: valid=False
+2026-10-14 12:53:53,872 - INFO - time_manager - Login attempt for username=jeanbon@gmail.fr, user_found=True
+2026-10-14 12:53:54,016 - INFO - time_manager - Password verification completed: valid=True 12345AZERTY
+2026-10-14 12:53:54,065 - INFO - time_manager - Login succeeded for username=jeanbon@gmail.fr
+2026-10-14 13:04:07,830 - INFO - time_manager - Login attempt for username=jeanbon@gmail.fr, user_found=True
+2026-10-14 13:04:53,789 - INFO - time_manager - Login attempt for username=jeanbon@gmail.fr, user_found=True
+2026-10-14 13:04:53,943 - INFO - time_manager - Password verification completed: valid=True $argon2id$v=19$m=65536,t=3,p=4$R0gp5dxba805Z+xdS2mNcQ$nuS0bZNs2uTLj2vZG+vGWIZ6RaBC1y8lVbVVIXx0XdU
+2026-10-14 13:04:53,958 - INFO - time_manager - Login succeeded for username=jeanbon@gmail.fr
+2026-10-14 13:05:00,066 - INFO - time_manager - Login attempt for username=jeanbon@gmail.fr, user_found=True
+2026-10-14 13:05:00,190 - INFO - time_manager - Password verification completed: valid=False $argon2id$v=19$m=65536,t=3,p=4$R0gp5dxba805Z+xdS2mNcQ$nuS0bZNs2uTLj2vZG+vGWIZ6RaBC1y8lVbVVIXx0XdU
+2026-10-14 13:05:00,190 - WARNING - time_manager - Login rejected for username=jeanbon@gmail.fr: invalid password

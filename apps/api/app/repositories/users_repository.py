@@ -45,9 +45,8 @@ def get_all() -> list[dict[str, Any]]:
             cursor.execute(query)
             return cursor.fetchall()
 
-
+# Retourne un utilisateur sans hash, ou None s'il n'existe pas
 def get_by_id(record_id: int) -> dict[str, Any] | None:
-    """Retourne un utilisateur sans hash, ou None s'il n'existe pas."""
     query = sql.SQL(
         "SELECT {} FROM {} WHERE id_user = %s"
     ).format(PUBLIC_COLUMNS, TABLE)
@@ -57,7 +56,10 @@ def get_by_id(record_id: int) -> dict[str, Any] | None:
             cursor.execute(query, (record_id,))
             return cursor.fetchone()
 
-
+#    Crée un utilisateur et retourne ses données sans le hash.
+#    password_hash doit être déjà haché, ou None.
+#    creat_at reçoit la valeur par défaut de PostgreSQL.
+#    Un email déjà présent provoque une erreur UniqueViolation.
 def create_User(
     *,
     first_name: str,
@@ -67,11 +69,7 @@ def create_User(
     role: str = "employe",
     phone: str | None = None,
 ) -> dict[str, Any]:
-    """Crée un utilisateur et retourne ses données sans le hash.
-    password_hash doit être déjà haché, ou None.
-    creat_at reçoit la valeur par défaut de PostgreSQL.
-    Un email déjà présent provoque une erreur UniqueViolation.
-    """
+
     query = sql.SQL(
         """
         INSERT INTO {} (
@@ -197,3 +195,34 @@ def deactivate_User(record_id: int) -> dict[str, Any] | None:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query, (record_id,))
             return cursor.fetchone()
+
+#  Récupère un utilisateur par son email
+def get_by_email(email: str) -> dict[str, Any] | None:
+    query = sql.SQL(
+        """
+        SELECT {}
+        FROM {}
+        WHERE email = %s
+        """
+    ).format(PUBLIC_COLUMNS, TABLE)
+
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(query, (email,))
+            return cursor.fetchone()    
+
+
+def get_password_hash_by_id(record_id: int) -> str | None:
+    query = sql.SQL(
+        """
+        SELECT password_hash
+        FROM {}
+        WHERE id_user = %s
+        """
+    ).format(TABLE)
+
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(query, (record_id,))
+            result = cursor.fetchone()
+            return result["password_hash"] if result else None

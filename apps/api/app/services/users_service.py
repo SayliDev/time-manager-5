@@ -1,7 +1,15 @@
 from psycopg.errors import UniqueViolation
-
-from app.repositories.users_repository import create_User, get_by_id, get_all, update_User, deactivate_User
-from core.security import hash_password
+import traceback
+from app.repositories.users_repository import (
+    create_User,
+    get_by_id,
+    get_all,
+    update_User,
+    deactivate_User,
+    get_by_email as repository_get_by_email,
+    get_password_hash_by_id as repository_get_password_hash_by_id,
+)
+from core.passwords import hash_password
 
 def create_user(
     *,
@@ -73,3 +81,16 @@ def deactivate_user(*,user_id: int,):
         return deactivate_User(record_id=user_id)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la désactivation de l'utilisateur : {e}")
+
+def get_user_by_email(*, email: str):
+    try:
+        return repository_get_by_email(email=email)
+    except Exception as e:
+        traceback.print_exc()
+        raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par email : {e}")
+
+def get_password_hash_by_id(*, user_id: int):
+    try:
+        return repository_get_password_hash_by_id(record_id=user_id)
+    except Exception as e:
+        raise RuntimeError(f"Erreur lors de la récupération du hash du mot de passe de l'utilisateur : {e}")

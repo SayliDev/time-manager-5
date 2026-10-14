@@ -4,4 +4,6 @@ psycopg[binary]==3.2.9
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.6
 # bcrypt==4.3.0
-argon2-cffi==23.1.0
+argon2-cffi==23.1.0     # Argon2 password hashing algorithm
+passlib==1.7.4          # password hashing library
+zxcvbn==4.4.28          # check common passwords
