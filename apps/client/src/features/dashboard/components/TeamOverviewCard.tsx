@@ -24,7 +24,7 @@ export function TeamOverviewCard({
             Cliquez sur un collaborateur pour ouvrir sa fiche.
           </Card.Description>
         </div>
-        <Link href='/mcp/users'>
+        <Link href='/dashboard/users'>
           Tout voir
           <Link.Icon />
         </Link>
