@@ -1,4 +1,4 @@
-from app.core.security import create_access_token, decode_access_token
+from core.security import create_access_token, decode_access_token
 
 
 def test_access_token_round_trip() -> None:
