@@ -115,6 +115,11 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
             phone=payload.phone,
         )
 
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
         return user
     except ValueError as error:
         raise HTTPException(
