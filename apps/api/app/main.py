@@ -10,6 +10,7 @@ from psycopg import sql
 from psycopg.rows import dict_row
 from core.security import (create_access_token,decode_access_token,)
 from app.routers.users_routers import router as users_router
+from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 # -----------------------------------------------------------------------------
 # Application
@@ -27,6 +28,7 @@ app = FastAPI(
 # Include router
 # ----------------------------------------------------------------------------- 
 app.include_router(users_router)
+app.include_router(register_router)
 
 
 # -----------------------------------------------------------------------------
