@@ -58,7 +58,7 @@ def get_by_id(record_id: int) -> dict[str, Any] | None:
             return cursor.fetchone()
 
 
-def create_User(
+def create(
     *,
     first_name: str,
     last_name: str,
@@ -111,7 +111,7 @@ def create_User(
             return user
 
 
-def update_User(
+def update(
     record_id: int,
     **changes: Any,
 ) -> dict[str, Any] | None:
@@ -155,7 +155,7 @@ def update_User(
             return cursor.fetchone()
 
 
-def delete_User(record_id: int) -> bool:
+def delete(record_id: int) -> bool:
     """Supprime définitivement l'utilisateur ; True s'il existait.
 
     Une référence depuis une autre table peut bloquer la suppression
@@ -177,7 +177,7 @@ def delete_User(record_id: int) -> bool:
             return cursor.fetchone() is not None
 
 
-def deactivate_User(record_id: int) -> dict[str, Any] | None:
+def deactivate(record_id: int) -> dict[str, Any] | None:
     """Désactive le compte sans supprimer son historique.
 
     Conserve la date existante si le compte est déjà désactivé.
