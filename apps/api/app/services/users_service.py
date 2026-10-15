@@ -8,11 +8,13 @@ from app.repositories.users_repository import (
     deactivate_User,
     get_by_email as repository_get_by_email,
     get_password_hash_by_id as repository_get_password_hash_by_id,
+    get_by_oid as repository_get_by_oid
 )
 from core.passwords import hash_password
 
 def create_user(
     *,
+    oid: str | None = None,
     first_name: str,
     last_name: str,
     email: str,
@@ -23,6 +25,7 @@ def create_user(
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
         return create_User(
+            oid=oid,
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -94,3 +97,9 @@ def get_password_hash_by_id(*, user_id: int):
         return repository_get_password_hash_by_id(record_id=user_id)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération du hash du mot de passe de l'utilisateur : {e}")
+
+def get_user_by_oid(*, oid: str):
+    try:
+        return repository_get_by_oid(oid=oid)
+    except Exception as e:
+        raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par oid : {e}")

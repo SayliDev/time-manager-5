@@ -226,3 +226,18 @@ def get_password_hash_by_id(record_id: int) -> str | None:
             cursor.execute(query, (record_id,))
             result = cursor.fetchone()
             return result["password_hash"] if result else None
+
+def get_by_oid(oid: str) -> dict[str, Any] | None:
+    query = sql.SQL(
+        """
+        SELECT {}
+        FROM {} AS u
+        INNER JOIN microsoft_log AS m ON u.id_user = m.id_user
+        WHERE m.oid = %s
+        """
+    ).format(PUBLIC_COLUMNS, TABLE)
+
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(query, (oid,))
+            return cursor.fetchone()

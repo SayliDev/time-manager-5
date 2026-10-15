@@ -20,6 +20,14 @@ router = APIRouter(
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):  
+
+    if not form_data.username or not form_data.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nom d'utilisateur et mot de passe requis",
+        )
+    
+    
     user = get_user_by_email(email=form_data.username)
     logger.info(
         "Login attempt for username=%s, user_found=%s",
@@ -49,6 +57,8 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiants invalides",
         )
+
+
 
     access_token = create_access_token(
         {

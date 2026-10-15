@@ -4,6 +4,7 @@ import logging
 import psycopg
 
 from fastapi import (Depends,FastAPI,HTTPException,status,)
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
 from jose import JWTError
 from psycopg import sql
@@ -12,6 +13,7 @@ from core.security import (create_access_token,decode_access_token,)
 from app.routers.users_routers import router as users_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
+from app.routers.auth_microsoft import router as microsoft_auth_router
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
@@ -24,11 +26,21 @@ app = FastAPI(
     },
 )
 
+# AI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # -----------------------------------------------------------------------------
 # Include router
 # ----------------------------------------------------------------------------- 
 app.include_router(users_router)
 app.include_router(auth_router)
+app.include_router(microsoft_auth_router)
 
 # -----------------------------------------------------------------------------
 # Constantes
