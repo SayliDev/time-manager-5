@@ -23,6 +23,12 @@ CREATE TABLE public.work_session (
     CHECK (end_at IS NULL OR end_at >= start_at)
 );
 
+CREATE TABLE public.microft_log(
+    token_microsoft TEXT PRIMARY KEY,
+    mail_microsoft VARCHAR(50) NOT NULL,
+    id_user INTEGER NOT NULL REFERENCES public.users(id_user)
+);
+
 CREATE TABLE public.departement (
     id_departement INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(50)
