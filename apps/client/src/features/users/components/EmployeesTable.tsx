@@ -1,7 +1,6 @@
 import { EllipsisVertical, Eye, Pencil, TrashBin } from '@gravity-ui/icons';
 import {
   Button,
-  Checkbox,
   Dropdown,
   Kbd,
   Label,
@@ -40,7 +39,7 @@ export function EmployeesTable({
   onDelete,
   showRole = false,
   compact = false,
-  selectable = true,
+  selectable = false,
   ariaLabel = 'Liste des employés',
   selectedKeys: controlledKeys,
   onSelectionChange,
@@ -109,7 +108,7 @@ export function EmployeesTable({
           onSortChange={setSort}
         >
           <Table.Header>
-            {selectable ? (
+            {/* {selectable ? (
               <Table.Column className='pe-0'>
                 <Checkbox aria-label='Tout sélectionner' slot='selection'>
                   <Checkbox.Content>
@@ -119,7 +118,7 @@ export function EmployeesTable({
                   </Checkbox.Content>
                 </Checkbox>
               </Table.Column>
-            ) : null}
+            ) : null} */}
             <Table.Column allowsSorting isRowHeader id='name'>
               {header('Employé')}
             </Table.Column>
@@ -152,7 +151,7 @@ export function EmployeesTable({
               const over = user.weeklyHours > WEEKLY_TARGET + 3;
               return (
                 <Table.Row id={user.id} key={user.id}>
-                  {selectable ? (
+                  {/* {selectable ? (
                     <Table.Cell className='pe-0'>
                       <Checkbox
                         aria-label={`Sélectionner ${fullName(user)}`}
@@ -166,7 +165,7 @@ export function EmployeesTable({
                         </Checkbox.Content>
                       </Checkbox>
                     </Table.Cell>
-                  ) : null}
+                  ) : null} */}
                   <Table.Cell>
                     <button
                       aria-label={`Ouvrir la fiche de ${fullName(user)}`}
