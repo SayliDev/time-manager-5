@@ -18,18 +18,18 @@ def create_user(
     first_name: str,
     last_name: str,
     email: str,
-    password: str,
+    password: str | None = None,
     role: str = "employe",
     phone: str | None = None,
 ):
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
         return create_User(
-            oid=oid,
+            # oid=oid,
             first_name=first_name,
             last_name=last_name,
             email=email,
-            password_hash=hash_password(password),
+            password_hash=hash_password(password) if password else None,
             role=role,
             phone=phone,
         )
