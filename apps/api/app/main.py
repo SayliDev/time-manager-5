@@ -1,8 +1,9 @@
 """FastAPI application entry point."""
 
 import logging
+import os
 import psycopg
-
+CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 from fastapi import (Depends,FastAPI,HTTPException,status,)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
@@ -15,11 +16,14 @@ from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
-from app.routers.test_work_time import router as test_work_time_router
+# from app.routers.register_routers import router as register_router
+from app.db.database_conn import connexion
 
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
+
+CLIENT_PORT = os.getenv("CLIENT_PORT")
 
 app = FastAPI(
     title="Time Manager API",
@@ -29,10 +33,11 @@ app = FastAPI(
     },
 )
 
-# AI
+# autorise les origines CORS, autoorise response from backend to frontend (avoid browzer blocking)
+# because docker backend and frontend different ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[f"http://localhost:{CLIENT_PORT}"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,9 +51,7 @@ app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
 app.include_router(register_router)
-
-
-app.include_router(test_work_time_router)
+# app.include_router(test_work_time_router)
 # -----------------------------------------------------------------------------
 # Constantes
 # -----------------------------------------------------------------------------
@@ -65,19 +68,14 @@ TABLES = (
 
 # Route utilisée par Swagger pour récupérer un token
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login"
+    tokenUrl="api/auth/login"
 )
 
 # -----------------------------------------------------------------------------
 # Base de données
 # -----------------------------------------------------------------------------
-
-def connexion():
-    return psycopg.connect(
-        DATABASE_URL,
-        connect_timeout=5,
-        row_factory=dict_row,
-    )
+ 
+connexion()
 
 # -----------------------------------------------------------------------------
 # JWT
