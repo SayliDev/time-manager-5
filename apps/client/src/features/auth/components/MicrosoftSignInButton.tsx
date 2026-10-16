@@ -1,4 +1,5 @@
 import { Button } from '@heroui/react';
+import { API_URL } from '@/shared/api/client';
 
 function MicrosoftLogo() {
   return (
@@ -13,21 +14,19 @@ function MicrosoftLogo() {
 
 function MicrosoftSignInButton() {
   return (
-      <Button
-        className='mt-8 w-full'
-        size='lg'
-        variant='secondary'
-        name='microsoft-sign-in'
-        onClick={() => handleLogin()}
-      >
-        <MicrosoftLogo />
-        Continuer avec Microsoft
-      </Button>
+    <Button
+      className='mt-8 w-full'
+      name='microsoft-sign-in'
+      size='lg'
+      variant='secondary'
+      onPress={() => {
+        window.location.href = `${API_URL}/api/auth/login/microsoft`;
+      }}
+    >
+      <MicrosoftLogo />
+      Continuer avec Microsoft
+    </Button>
   );
-}
-
-function handleLogin() {
-  window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/login/microsoft`;
 }
 
 export default MicrosoftSignInButton;
