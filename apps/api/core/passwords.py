@@ -73,26 +73,6 @@ def verify_password(plain_password: str,hashed_password: str | None,) -> bool:
     if len(plain_password.encode("utf-8")) > MAX_PASSWORD_BYTES:
         return False
 
-    # if len(plain_password) < 12:
-    #     raise ValueError("Password too short")
-
-    # if not re.search(r"[A-Z]", plain_password):
-    #     raise ValueError("Missing uppercase")
-
-    # if not re.search(r"[a-z]", plain_password):
-    #     raise ValueError("Missing lowercase")
-
-    # if not re.search(r"\d", plain_password):
-    #     raise ValueError("Missing number")
-
-    # if not re.search(r"[!@#$%^&*]", plain_password):
-    #     raise ValueError("Missing special character")
-
-    # Vérifie la force du mot de passe avec zxcvbn, lève une exception si trop faible.
-    # result = zxcvbn(plain_password)
-    # if result["score"] < 3:
-    #     raise ValueError("Password too weak")
-
     try:
         is_valid = pwd_context.verify(plain_password, hashed_password)
         logger.info("Password verification completed: valid=%s %s", is_valid, hashed_password)
