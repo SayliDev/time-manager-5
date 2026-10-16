@@ -1,6 +1,7 @@
 import { CircleFill } from '@gravity-ui/icons';
 import { Chip } from '@heroui/react';
-import type { EntryStatus, PresenceStatus, Role } from '@/features/users/types';
+import type { EntryStatus, WorkMode } from '@/features/time/types';
+import type { PresenceStatus, Role } from '@/features/users/types';
 
 type ChipColor = 'default' | 'accent' | 'success' | 'warning' | 'danger';
 
@@ -33,6 +34,20 @@ const entryMap: Record<EntryStatus, { label: string; color: ChipColor }> = {
 
 export function EntryStatusChip({ status }: { status: EntryStatus }) {
   const { label, color } = entryMap[status];
+  return (
+    <Chip color={color} size='sm' variant='soft'>
+      <Chip.Label>{label}</Chip.Label>
+    </Chip>
+  );
+}
+
+const workModeMap: Record<WorkMode, { label: string; color: ChipColor }> = {
+  onsite: { label: 'Présentiel', color: 'accent' },
+  remote: { label: 'Télétravail', color: 'success' },
+};
+
+export function WorkModeChip({ mode }: { mode: WorkMode }) {
+  const { label, color } = workModeMap[mode];
   return (
     <Chip color={color} size='sm' variant='soft'>
       <Chip.Label>{label}</Chip.Label>
