@@ -94,7 +94,6 @@ def callback(request: Request):
     user = get_user_by_email(email=email)
     if not user:
         user = create_user(
-            # oid=user_info.get("id"),
             first_name=user_info.get("givenName") or "Utilisateur",
             last_name=user_info.get("surname") or "Microsoft",
             email=user_info.get("userPrincipalName"),
