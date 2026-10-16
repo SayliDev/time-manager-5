@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./database/prod-init:/docker-entrypoint-initdb.d:ro # ne pas copier les additifs de développement (speudo user)
+      - ./database/init:/docker-entrypoint-initdb.d:ro # ne pas copier les additifs de développement (speudo user)
 
   api:
     build:
@@ -16,7 +16,6 @@ services:
       dockerfile: Dockerfile.prod
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       ENVIRONMENT: production
       API_ROOT_PATH: /api

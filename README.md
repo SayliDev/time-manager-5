@@ -17,7 +17,7 @@ Le nouvel entrypoint backend est `apps/api/app/main.py`. L'ancien `apps/api/main
 ## Lancement local
 
 1. Copier `.env.example` vers `.env` et remplacer les secrets.
-2. Lancer `docker compose up --build`.
+2. Lancer `docker compose --env-file .env up --build`.
 3. Ouvrir le frontend sur <http://localhost:5173> et la documentation API sur <http://localhost:8001/docs>.
 
 La base PostgreSQL écoute sur le port `5434` par défaut. Les scripts de `database/init` sont exécutés à la création du volume.
@@ -607,3 +607,6 @@ WHERE u.email LIKE '%.demo@example.com'
   AND s.debut_at < TIMESTAMPTZ '2026-10-05 00:00:00+02'
 GROUP BY u.id_utilisateur, u.prenom, u.nom
 ORDER BY u.id_utilisateur;
+
+# microsoft link app manager signin
+https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/quickStartType~/null/sourceType/Microsoft_AAD_IAM/appId/af362e67-66ee-4c18-bf9d-29b417bcd22f/objectId/de827d11-b653-4d00-8e13-d1da0c2b54e8/isMSAApp~/false/defaultBlade/Overview/appSignInAudience/AzureADMyOrg/servicePrincipalCreated~/true
