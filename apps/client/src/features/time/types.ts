@@ -12,4 +12,6 @@ export interface TimeEntry {
 export interface DayHours {
   day: string;
   hours: number;
+  onsite?: number;
+  remote?: number;
 }
