@@ -15,7 +15,6 @@ from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
-# from app.routers.register_routers import router as register_router
 from app.routers.test_work_time import router as test_work_time_router
 
 # -----------------------------------------------------------------------------
