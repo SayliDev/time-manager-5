@@ -59,6 +59,7 @@ export function HoursBarChart({
           />
           <Tooltip
             content={<ChartTooltip unit={unit} />}
+            isAnimationActive={false}
             cursor={{ fill: 'var(--default)', opacity: 0.5, radius: 4 }}
           />
           {target ? (
