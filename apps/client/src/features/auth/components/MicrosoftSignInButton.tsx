@@ -11,18 +11,23 @@ function MicrosoftLogo() {
   );
 }
 
-function MicrosoftSignInButton({ onSignIn }: { onSignIn: () => void }) {
+function MicrosoftSignInButton() {
   return (
-    <Button
-      className='mt-8 w-full'
-      size='lg'
-      variant='secondary'
-      onPress={onSignIn}
-    >
-      <MicrosoftLogo />
-      Continuer avec Microsoft
-    </Button>
+      <Button
+        className='mt-8 w-full'
+        size='lg'
+        variant='secondary'
+        name='microsoft-sign-in'
+        onClick={() => handleLogin()}
+      >
+        <MicrosoftLogo />
+        Continuer avec Microsoft
+      </Button>
   );
+}
+
+function handleLogin() {
+  window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/login/microsoft`;
 }
 
 export default MicrosoftSignInButton;
