@@ -10,7 +10,7 @@ from psycopg import sql
 from psycopg.errors import ForeignKeyViolation
 from psycopg.rows import dict_row
 
-from apps.api.app.db.database_conn import get_connection
+from app.db.database_conn import get_connection
 
 
 MODIFIABLE_FIELDS = frozenset({"name"})

@@ -11,7 +11,7 @@ from psycopg import sql
 from psycopg.errors import ForeignKeyViolation
 from psycopg.rows import dict_row
 
-from apps.api.app.db.database_conn import get_connection
+from app.db.database_conn import get_connection
 
 
 MODIFIABLE_FIELDS = frozenset({
@@ -50,6 +50,20 @@ def get_by_id(session_id: int) -> dict[str, Any] | None:
             )
             return cursor.fetchone()
 
+def get_all_by_user_id(user_id: int) -> list[dict[str, Any]]:
+    """Retourne toutes les sessions de travail d'un utilisateur."""
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT *
+                FROM public.work_session
+                WHERE id_user = %s
+                ORDER BY start_at DESC, id_work_session DESC
+                """,
+                (user_id,),
+            )
+            return cursor.fetchall()
 
 def create(
     *,

@@ -11,10 +11,13 @@ from psycopg import sql
 from psycopg.rows import dict_row
 from core.security import (create_access_token,decode_access_token,)
 from app.routers.users_routers import router as users_router
+from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 # from app.routers.register_routers import router as register_router
+from app.routers.test_work_time import router as test_work_time_router
+
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
@@ -43,7 +46,10 @@ app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
+app.include_router(register_router)
 
+
+app.include_router(test_work_time_router)
 # -----------------------------------------------------------------------------
 # Constantes
 # -----------------------------------------------------------------------------

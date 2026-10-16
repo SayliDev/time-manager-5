@@ -24,8 +24,7 @@ def create_user(
 ):
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
-        return create_User(
-            # oid=oid,
+        return create(
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -63,7 +62,7 @@ def update_user(
 ):
     
     try:
-        return update_User(
+        return update(
             record_id=user_id,
             first_name=first_name,
             last_name=last_name,
@@ -81,7 +80,7 @@ def update_user(
 
 def deactivate_user(*,user_id: int,):
     try:
-        return deactivate_User(record_id=user_id)
+        return deactivate(record_id=user_id)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la désactivation de l'utilisateur : {e}")
 
