@@ -1,12 +1,12 @@
 
 import logging
-import traceback
+
 
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
+from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user
 
 logger = logging.getLogger(__name__)
 
@@ -128,20 +128,3 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(error),
         )   
-
-@router.get("/userByEmail",response_model=UserResponse,status_code=status.HTTP_200_OK,)
-def get_user_by_email_endpoint(email: str):
-    try:
-        user = get_user_by_email(email=email)
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-        return user
-    except RuntimeError as error:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(error),
-        )

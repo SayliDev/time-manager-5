@@ -1,24 +1,14 @@
 from psycopg.errors import UniqueViolation
-import traceback
-from app.repositories.users_repository import (
-    create_User,
-    get_by_id,
-    get_all,
-    update_User,
-    deactivate_User,
-    get_by_email as repository_get_by_email,
-    get_password_hash_by_id as repository_get_password_hash_by_id,
-    get_by_oid as repository_get_by_oid
-)
-from core.passwords import hash_password
+
+from app.repositories.users_repository import create, get_by_id, get_all, update, deactivate
+from core.security import hash_password
 
 def create_user(
     *,
-    oid: str | None = None,
     first_name: str,
     last_name: str,
     email: str,
-    password: str | None = None,
+    password: str,
     role: str = "employe",
     phone: str | None = None,
 ):
@@ -28,7 +18,7 @@ def create_user(
             first_name=first_name,
             last_name=last_name,
             email=email,
-            password_hash=hash_password(password) if password else None,
+            password_hash=hash_password(password),
             role=role,
             phone=phone,
         )
@@ -83,22 +73,3 @@ def deactivate_user(*,user_id: int,):
         return deactivate(record_id=user_id)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la désactivation de l'utilisateur : {e}")
-
-def get_user_by_email(*, email: str):
-    try:
-        return repository_get_by_email(email=email)
-    except Exception as e:
-        traceback.print_exc()
-        raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par email : {e}")
-
-def get_password_hash_by_id(*, user_id: int):
-    try:
-        return repository_get_password_hash_by_id(record_id=user_id)
-    except Exception as e:
-        raise RuntimeError(f"Erreur lors de la récupération du hash du mot de passe de l'utilisateur : {e}")
-
-def get_user_by_oid(*, oid: str):
-    try:
-        return repository_get_by_oid(oid=oid)
-    except Exception as e:
-        raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par oid : {e}")
