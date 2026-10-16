@@ -1,4 +1,5 @@
 export type EntryStatus = 'ok' | 'late' | 'overtime' | 'missing' | 'ongoing';
+export type WorkMode = 'onsite' | 'remote';
 
 export interface TimeEntry {
   id: string;
@@ -7,6 +8,7 @@ export interface TimeEntry {
   departure: string | null;
   hours: number;
   status: EntryStatus;
+  mode: WorkMode;
 }
 
 export interface DayHours {

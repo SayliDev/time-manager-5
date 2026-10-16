@@ -217,6 +217,7 @@ export const myEntries: TimeEntry[] = [
     departure: null,
     hours: 4.4,
     status: 'ongoing',
+    mode: 'onsite',
   },
   {
     id: 'e2',
@@ -225,6 +226,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:36',
     hours: 7.8,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e3',
@@ -233,6 +235,7 @@ export const myEntries: TimeEntry[] = [
     departure: '18:02',
     hours: 7.6,
     status: 'late',
+    mode: 'onsite',
   },
   {
     id: 'e4',
@@ -241,6 +244,7 @@ export const myEntries: TimeEntry[] = [
     departure: '19:14',
     hours: 9.6,
     status: 'overtime',
+    mode: 'onsite',
   },
   {
     id: 'e5',
@@ -249,6 +253,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:20',
     hours: 7.4,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e6',
@@ -257,6 +262,7 @@ export const myEntries: TimeEntry[] = [
     departure: null,
     hours: 0,
     status: 'missing',
+    mode: 'onsite',
   },
   {
     id: 'e7',
@@ -265,6 +271,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:30',
     hours: 7.9,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e8',
@@ -273,6 +280,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:41',
     hours: 8.0,
     status: 'ok',
+    mode: 'onsite',
   },
 ];
 
