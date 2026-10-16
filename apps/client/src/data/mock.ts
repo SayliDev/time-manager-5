@@ -195,18 +195,18 @@ export const teams: Team[] = [
 ];
 
 export const weekHours: DayHours[] = [
-  { day: 'Lun', hours: 7.6 },
-  { day: 'Mar', hours: 7.9 },
-  { day: 'Mer', hours: 7.2 },
-  { day: 'Jeu', hours: 8.1 },
-  { day: 'Ven', hours: 6.8 },
+  { day: 'Lun', hours: 7.6, onsite: 5.1, remote: 2.5 },
+  { day: 'Mar', hours: 7.9, onsite: 4.8, remote: 3.1 },
+  { day: 'Mer', hours: 7.2, onsite: 3.4, remote: 3.8 },
+  { day: 'Jeu', hours: 8.1, onsite: 5.6, remote: 2.5 },
+  { day: 'Ven', hours: 6.8, onsite: 2.9, remote: 3.9 },
 ];
 
 export const monthHours: DayHours[] = [
-  { day: 'S1', hours: 36.8 },
-  { day: 'S2', hours: 38.4 },
-  { day: 'S3', hours: 35.9 },
-  { day: 'S4', hours: 37.6 },
+  { day: 'S1', hours: 36.8, onsite: 22.4, remote: 14.4 },
+  { day: 'S2', hours: 38.4, onsite: 21.0, remote: 17.4 },
+  { day: 'S3', hours: 35.9, onsite: 19.8, remote: 16.1 },
+  { day: 'S4', hours: 37.6, onsite: 23.2, remote: 14.4 },
 ];
 
 export const myEntries: TimeEntry[] = [
