@@ -1,53 +1,57 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta, timezone
+"""
+Gestion des JWT.
+"""
+
 import os
-from jose import jwt
 
+from datetime import datetime, timedelta, timezone
 
-# ----------------------------------------------------
-# create_access_token function for generating JWT tokens
-# ----------------------------------------------------
+from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = os.environ["SECRET_KEY"]
-ALGORITHM = "HS256"
 
+ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-def create_access_token(data: str | dict[str, object]):
-    payload = {"sub": data} if isinstance(data, str) else data.copy()
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/app/auth/login"
+)
+
+# Génère un JWT.
+def create_access_token(data: dict,) -> str:
+    payload = data.copy()
 
     expire = (
         datetime.now(timezone.utc)
-        + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     )
 
     payload["exp"] = expire
 
-    return jwt.encode(payload, SECRET_KEY,algorithm=ALGORITHM,)
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
 
-
-def decode_access_token(token: str) -> dict:
+# Décode un JWT.
+def decode_access_token(token: str,) -> dict:
     return jwt.decode(
         token,
         SECRET_KEY,
         algorithms=[ALGORITHM],
     )
 
+# Récupère le claim 'sub'.
+def get_token_subject(token: str,) -> str | None:
 
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto",
-)
+    try:
+        payload = decode_access_token(token)
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+        return payload.get("sub")
 
-
-def verify_password(
-    plain_password: str,
-    hashed_password: str,
-) -> bool:
-    return pwd_context.verify(
-        plain_password,
-        hashed_password,
-    )
+    except JWTError:
+        return None

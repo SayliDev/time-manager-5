@@ -4,6 +4,7 @@ import logging
 import psycopg
 
 from fastapi import (Depends,FastAPI,HTTPException,status,)
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
 from jose import JWTError
 from psycopg import sql
@@ -12,6 +13,9 @@ from core.security import (create_access_token,decode_access_token,)
 from app.routers.users_routers import router as users_router
 from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
+from app.routers.auth_routers import router as auth_router
+from app.routers.auth_microsoft import router as microsoft_auth_router
+# from app.routers.register_routers import router as register_router
 from app.routers.test_work_time import router as test_work_time_router
 
 # -----------------------------------------------------------------------------
@@ -26,10 +30,22 @@ app = FastAPI(
     },
 )
 
+# AI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # -----------------------------------------------------------------------------
 # Include router
 # ----------------------------------------------------------------------------- 
 app.include_router(users_router)
+app.include_router(auth_router)
+app.include_router(microsoft_auth_router)
+# app.include_router(register_router)
 app.include_router(register_router)
 
 
@@ -102,34 +118,6 @@ def accueil():
         "documentation": "/docs",
     }
 
-@app.post("/api/auth/login",
-    tags=["Authentication"],
-)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-):
-    #TODO:
-    # Exemple de connexion.
-    # À remplacer par une vérification PostgreSQL
-    # avec mot de passe hashé.
-
-    if (
-        form_data.username != "admin"
-        or form_data.password != "admin"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Identifiants invalides",
-        )
-
-    access_token = create_access_token(form_data.username)
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
-
-
 @app.get("/health", tags=["system"])
 def verification():
 
@@ -181,26 +169,3 @@ def me(
     return {
         "username": current_user
     }
-
-@app.get("/utilisateurs",
-    tags=["Utilisateurs"],
-)
-def utilisateurs(
-    current_user: str = Depends(get_current_user),
-):
-    with connexion() as conn:
-
-        result = conn.execute(
-            """
-            SELECT
-                id_utilisateur,
-                prenom,
-                nom,
-                email,
-                role
-            FROM public.utilisateur
-            ORDER BY id_utilisateur
-            """
-        )
-
-        return result.fetchall()

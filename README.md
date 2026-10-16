@@ -608,3 +608,5 @@ WHERE u.email LIKE '%.demo@example.com'
 GROUP BY u.id_utilisateur, u.prenom, u.nom
 ORDER BY u.id_utilisateur;
 
+# microsoft link app manager signin
+https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/quickStartType~/null/sourceType/Microsoft_AAD_IAM/appId/af362e67-66ee-4c18-bf9d-29b417bcd22f/objectId/de827d11-b653-4d00-8e13-d1da0c2b54e8/isMSAApp~/false/defaultBlade/Overview/appSignInAudience/AzureADMyOrg/servicePrincipalCreated~/true
