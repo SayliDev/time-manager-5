@@ -1,5 +1,8 @@
 .env
 .idea/
+logs
+*.log
+apps/api/log.txt
 __pycache__/
 .pytest_cache/
 .ruff_cache/
