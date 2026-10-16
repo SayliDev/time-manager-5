@@ -34,69 +34,26 @@ passe en clair, uniquement son hash (colonne password_hash).
 #     except ValueError:
 #         return False
 
-"""
-Gestion des mots de passe.
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerifyMismatchError
 
-Responsabilités :
-- Hashage des mots de passe
-- Vérification des mots de passe
-
-Algorithme :
-- Argon2 via Passlib
-"""
-import re #machting
-from zxcvbn import zxcvbn #check common passwords
-from passlib.context import CryptContext
-from core.logging import logger
-
+password_hasher = PasswordHasher()
 MAX_PASSWORD_BYTES = 72
 
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto",
-)
-
-#Génère un hash Argon2 pour un mot de passe.
 def hash_password(password: str) -> str:
     if len(password.encode("utf-8")) > MAX_PASSWORD_BYTES:
-        raise ValueError(
-            f"Mot de passe trop long ({MAX_PASSWORD_BYTES} octets maximum)"
-        )
+        raise ValueError("Mot de passe trop long (72 octets maximum)")
 
-    return pwd_context.hash(password)
+    return password_hasher.hash(password)
 
-# Vérifie un mot de passe contre son hash.
-def verify_password(plain_password: str,hashed_password: str | None,) -> bool:
-    if not hashed_password:
+def verify_password(password: str, password_hash: str | None) -> bool:
+    if (
+        not password_hash
+        or len(password.encode("utf-8")) > MAX_PASSWORD_BYTES
+    ):
         return False
-
-    if len(plain_password.encode("utf-8")) > MAX_PASSWORD_BYTES:
-        return False
-
-    # if len(plain_password) < 12:
-    #     raise ValueError("Password too short")
-
-    # if not re.search(r"[A-Z]", plain_password):
-    #     raise ValueError("Missing uppercase")
-
-    # if not re.search(r"[a-z]", plain_password):
-    #     raise ValueError("Missing lowercase")
-
-    # if not re.search(r"\d", plain_password):
-    #     raise ValueError("Missing number")
-
-    # if not re.search(r"[!@#$%^&*]", plain_password):
-    #     raise ValueError("Missing special character")
-
-    # Vérifie la force du mot de passe avec zxcvbn, lève une exception si trop faible.
-    # result = zxcvbn(plain_password)
-    # if result["score"] < 3:
-    #     raise ValueError("Password too weak")
 
     try:
-        is_valid = pwd_context.verify(plain_password, hashed_password)
-        logger.info("Password verification completed: valid=%s %s", is_valid, hashed_password)
-        return is_valid
-    except Exception:
-        logger.info("Password verification completed: valid=False %s", hashed_password)
+        return password_hasher.verify(password_hash, password)
+    except (InvalidHashError, VerifyMismatchError):
         return False

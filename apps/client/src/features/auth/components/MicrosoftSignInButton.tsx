@@ -11,19 +11,17 @@ function MicrosoftLogo() {
   );
 }
 
-function MicrosoftSignInButton() {
+function MicrosoftSignInButton({ onSignIn }: { onSignIn: () => void }) {
   return (
-    <a href='http://localhost:8001/api/auth/login/microsoft'>
-      <Button
-        className='mt-8 w-full'
-        size='lg'
-        variant='secondary'
-        name='microsoft-sign-in'
-      >
-        <MicrosoftLogo />
-        Continuer avec Microsoft
-      </Button>
-    </a>
+    <Button
+      className='mt-8 w-full'
+      size='lg'
+      variant='secondary'
+      onPress={onSignIn}
+    >
+      <MicrosoftLogo />
+      Continuer avec Microsoft
+    </Button>
   );
 }
 
