@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Brand } from '@/shared/branding/Brand';
-import { ThemeToggle } from '@/theme/ThemeToggle';
+import { useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -13,62 +11,67 @@ import {
   Separator,
   TextField,
 } from '@heroui/react';
+import { useLogin } from '@/features/auth/hooks/useLogin';
+import { ApiError } from '@/shared/api/client';
+import { Brand } from '@/shared/branding/Brand';
+import { ThemeToggle } from '@/theme/ThemeToggle';
 import MicrosoftSignInButton from './MicrosoftSignInButton';
 
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
+type FieldErrors = {
+  email?: string;
+  password?: string;
+};
 
-function LoginForm({ onSignIn }: { onSignIn: () => void }) {
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function LoginForm() {
+  const login = useLogin();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+    setFieldErrors({});
+    setFormError(null);
 
     const formData = new FormData(event.currentTarget);
-    const username = formData.get('email');
+    const email = formData.get('email');
     const password = formData.get('password');
+    const nextFieldErrors: FieldErrors = {};
 
-    if (typeof username !== 'string' || typeof password !== 'string') {
-      setError('Veuillez renseigner votre email et votre mot de passe.');
-      setIsSubmitting(false);
+    if (typeof email !== 'string' || !email.trim()) {
+      nextFieldErrors.email = 'Veuillez renseigner votre adresse email.';
+    }
+
+    if (typeof password !== 'string' || !password) {
+      nextFieldErrors.password = 'Veuillez renseigner votre mot de passe.';
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
       return;
     }
 
-    try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    login.mutate(
+      {
+        email: (email as string).trim(),
+        password: password as string,
+      },
+      {
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 401) {
+            setFieldErrors({
+              email: 'Email ou mot de passe incorrect.',
+              password: 'Email ou mot de passe incorrect.',
+            });
+            return;
+          }
+          setFormError(
+            error instanceof ApiError
+              ? error.detail
+              : 'Impossible de contacter le serveur.'
+          );
         },
-        body: new URLSearchParams({ username, password }),
-      });
-
-      if (!response.ok) {
-        setError('Identifiants invalides.');
-        return;
       }
-
-      const result: unknown = await response.json();
-
-      if (
-        typeof result !== 'object' ||
-        result === null ||
-        !('access_token' in result) ||
-        typeof result.access_token !== 'string'
-      ) {
-        setError('Réponse de connexion invalide.');
-        return;
-      }
-
-      localStorage.setItem('access_token', result.access_token);
-      onSignIn();
-    } catch {
-      setError('Impossible de contacter le serveur.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   }
 
   return (
@@ -86,7 +89,7 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
           Entrez vos identifiants pour accéder à votre espace.
         </p>
 
-        <MicrosoftSignInButton onSignIn={onSignIn} />
+        <MicrosoftSignInButton />
 
         <div className='my-6 flex items-center gap-3 text-xs text-muted'>
           <Separator className='flex-1' />
@@ -97,17 +100,36 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
         <Form
           className='flex flex-col gap-4'
           onSubmit={handleSubmit}
+          validationBehavior='aria'
         >
-          <TextField isRequired name='email' type='email'>
+          <TextField
+            isInvalid={Boolean(fieldErrors.email)}
+            isRequired
+            name='email'
+            type='email'
+          >
             <Label className='after:content-none'>Email professionnel</Label>
             <Input
               autoComplete='username'
+              name='email'
               placeholder='prenom.nom@trinitymarket.com'
+              onChange={() =>
+                setFieldErrors((errors) => ({
+                  ...errors,
+                  email: undefined,
+                  password: undefined,
+                }))
+              }
             />
-            <FieldError />
+            <FieldError>{fieldErrors.email}</FieldError>
           </TextField>
 
-          <TextField isRequired name='password' type='password'>
+          <TextField
+            isInvalid={Boolean(fieldErrors.password)}
+            isRequired
+            name='password'
+            type='password'
+          >
             <div className='flex items-center justify-between'>
               <Label>Mot de passe</Label>
               <Link className='text-xs' href='#'>
@@ -116,9 +138,17 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
             </div>
             <Input
               autoComplete='current-password'
+              name='password'
               placeholder='Votre mot de passe'
+              onChange={() =>
+                setFieldErrors((errors) => ({
+                  ...errors,
+                  password: undefined,
+                  email: undefined,
+                }))
+              }
             />
-            <FieldError />
+            <FieldError>{fieldErrors.password}</FieldError>
           </TextField>
 
           <Checkbox name='remember'>
@@ -132,13 +162,13 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
 
           <Button
             className='mt-2 w-full'
-            isDisabled={isSubmitting}
+            isDisabled={login.isPending}
             size='lg'
             type='submit'
           >
             Se connecter
           </Button>
-          {error && <FieldError>{error}</FieldError>}
+          {formError ? <FieldError>{formError}</FieldError> : null}
         </Form>
 
         <p className='mt-8 text-center text-xs text-muted'>
@@ -152,5 +182,3 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
     </main>
   );
 }
-
-export default LoginForm;
