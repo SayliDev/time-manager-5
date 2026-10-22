@@ -12,8 +12,4 @@ if not logger.handlers:
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    file_handler = logging.FileHandler("log.txt")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
 logger.propagate = False
