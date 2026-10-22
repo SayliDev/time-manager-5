@@ -6,12 +6,12 @@ DO $$
 DECLARE
     v_first_names TEXT[] := ARRAY[
         'Alexandre', 'Alice', 'Karim', 'Emma', 'Lucas',
-        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah'
+        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah, John'
     ];
 
     v_last_names TEXT[] := ARRAY[
         'Martin', 'Bernard', 'Dubois', 'Petit', 'Robert',
-        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent'
+        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent, Doe'
     ];
 
     v_emails TEXT[] := ARRAY[
@@ -24,7 +24,8 @@ DECLARE
         'hugo.durand.demo@example.com',
         'lea.moreau.demo@example.com',
         'nathan.simon.demo@example.com',
-        'sarah.laurent.demo@example.com'
+        'sarah.laurent.demo@example.com',
+        'john.doe.demo@example.com'
     ];
 
     v_user_ids INTEGER[] := ARRAY[]::INTEGER[];

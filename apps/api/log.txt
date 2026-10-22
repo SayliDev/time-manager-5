@@ -74,3 +74,5 @@
 2026-10-14 14:08:58,331 - INFO - time_manager - Login attempt for username=jeanbon@gmail.fr, user_found=True
 2026-10-14 14:08:58,481 - INFO - time_manager - Password verification completed: valid=True $argon2id$v=19$m=65536,t=3,p=4$R0gp5dxba805Z+xdS2mNcQ$nuS0bZNs2uTLj2vZG+vGWIZ6RaBC1y8lVbVVIXx0XdU
 2026-10-14 14:08:58,637 - INFO - time_manager - Login succeeded for username=jeanbon@gmail.fr
+2026-10-22 12:56:47,019 - INFO - time_manager - Login attempt for username=kok, user_found=False
+2026-10-22 12:56:47,022 - WARNING - time_manager - Login rejected for username=kok: user unavailable

@@ -18,10 +18,12 @@ export interface DashboardData {
   referenceDate: string;
 }
 
-const API_URL = 'http://localhost:8001';
+const API_URL =
+  import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
 
-// Vide = date réelle. Pour ton jeu de test : '2026-10-02'.
-const REFERENCE_DATE: string = '';
+const REFERENCE_DATE: string =
+  import.meta.env.VITE_DASHBOARD_REFERENCE_DATE ?? '';
+
 
 export async function fetchDashboard(
   teamId: string,
@@ -38,8 +40,14 @@ export async function fetchDashboard(
     params.set('reference_date', REFERENCE_DATE);
   }
 
+  const token = localStorage.getItem('access_token');
+
   const response = await fetch(`${API_URL}/dashboard?${params}`, {
     signal,
+    credentials: 'include',
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : {},
   });
 
   if (!response.ok) {

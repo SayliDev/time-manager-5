@@ -14,6 +14,7 @@ CREATE TABLE public.users (
 
 CREATE TABLE public.work_session (
     id_work_session INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    work_mode VARCHAR(50),
     start_at TIMESTAMPTZ NOT NULL,
     end_at TIMESTAMPTZ,
     cancel_at TIMESTAMPTZ,

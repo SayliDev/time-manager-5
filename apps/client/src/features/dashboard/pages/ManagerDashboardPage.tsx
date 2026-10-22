@@ -1,8 +1,7 @@
 import { Pulse } from '@gravity-ui/icons';
 import { Chip, toast } from '@heroui/react';
-import { useMemo, useState } from 'react';
-import { fullName, users } from '@/data/mock';
-import { AttentionAlert } from '@/features/dashboard/components/AttentionAlert';
+import { useEffect, useState } from 'react';
+import {fetchDashboard, type DashboardData} from '@/features/dashboard/api';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -12,9 +11,12 @@ import { TeamOverviewCard } from '@/features/dashboard/components/TeamOverviewCa
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
-import type { PresenceStatus, User } from '@/features/users/types';
+import type { User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
+
+const fullName = (user: User) =>
+  `${user.firstName} ${user.lastName}`;
 
 export function ManagerDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('week');
@@ -25,19 +27,27 @@ export function ManagerDashboardPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-  const scoped = useMemo(
-    () => (teamId === 'all' ? users : users.filter((u) => u.teamId === teamId)),
-    [teamId]
-  );
+const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+const [error, setError] = useState('');
 
-  const countBy = (status: PresenceStatus) =>
-    scoped.filter((u) => u.presence === status).length;
-  const clockedIn = scoped.filter((u) =>
-    ['present', 'remote', 'late'].includes(u.presence)
-  ).length;
-  const lateCount = countBy('late');
-  const absentCount = countBy('absent');
-  const alerts = lateCount + absentCount;
+useEffect(() => {
+  const controller = new AbortController();
+
+  setDashboard(null);
+  setError('');
+
+  fetchDashboard(teamId, period, controller.signal)
+    .then(setDashboard)
+    .catch((error: Error) => {
+      if (error.name !== 'AbortError') {
+        setError(error.message);
+      }
+    });
+
+  return () => controller.abort();
+}, [teamId, period]);
+
+const scoped = dashboard?.users ?? [];
 
   const openCreate = () => {
     setEditUser(null);
@@ -48,6 +58,13 @@ export function ManagerDashboardPage() {
     setEditUser(user);
     setFormOpen(true);
   };
+  if (error) {
+    return <p role='alert'>{error}</p>;
+  }
+
+  if (!dashboard) {
+    return <p role='status'>Chargement…</p>;
+  }
 
   return (
     <>
@@ -59,10 +76,11 @@ export function ManagerDashboardPage() {
             <Chip.Label>Espace manager</Chip.Label>
           </Chip>
         }
-        title={`Bonjour, John 👋`}
+        title={`Bonjour 👋`}
       />
 
       <DashboardToolbar
+        teams={dashboard.teams}
         period={period}
         teamId={teamId}
         onCreateEmployee={openCreate}
@@ -70,17 +88,26 @@ export function ManagerDashboardPage() {
         onTeamChange={setTeamId}
       />
 
-      <AttentionAlert absentCount={absentCount} lateCount={lateCount} />
+      {/*<AttentionAlert absentCount={absentCount} lateCount={lateCount} />*/}
 
       <DashboardKpis
-        alerts={alerts}
-        clockedIn={clockedIn}
+        alerts={dashboard.stats.alerts}
+        clockedIn={dashboard.stats.clockedIn}
+        attendance={dashboard.stats.attendance}
+        averageWeeklyHours={dashboard.stats.averageWeeklyHours}
         totalEmployees={scoped.length}
-      />
+/>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
-        <HoursOverviewCard period={period} />
-        <PresenceBreakdownCard users={scoped} />
+        <HoursOverviewCard
+          period={period}
+          data={dashboard.hours}
+        />
+
+        <PresenceBreakdownCard
+          counts={dashboard.presence}
+          total={scoped.length}
+        />
       </section>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
@@ -90,7 +117,10 @@ export function ManagerDashboardPage() {
           onEdit={openEdit}
           onView={setViewUser}
         />
-        <RecentActivityCard />
+        <RecentActivityCard
+          activity={dashboard.activity}
+          users={scoped}
+        />
       </section>
 
       <EmployeeDrawer
@@ -116,10 +146,8 @@ export function ManagerDashboardPage() {
         isOpen={deleteUser !== null}
         title='Supprimer cet employé ?'
         onConfirm={() => {
-          toast.danger('Employé supprimé', {
-            description: `${
-              deleteUser ? fullName(deleteUser) : ''
-            } a été retiré.`,
+          toast.danger('suprétion non connecté a l api', {
+            
           });
           setDeleteUser(null);
         }}

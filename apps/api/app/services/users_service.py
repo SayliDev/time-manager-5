@@ -1,11 +1,11 @@
 from psycopg.errors import UniqueViolation
 import traceback
 from app.repositories.users_repository import (
-    create_User,
+    create,
     get_by_id,
     get_all,
-    update_User,
-    deactivate_User,
+    update,
+    deactivate,
     get_by_email as repository_get_by_email,
     get_password_hash_by_id as repository_get_password_hash_by_id,
     get_by_oid as repository_get_by_oid
