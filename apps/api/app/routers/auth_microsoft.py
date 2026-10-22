@@ -122,4 +122,3 @@ def callback(request: Request):
         secure=False,
         samesite="lax",
     )
-    return response

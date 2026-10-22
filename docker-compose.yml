@@ -45,11 +45,18 @@ services:
       dockerfile: Dockerfile.dev
     env_file:
       - ./apps/client/.env
+    environment:
+      USE_POLLING: 'true'
     ports:
       - '127.0.0.1:${CLIENT_PORT:-5173}:5173'
     volumes:
       - ./apps/client:/app
       - client_node_modules:/app/node_modules
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "127.0.0.1:8025:8025"
 
 volumes:
   postgres_data:
