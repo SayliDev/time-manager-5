@@ -4,6 +4,7 @@ from app.repositories.users_repository import (
     create as repository_create,
     get_by_id,
     get_all,
+    get_all_with_details,
     update as repository_update,
     deactivate as repository_deactivate,
     get_by_email as repository_get_by_email,
@@ -49,6 +50,15 @@ def get_all_users():
         return get_all()
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération de tous les utilisateurs : {e}")
+
+
+def get_all_users_with_details():
+    try:
+        return get_all_with_details()
+    except Exception as e:
+        raise RuntimeError(
+            f"Erreur lors de la récupération détaillée des utilisateurs : {e}"
+        )
 
 def update_user(
     *,

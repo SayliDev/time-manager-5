@@ -9,8 +9,8 @@ import {
   Select,
   toast,
 } from '@heroui/react';
-import { useMemo, useState } from 'react';
-import { fullName, teams, users } from '@/data/mock';
+import { useEffect, useMemo, useState } from 'react';
+import { fullName, teams } from '@/data/mock';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
@@ -18,7 +18,40 @@ import type { User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
 
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
+
+type EmployeeApiRow = {
+  id_user: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  phone: string | null;
+  id_team: number | null;
+  weekly_hours: number;
+  last_clock_start: string | null;
+  presence: User['presence'];
+};
+
+function mapEmployee(row: EmployeeApiRow): User {
+  return {
+    id: String(row.id_user),
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    phone: row.phone ?? '',
+    role: row.role === 'manager' ? 'manager' : 'employee',
+    teamId: row.id_team === null ? null : String(row.id_team),
+    presence: row.presence,
+    weeklyHours: row.weekly_hours,
+    lastClock: row.last_clock_start
+      ? new Date(row.last_clock_start).toLocaleString('fr-FR')
+      : '—',
+  };
+}
+
 export function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('all');
   const [teamId, setTeamId] = useState('all');
@@ -27,6 +60,29 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    fetch(`${apiUrl}/api/all/details`, {
+      credentials: 'include',
+      headers,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Impossible de récupérer les employés.');
+        }
+
+        const rows = (await response.json()) as EmployeeApiRow[];
+        setUsers(rows.map(mapEmployee));
+      })
+      .catch((error: Error) => {
+        toast.danger('Chargement impossible', {
+          description: error.message,
+        });
+      });
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

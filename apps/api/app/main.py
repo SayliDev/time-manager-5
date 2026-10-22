@@ -16,6 +16,7 @@ from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
+from app.controller.users import get_current_user as get_authenticated_user
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
 
@@ -33,11 +34,11 @@ app = FastAPI(
     },
 )
 
-# autorise les origines CORS, autoorise response from backend to frontend (avoid browzer blocking)
-# because docker backend and frontend different ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[f"http://localhost:{CLIENT_PORT}"],
+    allow_origins=[
+        f"http://localhost:{os.getenv('CLIENT_PORT', '5173')}",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -94,11 +95,15 @@ def get_current_user(
         payload = decode_access_token(token)
 
         username = payload.get("sub")
+        role = payload.get("role")
 
         if username is None:
             raise credentials_exception
 
-        return username
+        return {
+            "username": username,
+            "role": role
+        }
 
     except JWTError:
         raise credentials_exception
@@ -113,6 +118,16 @@ def accueil():
         "message": "Time Manager fonctionne",
         "verification": "/health",
         "documentation": "/docs",
+    }
+
+
+@app.get("/me", tags=["Authentication"])
+def me(
+    current_user: dict = Depends(get_authenticated_user),
+):
+    return {
+        "username": current_user.get("sub"),
+        "role": current_user.get("role"),
     }
 
 @app.get("/health", tags=["system"])
@@ -152,17 +167,3 @@ def verification():
             status_code=503,
             detail="Base inaccessible ou schéma incomplet.",
         )
-
-# -----------------------------------------------------------------------------
-# Routes sécurisées
-# -----------------------------------------------------------------------------
-
-@app.get("/me",
-    tags=["Authentication"],
-)
-def me(
-    current_user: str = Depends(get_current_user),
-):
-    return {
-        "username": current_user
-    }

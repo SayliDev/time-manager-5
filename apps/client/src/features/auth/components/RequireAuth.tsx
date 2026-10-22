@@ -5,7 +5,6 @@ import { tokenStorage } from '@/features/auth/api/tokenStorage';
 import { useSession } from '@/features/auth/hooks/useSession';
 
 export function RequireAuth() {
-  const token = tokenStorage.get();
   const session = useSession();
 
   useEffect(() => {
@@ -14,7 +13,7 @@ export function RequireAuth() {
     }
   }, [session.isError]);
 
-  if (!token || session.isError) {
+  if (session.isError) {
     return <Navigate replace to='/' />;
   }
 

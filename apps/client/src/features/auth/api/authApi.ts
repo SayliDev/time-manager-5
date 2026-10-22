@@ -7,6 +7,7 @@ import type {
 
 type MeResponse = {
   username: string;
+  role: string;
 };
 
 export async function login(
@@ -27,7 +28,7 @@ export async function login(
 
 export async function getMe(): Promise<SessionUser> {
   const me = await request<MeResponse>('/me');
-  return { id: me.username };
+  return { id: me.username, role: me.role };
 }
 
 export const authQueryKeys = {

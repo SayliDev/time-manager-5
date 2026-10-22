@@ -10,4 +10,5 @@ export type TokenResponse = {
 
 export type SessionUser = {
   id: string;
+  role: string;
 };

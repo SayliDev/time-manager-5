@@ -4,9 +4,17 @@ import traceback
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
+from app.controller.users import get_current_user, require_roles
+from app.services.users_service import (
+    create_user,
+    deactivate_user,
+    get_all_users,
+    get_all_users_with_details,
+    get_user_by_id,
+    update_user,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +36,16 @@ class UserResponse(BaseModel):
     phone: str | None = None
     creat_at: datetime | None = None
     desactive_at: datetime | None = None
+
+
+class UserDetailsResponse(UserResponse):
+    id_team: int | None = None
+    team_name: str | None = None
+    department_name: str | None = None
+    weekly_hours: float
+    last_clock_start: datetime | None = None
+    last_clock_end: datetime | None = None
+    presence: str
 
 router = APIRouter(
     prefix="/api",
@@ -129,17 +147,33 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
             detail=str(error),
         )   
 
-@router.get("/userByEmail",response_model=UserResponse,status_code=status.HTTP_200_OK,)
-def get_user_by_email_endpoint(email: str):
+@router.get("/all",response_model=list[UserResponse],status_code=status.HTTP_200_OK,)
+def all_users_endpoint():
     try:
-        user = get_user_by_email(email=email)
+        users = get_all_users()
+        return users
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        )
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-        return user
+@router.get("/me", tags=["Authentication"])
+def me_endpoint(
+    current_user: str = Depends(get_current_user),
+):
+    return {
+        "username": current_user,
+        "role": current_user["role"]  # Remplacez "user" par la valeur réelle du rôle si disponible
+    }
+
+
+@router.get("/all/details",response_model=list[UserDetailsResponse],status_code=status.HTTP_200_OK,)
+def all_users_details(
+    user=Depends(require_roles("admin", "manager")),
+):
+    try:
+        return get_all_users_with_details()
     except RuntimeError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

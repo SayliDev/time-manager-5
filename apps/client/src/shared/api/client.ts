@@ -57,6 +57,7 @@ export async function request<T>(
     method,
     headers: nextHeaders,
     body,
+    credentials: 'include',
   });
 
   if (!response.ok) {

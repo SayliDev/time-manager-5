@@ -33,9 +33,9 @@ MODIFIABLE_FIELDS = frozenset({
     "desactive_at",
 })
 
-
+# Retourne tous les utilisateurs, y compris ceux désactivés.
 def get_all() -> list[dict[str, Any]]:
-    """Retourne tous les utilisateurs, y compris ceux désactivés."""
+
     query = sql.SQL(
         "SELECT {} FROM {} ORDER BY id_user"
     ).format(PUBLIC_COLUMNS, TABLE)
@@ -45,8 +45,84 @@ def get_all() -> list[dict[str, Any]]:
             cursor.execute(query)
             return cursor.fetchall()
 
-# Retourne un utilisateur sans hash, ou None s'il n'existe pas
+
+def get_all_with_details() -> list[dict[str, Any]]:
+    """Retourne les informations nécessaires à la page Employés."""
+    query = sql.SQL(
+        """
+        SELECT
+            u.id_user,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.role,
+            u.phone,
+            u.creat_at,
+            u.desactive_at,
+            active_team.id_team,
+            active_team.team_name,
+            active_team.department_name,
+            COALESCE(weekly.total_hours, 0)::double precision AS weekly_hours,
+            latest_session.start_at AS last_clock_start,
+            latest_session.end_at AS last_clock_end,
+            CASE
+                WHEN latest_session.id_work_session IS NULL THEN 'off'
+                WHEN latest_session.end_at IS NULL THEN 'present'
+                ELSE 'off'
+            END AS presence
+        FROM users AS u
+        LEFT JOIN LATERAL (
+            SELECT
+                t.id_team,
+                t.name AS team_name,
+                d.name AS department_name
+            FROM team_allocation AS allocation
+            JOIN team AS t ON t.id_team = allocation.id_team
+            JOIN departement AS d ON d.id_departement = t.id_departement
+            WHERE allocation.id_user = u.id_user
+              AND allocation.start_at <= CURRENT_DATE
+              AND (allocation.end_at IS NULL OR allocation.end_at >= CURRENT_DATE)
+            ORDER BY allocation.start_at DESC
+            LIMIT 1
+        ) AS active_team ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                SUM(
+                    EXTRACT(
+                        EPOCH FROM (COALESCE(ws.end_at, CURRENT_TIMESTAMP) - ws.start_at)
+                    ) / 3600
+                ) AS total_hours
+            FROM work_session AS ws
+            WHERE ws.id_user = u.id_user
+              AND ws.cancel_at IS NULL
+              AND ws.start_at >= date_trunc('week', CURRENT_TIMESTAMP)
+        ) AS weekly ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                ws.id_work_session,
+                ws.start_at,
+                ws.end_at
+            FROM work_session AS ws
+            WHERE ws.id_user = u.id_user
+              AND ws.cancel_at IS NULL
+            ORDER BY ws.start_at DESC
+            LIMIT 1
+        ) AS latest_session ON TRUE
+        WHERE u.desactive_at IS NULL
+        ORDER BY u.last_name, u.first_name, u.id_user
+        """
+    )
+
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
+
+
+
+#  Retourne un utilisateur sans hash, ou None s'il n'existe pas.
 def get_by_id(record_id: int) -> dict[str, Any] | None:
+
     query = sql.SQL(
         "SELECT {} FROM {} WHERE id_user = %s"
     ).format(PUBLIC_COLUMNS, TABLE)
