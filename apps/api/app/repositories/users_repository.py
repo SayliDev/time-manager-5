@@ -8,12 +8,16 @@ Les autorisations, notamment les changements de rôle, et le hachage
 des mots de passe sont gérés dans le service.
 """
 
+from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from psycopg import sql
 from psycopg.rows import dict_row
 
 from app.db.database_conn import get_connection
+from app.services.time_service import calc_work_time
 
 
 PUBLIC_COLUMNS = sql.SQL(
@@ -62,7 +66,6 @@ def get_all_with_details() -> list[dict[str, Any]]:
             active_team.id_team,
             active_team.team_name,
             active_team.department_name,
-            COALESCE(weekly.total_hours, 0)::double precision AS weekly_hours,
             latest_session.start_at AS last_clock_start,
             latest_session.end_at AS last_clock_end,
             CASE
@@ -87,18 +90,6 @@ def get_all_with_details() -> list[dict[str, Any]]:
         ) AS active_team ON TRUE
         LEFT JOIN LATERAL (
             SELECT
-                SUM(
-                    EXTRACT(
-                        EPOCH FROM (COALESCE(ws.end_at, CURRENT_TIMESTAMP) - ws.start_at)
-                    ) / 3600
-                ) AS total_hours
-            FROM work_session AS ws
-            WHERE ws.id_user = u.id_user
-              AND ws.cancel_at IS NULL
-              AND ws.start_at >= date_trunc('week', CURRENT_TIMESTAMP)
-        ) AS weekly ON TRUE
-        LEFT JOIN LATERAL (
-            SELECT
                 ws.id_work_session,
                 ws.start_at,
                 ws.end_at
@@ -116,9 +107,32 @@ def get_all_with_details() -> list[dict[str, Any]]:
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query)
-            return cursor.fetchall()
+            users = cursor.fetchall()
 
+            sessions_by_user: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
+            cursor.execute(
+                """
+                SELECT id_user, start_at, end_at, cancel_at
+                FROM work_session
+                WHERE cancel_at IS NULL
+                """
+            )
+            for session in cursor.fetchall():
+                sessions_by_user[session["id_user"]].append(session)
 
+    paris_today = datetime.now(ZoneInfo("Europe/Paris")).date()
+    monday = paris_today - timedelta(days=paris_today.weekday())
+    end_date = paris_today + timedelta(days=1)
+
+    for user in users:
+        duration = calc_work_time(
+            sessions_by_user[user["id_user"]],
+            start_date=monday,
+            end_date=end_date,
+        )
+        user["weekly_hours"] = duration.total_seconds() / 3600
+
+    return users
 
 #  Retourne un utilisateur sans hash, ou None s'il n'existe pas.
 def get_by_id(record_id: int) -> dict[str, Any] | None:
@@ -131,7 +145,6 @@ def get_by_id(record_id: int) -> dict[str, Any] | None:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query, (record_id,))
             return cursor.fetchone()
-
 
 def create(
     *,
@@ -181,7 +194,6 @@ def create(
 
             return user
 
-
 def update(
     record_id: int,
     **changes: Any,
@@ -225,7 +237,6 @@ def update(
             )
             return cursor.fetchone()
 
-
 def delete(record_id: int) -> bool:
     """Supprime définitivement l'utilisateur ; True s'il existait.
 
@@ -246,7 +257,6 @@ def delete(record_id: int) -> bool:
                 (record_id,),
             )
             return cursor.fetchone() is not None
-
 
 def deactivate(record_id: int) -> dict[str, Any] | None:
     """Désactive le compte sans supprimer son historique.

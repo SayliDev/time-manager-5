@@ -18,7 +18,7 @@ session_details AS (
         -- Numéro du jour depuis le début du jeu de test.
         (
             (s.start_at AT TIME ZONE 'Europe/Paris')::DATE
-            - DATE '2026-09-28'
+            - date_trunc('week', CURRENT_DATE)::date
         ) AS day_number,
 
         -- Identification de la session du matin.
@@ -30,8 +30,10 @@ session_details AS (
     FROM public.work_session AS s
     JOIN demo_users AS u ON u.id_user = s.id_user
 
-    WHERE s.start_at >= TIMESTAMPTZ '2026-09-28 00:00:00+02'
-      AND s.start_at < TIMESTAMPTZ '2026-10-03 00:00:00+02'
+        WHERE (s.start_at AT TIME ZONE 'Europe/Paris')::DATE
+              >= date_trunc('week', CURRENT_DATE)::date
+          AND (s.start_at AT TIME ZONE 'Europe/Paris')::DATE
+              < date_trunc('week', CURRENT_DATE)::date + 5
       AND s.end_at IS NOT NULL
       AND s.cancel_at IS NULL
 

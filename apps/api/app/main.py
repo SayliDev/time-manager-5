@@ -58,13 +58,13 @@ app.include_router(register_router)
 # -----------------------------------------------------------------------------
 
 TABLES = (
-    "utilisateur",
+    "users",
     "departement",
-    "equipe",
-    "affectation_equipe",
-    "contrat",
-    "session_travail",
-    "correction_pointage",
+    "team",
+    "team_allocation",
+    "contract",
+    "work_session",
+    "timekeeping_correction",
 )
 
 # Route utilisée par Swagger pour récupérer un token

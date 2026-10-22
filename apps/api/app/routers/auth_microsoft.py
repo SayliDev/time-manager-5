@@ -5,8 +5,9 @@ import requests
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from app.services.users_service import get_user_by_email
+from app.services.users_service import get_user_by_email, update_user
 from core.security import create_access_token
+from core.logging import logger
 
 
 router = APIRouter(
@@ -111,6 +112,14 @@ def callback(request: Request):
             "role": user["role"],
         }
     )
+
+    # Set the access token as a cookie in the response
+    # update last login for the user if needed
+    try:
+        update_user(user_id=user["id_user"], last_login="now()")
+    except Exception as e:
+        logger.error("Failed to update last login for username=%s: %s", email, str(e))
+
     response = RedirectResponse(
         f"{CLIENT_URL}/dashboard",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -122,3 +131,4 @@ def callback(request: Request):
         secure=False,
         samesite="lax",
     )
+    return response

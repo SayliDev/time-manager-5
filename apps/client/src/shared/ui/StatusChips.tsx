@@ -56,13 +56,20 @@ export function WorkModeChip({ mode }: { mode: WorkMode }) {
 }
 
 export function RoleChip({ role }: { role: Role }) {
+  const labels: Record<string, string> = {
+    admin: 'Administrateur',
+    employe: 'Employé',
+    employee: 'Employé',
+    manager: 'Manager',
+  };
+
   return (
     <Chip
-      color={role === 'manager' ? 'accent' : 'default'}
+      color={role === 'manager' || role === 'admin' ? 'accent' : 'default'}
       size='sm'
       variant='soft'
     >
-      <Chip.Label>{role === 'manager' ? 'Manager' : 'Employé'}</Chip.Label>
+      <Chip.Label>{labels[role] ?? role}</Chip.Label>
     </Chip>
   );
 }

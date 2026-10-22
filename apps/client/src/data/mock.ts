@@ -194,6 +194,12 @@ export const teams: Team[] = [
   },
 ];
 
+export const teamNameOptions = [
+  ...teams.map((team) => team.name),
+  'Développement - DEMO',
+  'Support - DEMO',
+];
+
 export const weekHours: DayHours[] = [
   { day: 'Lun', hours: 7.6, onsite: 5.1, remote: 2.5 },
   { day: 'Mar', hours: 7.9, onsite: 4.8, remote: 3.1 },

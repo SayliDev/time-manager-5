@@ -51,7 +51,6 @@ def get_all_users():
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération de tous les utilisateurs : {e}")
 
-
 def get_all_users_with_details():
     try:
         return get_all_with_details()
@@ -69,6 +68,7 @@ def update_user(
     password: str | None = None,
     role: str | None = None,
     phone: str | None = None,
+    last_login: str | None = None,
 ):
     
     try:
@@ -80,6 +80,7 @@ def update_user(
             password_hash=hash_password(password) if password else None,
             role=role,
             phone=phone,
+            last_login=last_login,
         )
     except UniqueViolation:
         raise ValueError(

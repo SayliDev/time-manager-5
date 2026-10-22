@@ -10,7 +10,7 @@ import {
   type SortDescriptor,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { fullName, getTeam } from '@/data/mock';
+import { fullName } from '@/data/mock';
 import type { User } from '@/features/users/types';
 import { PresenceChip, RoleChip } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
@@ -51,9 +51,7 @@ export function EmployeesTable({
         case 'presence':
           return a.presence.localeCompare(b.presence);
         case 'team':
-          return (getTeam(a.teamId)?.name ?? '').localeCompare(
-            getTeam(b.teamId)?.name ?? ''
-          );
+          return (a.teamName ?? '').localeCompare(b.teamName ?? '');
         default:
           return fullName(a).localeCompare(fullName(b));
       }
@@ -136,7 +134,7 @@ export function EmployeesTable({
                   {compact ? null : (
                     <Table.Cell>
                       <span className='text-sm'>
-                        {getTeam(user.teamId)?.name ?? '—'}
+                        {user.teamName ?? '—'}
                       </span>
                     </Table.Cell>
                   )}

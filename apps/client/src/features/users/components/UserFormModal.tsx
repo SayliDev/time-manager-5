@@ -1,4 +1,5 @@
 import { PersonPlus, Pencil } from '@gravity-ui/icons';
+import { useState } from 'react';
 import {
   Button,
   Description,
@@ -12,12 +13,14 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
-import { fullName, teams } from '@/data/mock';
+import { fullName, teamNameOptions } from '@/data/mock';
 import type { User } from '@/features/users/types';
+import { request, ApiError } from '@/shared/api/client';
 
 interface UserFormModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
   user?: User | null;
 }
 
@@ -26,14 +29,45 @@ const FORM_ID = 'user-form';
 export function UserFormModal({
   isOpen,
   onOpenChange,
+  onSaved,
   user,
 }: UserFormModalProps) {
   const isEdit = Boolean(user);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const name = `${data.get('firstName')} ${data.get('lastName')}`;
+
+    if (!isEdit) {
+      setIsSubmitting(true);
+      try {
+        await request('/api/addUsers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: data.get('firstName'),
+            last_name: data.get('lastName'),
+            email: data.get('email'),
+            role: data.get('role') === 'employee' ? 'employe' : data.get('role'),
+            phone: data.get('phone') || null,
+          }),
+        });
+        onSaved?.();
+      } catch (error) {
+        toast.danger('Création impossible', {
+          description:
+            error instanceof ApiError
+              ? error.detail
+              : 'Impossible de contacter le serveur.',
+        });
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     toast.success(isEdit ? 'Employé mis à jour' : 'Employé créé', {
       description: isEdit
         ? `Les informations de ${name} ont été enregistrées.`
@@ -151,9 +185,9 @@ export function UserFormModal({
 
               <Select
                 isRequired
-                defaultValue={user?.teamId ?? undefined}
+                defaultValue={user?.teamName ?? undefined}
                 fullWidth
-                name='teamId'
+                name='teamName'
                 placeholder='Choisir une équipe'
                 variant='secondary'
               >
@@ -164,13 +198,13 @@ export function UserFormModal({
                 </Select.Trigger>
                 <Select.Popover>
                   <ListBox>
-                    {teams.map((team) => (
+                    {teamNameOptions.map((name) => (
                       <ListBox.Item
-                        id={team.id}
-                        key={team.id}
-                        textValue={team.name}
+                        id={name}
+                        key={name}
+                        textValue={name}
                       >
-                        {team.name}
+                        {name}
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
                     ))}
@@ -184,7 +218,7 @@ export function UserFormModal({
             <Button slot='close' variant='tertiary'>
               Annuler
             </Button>
-            <Button form={FORM_ID} type='submit'>
+            <Button form={FORM_ID} isDisabled={isSubmitting} type='submit'>
               {isEdit ? 'Enregistrer' : 'Créer l’employé'}
             </Button>
           </Modal.Footer>

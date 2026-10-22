@@ -1,5 +1,7 @@
 import { Button } from '@heroui/react';
-import { API_URL } from '@/shared/api/client';
+import { tokenStorage } from '@/features/auth/api/tokenStorage';
+
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
 
 function MicrosoftLogo() {
   return (
@@ -16,11 +18,11 @@ function MicrosoftSignInButton() {
   return (
     <Button
       className='mt-8 w-full'
-      name='microsoft-sign-in'
       size='lg'
       variant='secondary'
       onPress={() => {
-        window.location.href = `${API_URL}/api/auth/login/microsoft`;
+        tokenStorage.clear();
+        window.location.assign(`${apiUrl}/api/auth/login/microsoft`);
       }}
     >
       <MicrosoftLogo />

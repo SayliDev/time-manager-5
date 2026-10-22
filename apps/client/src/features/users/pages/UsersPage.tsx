@@ -10,7 +10,7 @@ import {
   toast,
 } from '@heroui/react';
 import { useEffect, useMemo, useState } from 'react';
-import { fullName, teams } from '@/data/mock';
+import { fullName } from '@/data/mock';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
@@ -28,33 +28,41 @@ type EmployeeApiRow = {
   role: string;
   phone: string | null;
   id_team: number | null;
+  team_name: string | null;
   weekly_hours: number;
   last_clock_start: string | null;
+  last_clock_end: string | null;
   presence: User['presence'];
 };
 
 function mapEmployee(row: EmployeeApiRow): User {
+  const lastClock = row.last_clock_end ?? row.last_clock_start;
+
   return {
     id: String(row.id_user),
     firstName: row.first_name,
     lastName: row.last_name,
     email: row.email,
     phone: row.phone ?? '',
-    role: row.role === 'manager' ? 'manager' : 'employee',
+    role: row.role,
     teamId: row.id_team === null ? null : String(row.id_team),
+    teamName: row.team_name,
     presence: row.presence,
     weeklyHours: row.weekly_hours,
-    lastClock: row.last_clock_start
-      ? new Date(row.last_clock_start).toLocaleString('fr-FR')
+    lastClock: lastClock
+      ? `${row.last_clock_end ? 'Départ' : 'Arrivée'} ${new Date(
+          lastClock
+        ).toLocaleString('fr-FR')}`
       : '—',
   };
 }
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('all');
-  const [teamId, setTeamId] = useState('all');
+  const [teamName, setTeamName] = useState('all');
 
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -82,20 +90,40 @@ export function UsersPage() {
           description: error.message,
         });
       });
-  }, []);
+  }, [refreshKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return users.filter((u) => {
       if (role !== 'all' && u.role !== role) return false;
-      if (teamId !== 'all' && u.teamId !== teamId) return false;
+      if (teamName !== 'all' && u.teamName !== teamName) return false;
       if (!q) return true;
       return (
         fullName(u).toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q)
       );
     });
-  }, [query, role, teamId]);
+  }, [users, query, role, teamName]);
+
+  const teamOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          users
+            .map((user) => user.teamName)
+            .filter((name): name is string => Boolean(name))
+        )
+      ).sort((first, second) => first.localeCompare(second)),
+    [users]
+  );
+
+  const roleOptions = useMemo(
+    () =>
+      Array.from(new Set(users.map((user) => user.role).filter(Boolean))).sort(
+        (first, second) => first.localeCompare(second)
+      ),
+    [users]
+  );
 
   const openCreate = () => {
     setEditUser(null);
@@ -158,14 +186,12 @@ export function UsersPage() {
                       <Label>Tous les rôles</Label>
                       <ListBox.ItemIndicator />
                     </ListBox.Item>
-                    <ListBox.Item id='manager' textValue='Managers'>
-                      <Label>Managers</Label>
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                    <ListBox.Item id='employee' textValue='Employés'>
-                      <Label>Employés</Label>
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
+                    {roleOptions.map((value) => (
+                      <ListBox.Item id={value} key={value} textValue={value}>
+                        <Label>{value}</Label>
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
                   </ListBox>
                 </Select.Popover>
               </Select>
@@ -173,9 +199,9 @@ export function UsersPage() {
               <Select
                 aria-label='Filtrer par équipe'
                 className='w-52'
-                value={teamId}
+                value={teamName}
                 variant='secondary'
-                onChange={(key) => setTeamId(String(key))}
+                onChange={(key) => setTeamName(String(key))}
               >
                 <Select.Trigger>
                   <Select.Value />
@@ -187,9 +213,9 @@ export function UsersPage() {
                       <Label>Toutes les équipes</Label>
                       <ListBox.ItemIndicator />
                     </ListBox.Item>
-                    {teams.map((t) => (
-                      <ListBox.Item id={t.id} key={t.id} textValue={t.name}>
-                        <Label>{t.name}</Label>
+                    {teamOptions.map((name) => (
+                      <ListBox.Item id={name} key={name} textValue={name}>
+                        <Label>{name}</Label>
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
                     ))}
@@ -227,6 +253,7 @@ export function UsersPage() {
         isOpen={formOpen}
         key={editUser?.id ?? 'new'}
         user={editUser}
+        onSaved={() => setRefreshKey((key) => key + 1)}
         onOpenChange={setFormOpen}
       />
       <ConfirmDialog

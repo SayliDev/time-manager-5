@@ -1,4 +1,4 @@
-export type Role = 'manager' | 'employee';
+export type Role = string;
 export type PresenceStatus = 'present' | 'remote' | 'late' | 'absent' | 'off';
 export type EntryStatus = 'ok' | 'late' | 'overtime' | 'missing' | 'ongoing';
 
@@ -10,6 +10,7 @@ export interface User {
   phone: string;
   role: Role;
   teamId: string | null;
+  teamName?: string | null;
   presence: PresenceStatus;
   weeklyHours: number;
   lastClock: string;

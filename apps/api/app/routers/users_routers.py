@@ -15,6 +15,8 @@ from app.services.users_service import (
     get_user_by_id,
     update_user,
 )
+from app.services.email_service import send_account_created_email
+from core.password_generator import generate_temporary_password
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,7 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     email: str
-    password: str
+    password: str | None = None
     role: str = "employe"
     phone: str | None = None
 
@@ -56,16 +58,30 @@ router = APIRouter(
 @router.post("/addUsers",response_model=UserResponse,status_code=status.HTTP_201_CREATED,)
 def create_user_endpoint(
     payload: UserCreate,
+    current_user: dict = Depends(require_roles("admin", "manager")),
 ):
     try:
+        temporary_password = payload.password or generate_temporary_password()
         user = create_user(
             first_name=payload.first_name,
             last_name=payload.last_name,
             email=payload.email,
-            password=payload.password,
+            password=temporary_password,
             role=payload.role,
             phone=payload.phone,
         )
+
+        email_sent = send_account_created_email(
+            to_email=user["email"],
+            first_name=user["first_name"],
+            temporary_password=temporary_password,
+            cc_email=current_user.get("email"),
+        )
+        if not email_sent:
+            logger.warning(
+                "User created but account email could not be sent: %s",
+                user["email"],
+            )
 
         return user
 
@@ -147,17 +163,6 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
             detail=str(error),
         )   
 
-@router.get("/all",response_model=list[UserResponse],status_code=status.HTTP_200_OK,)
-def all_users_endpoint():
-    try:
-        users = get_all_users()
-        return users
-    except RuntimeError as error:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(error),
-        )
-
 @router.get("/me", tags=["Authentication"])
 def me_endpoint(
     current_user: str = Depends(get_current_user),
@@ -166,7 +171,6 @@ def me_endpoint(
         "username": current_user,
         "role": current_user["role"]  # Remplacez "user" par la valeur réelle du rôle si disponible
     }
-
 
 @router.get("/all/details",response_model=list[UserDetailsResponse],status_code=status.HTTP_200_OK,)
 def all_users_details(
@@ -179,3 +183,4 @@ def all_users_details(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(error),
         )
+

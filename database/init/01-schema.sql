@@ -34,9 +34,18 @@ CREATE TABLE public.departement (
     name VARCHAR(50)
 );
 
+CREATE TYPE public.team_name_enum AS ENUM (
+    'Ressources humaines',
+    'Finance',
+    'IT & Produit',
+    'Opérations',
+    'Développement - DEMO',
+    'Support - DEMO'
+);
+
 CREATE TABLE public.team (
     id_team INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    name public.team_name_enum NOT NULL,
     description TEXT,
     id_user INTEGER NOT NULL REFERENCES public.users(id_user),
     id_departement INTEGER NOT NULL

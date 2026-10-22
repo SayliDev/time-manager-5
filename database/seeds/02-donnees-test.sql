@@ -169,12 +169,12 @@ BEGIN
         );
     END LOOP;
 
-    -- Sessions du lundi 28 septembre au vendredi 2 octobre 2026.
+    -- Sessions du lundi de la semaine courante au vendredi.
     -- Journée standard : 09h–12h et 13h–17h, soit 7 heures.
     -- 10 utilisateurs × 5 jours × 2 sessions = 100 sessions.
     FOR v_user_index IN 1..10 LOOP
         FOR v_day_offset IN 0..4 LOOP
-            v_work_day := DATE '2026-09-28' + v_day_offset;
+            v_work_day := date_trunc('week', CURRENT_DATE)::date + v_day_offset;
 
             -- Matin.
             v_session_start :=
