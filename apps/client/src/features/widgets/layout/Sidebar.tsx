@@ -23,21 +23,23 @@ import {
   fullName,
   getUser,
 } from '@/data/mock';
+import { useLogout } from '@/features/auth/hooks/useLogout';
 import type { Role } from '@/features/users/types';
 import { RoleChip } from '@/shared/ui/StatusChips';
 import { Brand } from './Brand';
 import { appPath, navSections } from './nav';
 
 interface SidebarProps {
-  /** Appelé après une navigation (sert à fermer le tiroir mobile) */
   onNavigate?: () => void;
 }
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const navigate = useNavigate();
+  const logout = useLogout();
   const [role, setRole] = useState<Role>('manager');
-  const currentUser =
-    getUser(role === 'manager' ? CURRENT_MANAGER_ID : CURRENT_EMPLOYEE_ID)!;
+  const currentUser = getUser(
+    role === 'manager' ? CURRENT_MANAGER_ID : CURRENT_EMPLOYEE_ID
+  )!;
 
   const handleAction = (key: string | number) => {
     if (key === 'profile') {
@@ -55,7 +57,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         }
       );
     } else if (key === 'logout') {
-      navigate('/');
+      logout();
+      onNavigate?.();
     }
   };
 
