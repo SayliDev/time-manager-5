@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Brand } from '@/shared/branding/Brand';
-import { ThemeToggle } from '@/theme/ThemeToggle';
+import { useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -13,32 +11,33 @@ import {
   Separator,
   TextField,
 } from '@heroui/react';
+import { useLogin } from '@/features/auth/hooks/useLogin';
+import { ApiError } from '@/shared/api/client';
+import { Brand } from '@/shared/branding/Brand';
+import { ThemeToggle } from '@/theme/ThemeToggle';
 import MicrosoftSignInButton from './MicrosoftSignInButton';
-
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
 
 type FieldErrors = {
   email?: string;
   password?: string;
 };
 
-function LoginForm({ onSignIn }: { onSignIn: () => void }) {
+export default function LoginForm() {
+  const login = useLogin();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
-    setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const username = formData.get('email');
+    const email = formData.get('email');
     const password = formData.get('password');
     const nextFieldErrors: FieldErrors = {};
 
-    if (typeof username !== 'string' || !username.trim()) {
+    if (typeof email !== 'string' || !email.trim()) {
       nextFieldErrors.email = 'Veuillez renseigner votre adresse email.';
     }
 
@@ -48,46 +47,31 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      setIsSubmitting(false);
       return;
     }
 
-    try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    login.mutate(
+      {
+        email: (email as string).trim(),
+        password: password as string,
+      },
+      {
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 401) {
+            setFieldErrors({
+              email: 'Email ou mot de passe incorrect.',
+              password: 'Email ou mot de passe incorrect.',
+            });
+            return;
+          }
+          setFormError(
+            error instanceof ApiError
+              ? error.detail
+              : 'Impossible de contacter le serveur.'
+          );
         },
-        body: new URLSearchParams({ username, password }),
-      });
-
-      if (!response.ok) {
-        setFieldErrors({
-          email: 'Email ou mot de passe incorrect.',
-          password: 'Email ou mot de passe incorrect.',
-        });
-        return;
       }
-
-      const result: unknown = await response.json();
-
-      if (
-        typeof result !== 'object' ||
-        result === null ||
-        !('access_token' in result) ||
-        typeof result.access_token !== 'string'
-      ) {
-        setFormError('La réponse du serveur est invalide.');
-        return;
-      }
-
-      localStorage.setItem('access_token', result.access_token);
-      onSignIn();
-    } catch {
-      setFormError('Impossible de contacter le serveur.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   }
 
   return (
@@ -178,13 +162,13 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
 
           <Button
             className='mt-2 w-full'
-            isDisabled={isSubmitting}
+            isDisabled={login.isPending}
             size='lg'
             type='submit'
           >
             Se connecter
           </Button>
-          {formError && <FieldError>{formError}</FieldError>}
+          {formError ? <FieldError>{formError}</FieldError> : null}
         </Form>
 
         <p className='mt-8 text-center text-xs text-muted'>
@@ -198,5 +182,3 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
     </main>
   );
 }
-
-export default LoginForm;
