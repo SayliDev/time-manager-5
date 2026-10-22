@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import LoginPage from '@/features/auth/pages/LoginPage';
+import MicrosoftCallbackPage from '@/features/auth/pages/MicrosoftCallbackPage';
 import { ManagerDashboardPage } from '@/features/dashboard/pages/ManagerDashboardPage';
 import { TimePage } from '@/features/time/pages/TimePage';
 import { AppShell } from '@/features/widgets/layout/AppShell';
@@ -11,6 +12,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<LoginPage />} />
+        <Route path='/auth/callback' element={<MicrosoftCallbackPage />} />
         <Route element={<RequireAuth />}>
           <Route path='/dashboard' element={<AppShell />}>
             <Route index element={<ManagerDashboardPage />} />
