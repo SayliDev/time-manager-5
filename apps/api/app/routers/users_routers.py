@@ -30,7 +30,7 @@ class UserResponse(BaseModel):
     desactive_at: datetime | None = None
 
 router = APIRouter(
-    prefix="/app",
+    prefix="/api",
     tags=["Users"],
 )
 

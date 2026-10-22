@@ -195,18 +195,18 @@ export const teams: Team[] = [
 ];
 
 export const weekHours: DayHours[] = [
-  { day: 'Lun', hours: 7.6 },
-  { day: 'Mar', hours: 7.9 },
-  { day: 'Mer', hours: 7.2 },
-  { day: 'Jeu', hours: 8.1 },
-  { day: 'Ven', hours: 6.8 },
+  { day: 'Lun', hours: 7.6, onsite: 5.1, remote: 2.5 },
+  { day: 'Mar', hours: 7.9, onsite: 4.8, remote: 3.1 },
+  { day: 'Mer', hours: 7.2, onsite: 3.4, remote: 3.8 },
+  { day: 'Jeu', hours: 8.1, onsite: 5.6, remote: 2.5 },
+  { day: 'Ven', hours: 6.8, onsite: 2.9, remote: 3.9 },
 ];
 
 export const monthHours: DayHours[] = [
-  { day: 'S1', hours: 36.8 },
-  { day: 'S2', hours: 38.4 },
-  { day: 'S3', hours: 35.9 },
-  { day: 'S4', hours: 37.6 },
+  { day: 'S1', hours: 36.8, onsite: 22.4, remote: 14.4 },
+  { day: 'S2', hours: 38.4, onsite: 21.0, remote: 17.4 },
+  { day: 'S3', hours: 35.9, onsite: 19.8, remote: 16.1 },
+  { day: 'S4', hours: 37.6, onsite: 23.2, remote: 14.4 },
 ];
 
 export const myEntries: TimeEntry[] = [
@@ -217,6 +217,7 @@ export const myEntries: TimeEntry[] = [
     departure: null,
     hours: 4.4,
     status: 'ongoing',
+    mode: 'onsite',
   },
   {
     id: 'e2',
@@ -225,6 +226,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:36',
     hours: 7.8,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e3',
@@ -233,6 +235,7 @@ export const myEntries: TimeEntry[] = [
     departure: '18:02',
     hours: 7.6,
     status: 'late',
+    mode: 'onsite',
   },
   {
     id: 'e4',
@@ -241,6 +244,7 @@ export const myEntries: TimeEntry[] = [
     departure: '19:14',
     hours: 9.6,
     status: 'overtime',
+    mode: 'onsite',
   },
   {
     id: 'e5',
@@ -249,6 +253,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:20',
     hours: 7.4,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e6',
@@ -257,6 +262,7 @@ export const myEntries: TimeEntry[] = [
     departure: null,
     hours: 0,
     status: 'missing',
+    mode: 'onsite',
   },
   {
     id: 'e7',
@@ -265,6 +271,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:30',
     hours: 7.9,
     status: 'ok',
+    mode: 'remote',
   },
   {
     id: 'e8',
@@ -273,6 +280,7 @@ export const myEntries: TimeEntry[] = [
     departure: '17:41',
     hours: 8.0,
     status: 'ok',
+    mode: 'onsite',
   },
 ];
 

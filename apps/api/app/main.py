@@ -1,14 +1,13 @@
 """FastAPI application entry point."""
 
 import logging
+import os
 import psycopg
-
+CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 from fastapi import (Depends,FastAPI,HTTPException,status,)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
 from jose import JWTError
-from psycopg import sql
-from psycopg.rows import dict_row
 from core.security import (create_access_token,decode_access_token,)
 from app.routers.users_routers import router as users_router
 from app.routers.register import router as register_router
@@ -22,6 +21,8 @@ from app.routers.manager_router import router as manager_router
 # Application
 # -----------------------------------------------------------------------------
 
+CLIENT_PORT = os.getenv("CLIENT_PORT")
+
 app = FastAPI(
     title="Time Manager API",
     version="1.0.0",
@@ -30,10 +31,11 @@ app = FastAPI(
     },
 )
 
-# AI
+# autorise les origines CORS, autoorise response from backend to frontend (avoid browzer blocking)
+# because docker backend and frontend different ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[f"http://localhost:{CLIENT_PORT}"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,19 +66,12 @@ TABLES = (
 
 # Route utilisée par Swagger pour récupérer un token
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login"
+    tokenUrl="api/auth/login"
 )
 
 # -----------------------------------------------------------------------------
 # Base de données
 # -----------------------------------------------------------------------------
-
-def connexion():
-    return psycopg.connect(
-        DATABASE_URL,
-        connect_timeout=5,
-        row_factory=dict_row,
-    )
 
 # -----------------------------------------------------------------------------
 # JWT
@@ -115,44 +110,6 @@ def accueil():
         "verification": "/health",
         "documentation": "/docs",
     }
-
-@app.get("/health", tags=["system"])
-def verification():
-
-    try:
-        with connexion() as conn:
-
-            counts = {}
-
-            for table in TABLES:
-
-                query = sql.SQL(
-                    "SELECT COUNT(*) AS total FROM public.{}"
-                ).format(
-                    sql.Identifier(table)
-                )
-
-                result = conn.execute(
-                    query
-                ).fetchone()
-
-                counts[table] = result["total"]
-
-        return {
-            "status": "ok",
-            "tables": counts,
-        }
-
-    except psycopg.Error:
-
-        logging.exception(
-            "Verification PostgreSQL impossible"
-        )
-
-        raise HTTPException(
-            status_code=503,
-            detail="Base inaccessible ou schéma incomplet.",
-        )
 
 # -----------------------------------------------------------------------------
 # Routes sécurisées

@@ -1,11 +1,11 @@
 from psycopg.errors import UniqueViolation
 import traceback
 from app.repositories.users_repository import (
-    create,
+    create as repository_create,
     get_by_id,
     get_all,
-    update,
-    deactivate,
+    update as repository_update,
+    deactivate as repository_deactivate,
     get_by_email as repository_get_by_email,
     get_password_hash_by_id as repository_get_password_hash_by_id,
     get_by_oid as repository_get_by_oid
@@ -24,7 +24,7 @@ def create_user(
 ):
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
-        return create(
+        return repository_create(
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -62,7 +62,7 @@ def update_user(
 ):
     
     try:
-        return update(
+        return repository_update(
             record_id=user_id,
             first_name=first_name,
             last_name=last_name,
@@ -80,7 +80,7 @@ def update_user(
 
 def deactivate_user(*,user_id: int,):
     try:
-        return deactivate(record_id=user_id)
+        return repository_deactivate(record_id=user_id)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la désactivation de l'utilisateur : {e}")
 

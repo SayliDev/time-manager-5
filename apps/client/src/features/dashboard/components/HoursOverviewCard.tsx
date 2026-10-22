@@ -13,17 +13,18 @@ export function HoursOverviewCard({ period }: HoursOverviewCardProps) {
       <Card.Header>
         <Card.Title>
           {period === 'week'
-            ? 'Heures moyennes par jour'
-            : 'Heures moyennes par semaine'}
+            ? 'Présentiel vs télétravail'
+            : 'Présentiel vs télétravail (mois)'}
         </Card.Title>
         <Card.Description>
-          Moyenne de l’équipe sur{' '}
-          {period === 'week' ? 'la semaine en cours' : 'le mois en cours'} ·
-          objectif en pointillés
+          Comparaison des heures moyennes{' '}
+          {period === 'week' ? 'par jour' : 'par semaine'} · objectif en
+          pointillés
         </Card.Description>
       </Card.Header>
       <Card.Content>
         <HoursBarChart
+          compareModes
           data={period === 'week' ? weekHours : monthHours}
           target={period === 'week' ? 7 : 35}
           targetLabel={period === 'week' ? '7 h' : '35 h'}

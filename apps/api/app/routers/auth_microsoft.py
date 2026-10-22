@@ -14,6 +14,7 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
+CLIENT_PORT= os.getenv("CLIENT_PORT")
 CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
 TENANT_ID = os.getenv("MICROSOFT_TENANT_ID")
@@ -94,7 +95,6 @@ def callback(request: Request):
     user = get_user_by_email(email=email)
     if not user:
         user = create_user(
-            # oid=user_info.get("id"),
             first_name=user_info.get("givenName") or "Utilisateur",
             last_name=user_info.get("surname") or "Microsoft",
             email=user_info.get("userPrincipalName"),
@@ -107,7 +107,7 @@ def callback(request: Request):
             "email": user["email"],
         }
     )
-    response = RedirectResponse("http://localhost:5173/dashboard")
+    response = RedirectResponse(f"http://localhost:{CLIENT_PORT}/dashboard")
     response.set_cookie(
         key="access_token",
         value=jwt_token,
