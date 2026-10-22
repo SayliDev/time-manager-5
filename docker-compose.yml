@@ -45,6 +45,8 @@ services:
       dockerfile: Dockerfile.dev
     env_file:
       - ./apps/client/.env
+    environment:
+      USE_POLLING: 'true'
     ports:
       - '127.0.0.1:${CLIENT_PORT:-5173}:5173'
     volumes:
