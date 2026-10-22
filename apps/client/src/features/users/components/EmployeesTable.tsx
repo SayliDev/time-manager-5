@@ -7,7 +7,6 @@ import {
   ProgressBar,
   Separator,
   Table,
-  type Selection,
   type SortDescriptor,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
@@ -26,10 +25,7 @@ interface EmployeesTableProps {
   onDelete?: (user: User) => void;
   showRole?: boolean;
   compact?: boolean;
-  selectable?: boolean;
   ariaLabel?: string;
-  selectedKeys?: Selection;
-  onSelectionChange?: (keys: Selection) => void;
 }
 
 export function EmployeesTable({
@@ -39,23 +35,12 @@ export function EmployeesTable({
   onDelete,
   showRole = false,
   compact = false,
-  selectable = false,
   ariaLabel = 'Liste des employés',
-  selectedKeys: controlledKeys,
-  onSelectionChange,
 }: EmployeesTableProps) {
   const [sort, setSort] = useState<SortDescriptor>({
     column: 'name',
     direction: 'ascending',
   });
-  const [internalKeys, setInternalKeys] = useState<Selection>(new Set());
-
-  const isControlled = controlledKeys !== undefined;
-  const selectedKeys = isControlled ? controlledKeys : internalKeys;
-  const setSelectedKeys = (keys: Selection) => {
-    if (!isControlled) setInternalKeys(keys);
-    onSelectionChange?.(keys);
-  };
 
   const sorted = useMemo(() => {
     const list = [...users];
@@ -79,13 +64,6 @@ export function EmployeesTable({
     return list;
   }, [users, sort]);
 
-  const selectedCount =
-    selectedKeys === 'all'
-      ? sorted.length
-      : selectedKeys instanceof Set
-      ? selectedKeys.size
-      : 0;
-
   const header =
     (label: string) =>
     ({ sortDirection }: { sortDirection?: 'ascending' | 'descending' }) =>
@@ -101,24 +79,10 @@ export function EmployeesTable({
         <Table.Content
           aria-label={ariaLabel}
           className={compact ? 'min-w-[520px]' : 'min-w-[860px]'}
-          selectedKeys={selectable ? selectedKeys : undefined}
-          selectionMode={selectable ? 'multiple' : undefined}
           sortDescriptor={sort}
-          onSelectionChange={selectable ? setSelectedKeys : undefined}
           onSortChange={setSort}
         >
           <Table.Header>
-            {/* {selectable ? (
-              <Table.Column className='pe-0'>
-                <Checkbox aria-label='Tout sélectionner' slot='selection'>
-                  <Checkbox.Content>
-                    <Checkbox.Control>
-                      <Checkbox.Indicator />
-                    </Checkbox.Control>
-                  </Checkbox.Content>
-                </Checkbox>
-              </Table.Column>
-            ) : null} */}
             <Table.Column allowsSorting isRowHeader id='name'>
               {header('Employé')}
             </Table.Column>
@@ -151,21 +115,6 @@ export function EmployeesTable({
               const over = user.weeklyHours > WEEKLY_TARGET + 3;
               return (
                 <Table.Row id={user.id} key={user.id}>
-                  {/* {selectable ? (
-                    <Table.Cell className='pe-0'>
-                      <Checkbox
-                        aria-label={`Sélectionner ${fullName(user)}`}
-                        slot='selection'
-                        variant='secondary'
-                      >
-                        <Checkbox.Content>
-                          <Checkbox.Control>
-                            <Checkbox.Indicator />
-                          </Checkbox.Control>
-                        </Checkbox.Content>
-                      </Checkbox>
-                    </Table.Cell>
-                  ) : null} */}
                   <Table.Cell>
                     <button
                       aria-label={`Ouvrir la fiche de ${fullName(user)}`}
@@ -280,17 +229,6 @@ export function EmployeesTable({
           </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
-      {selectable && selectedCount > 0 ? (
-        <Table.Footer className='justify-between gap-3 text-sm'>
-          <span className='text-muted'>
-            <span className='tabular font-medium text-foreground'>
-              {selectedCount}
-            </span>{' '}
-            sélectionné
-            {selectedCount > 1 ? 's' : ''}
-          </span>
-        </Table.Footer>
-      ) : null}
     </Table>
   );
 }

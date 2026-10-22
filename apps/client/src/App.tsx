@@ -4,6 +4,8 @@ import LoginPage from '@/features/auth/pages/LoginPage';
 import MicrosoftCallbackPage from '@/features/auth/pages/MicrosoftCallbackPage';
 import { ManagerDashboardPage } from '@/features/dashboard/pages/ManagerDashboardPage';
 import { TimePage } from '@/features/time/pages/TimePage';
+import { TeamsPage } from '@/features/teams/pages/TeamsPage';
+import { UsersPage } from '@/features/users/pages/UsersPage';
 import { AppShell } from '@/features/widgets/layout/AppShell';
 import { PlaceholderPage } from '@/features/widgets/layout/PlaceholderPage';
 
@@ -17,14 +19,8 @@ export default function App() {
           <Route path='/dashboard' element={<AppShell />}>
             <Route index element={<ManagerDashboardPage />} />
             <Route path='time' element={<TimePage />} />
-            <Route
-              path='users'
-              element={<PlaceholderPage title='Employés' />}
-            />
-            <Route
-              path='teams'
-              element={<PlaceholderPage title='Équipes' />}
-            />
+            <Route path='users' element={<UsersPage />} />
+            <Route path='teams' element={<TeamsPage />} />
             <Route
               path='reports'
               element={<PlaceholderPage title='Rapports & KPIs' />}
