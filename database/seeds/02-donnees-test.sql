@@ -6,12 +6,12 @@ DO $$
 DECLARE
     v_first_names TEXT[] := ARRAY[
         'Alexandre', 'Alice', 'Karim', 'Emma', 'Lucas',
-        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah', 'John'
+        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah, 'John'
     ];
 
     v_last_names TEXT[] := ARRAY[
         'Martin', 'Bernard', 'Dubois', 'Petit', 'Robert',
-        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent', 'Doe'
+        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent, 'Doe'
     ];
 
     v_emails TEXT[] := ARRAY[
@@ -50,11 +50,6 @@ DECLARE
     v_session_end TIMESTAMPTZ;
 
 BEGIN
-    IF cardinality(v_first_names) <> cardinality(v_emails)
-       OR cardinality(v_last_names) <> cardinality(v_emails) THEN
-        RAISE EXCEPTION 'Les listes de noms et emails doivent avoir la meme taille.';
-    END IF;
-
     -- Empêche une deuxième insertion du même jeu de données.
     IF EXISTS (
         SELECT 1
@@ -65,8 +60,8 @@ BEGIN
             'Jeu de test déjà présent ou email en conflit. Aucune donnée ajoutée.';
     END IF;
 
-    -- 1 administrateur, 2 managers et 8 employés.
-    FOR v_user_index IN 1..cardinality(v_emails) LOOP
+    -- 1 administrateur, 2 managers et 7 employés.
+    FOR v_user_index IN 1..10 LOOP
         INSERT INTO public.users (
             first_name,
             last_name,
@@ -133,7 +128,7 @@ BEGIN
 
     -- Les managers sont également membres de leur équipe.
     -- L'administrateur reste hors équipe.
-    FOR v_user_index IN 2..cardinality(v_emails) LOOP
+    FOR v_user_index IN 2..10 LOOP
         INSERT INTO public.team_allocation (
             start_at,
             end_at,
@@ -153,7 +148,7 @@ BEGIN
     END LOOP;
 
     -- Contrats : Chloé en alternance, Sarah en CDD, les autres en CDI.
-    FOR v_user_index IN 1..cardinality(v_emails) LOOP
+    FOR v_user_index IN 1..10 LOOP
         INSERT INTO public.contract (
             contract_type,
             start_date,
@@ -178,8 +173,8 @@ BEGIN
 
     -- Sessions du lundi 28 septembre au vendredi 2 octobre 2026.
     -- Journée standard : 09h–12h et 13h–17h, soit 7 heures.
-    -- 11 utilisateurs × 5 jours × 2 sessions = 110 sessions.
-    FOR v_user_index IN 1..cardinality(v_emails) LOOP
+    -- 10 utilisateurs × 5 jours × 2 sessions = 100 sessions.
+    FOR v_user_index IN 1..10 LOOP
         FOR v_day_offset IN 0..4 LOOP
             v_work_day := DATE '2026-09-28' + v_day_offset;
 
