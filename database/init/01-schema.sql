@@ -14,7 +14,7 @@ CREATE TABLE public.users (
 );
 
 COMMENT ON COLUMN public.users.password_set_at IS
-    'NULL = mot de passe pas encore choisi par l''utilisateur';
+    'NULL = mot de passe pas encore choisi';
 
 CREATE TABLE public.password_reset_token (
     id_password_reset_token INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
