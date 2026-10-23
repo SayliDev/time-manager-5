@@ -4,6 +4,14 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from core.passwords import MAX_PASSWORD_BYTES
+def check_password_rules(value:str) -> str:
+    if len(value) < 8:
+        raise ValueError("Minimum 8 caratères")
+    if not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
+        raise ValueError("Au moins une lettre et un chiffre")
+    if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
+        raise ValueError("72 octets maximum")
+    return value
 
 class RegisterRequest(BaseModel):
     first_name: str = Field(max_length=50)
@@ -27,13 +35,7 @@ class RegisterRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def password_rules(cls, value: str) -> str:
-        if len(value) < 8:
-            raise ValueError("8 caracteres minimum")
-        if not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
-            raise ValueError("Au moins une lettre et un chiffre")
-        if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
-            raise ValueError("72 octets maximum")
-        return value
+        return check_password_rules(value)
 
 
 class UserOut(BaseModel):
@@ -44,3 +46,12 @@ class UserOut(BaseModel):
     role: str
     phone: str | None = None
     creat_at: datetime
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=200)
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_rules(cls, value: str) -> str:
+        return check_password_rules(value)
