@@ -19,6 +19,23 @@ def period_bounds(day: date, period: str) -> tuple[date, date]:
     return start, end
 
 
+def work_mode(session) -> str:
+    mode = str(session.get("work_mode") or "").strip().lower()
+    if mode in {"remote", "teletravail", "télétravail", "distanciel", "distancielle"}:
+        return "remote"
+    elif mode in {
+        "onsite",
+        "on_site",
+        "presentiel",
+        "présentiel",
+        "presentielle",
+        "présentielle",
+    }:
+        return "present"
+    else:
+        return "unknown"
+
+
 def build_dashboard(
     data: dict,
     *,
@@ -46,17 +63,28 @@ def build_dashboard(
         duration = calc_work_time(completed, lower, upper)
         return duration.total_seconds() / 3600
 
-    def day_bars(sessions):
+    def hour_totals(sessions, lower, upper, denominator=1):
+        return {
+            "hours": round(hours(sessions, lower, upper) / denominator, 2),
+            "onsite": round(hours(
+                [s for s in sessions if work_mode(s) == "present"],
+                lower, upper,
+            ) / denominator, 2),
+            "remote": round(hours(
+                [s for s in sessions if work_mode(s) == "remote"],
+                lower, upper,
+            ) / denominator, 2),
+        }
+
+    def day_bars(sessions, denominator=1):
         return [
             {
                 "day": DAY_NAMES[index],
-                "hours": round(
-                    hours(
-                        sessions,
-                        week_start + timedelta(days=index),
-                        week_start + timedelta(days=index + 1),
-                    ),
-                    2,
+                **hour_totals(
+                    sessions,
+                    week_start + timedelta(days=index),
+                    week_start + timedelta(days=index + 1),
+                    denominator,
                 ),
             }
             for index in range(7)
@@ -112,25 +140,7 @@ def build_dashboard(
         clocked_in += bool(active)
         attended += bool(todays)
 
-        mode = (
-            str(todays[-1].get("work_mode") or "").strip().lower()
-            if todays
-            else ""
-        )
-
-        if mode in {"remote", "teletravail", "télétravail", "distanciel", "distancielle"}:
-            presence_status = "remote"
-        elif mode in {
-            "onsite",
-            "on_site",
-            "presentiel",
-            "présentiel",
-            "presentielle",
-            "présentielle",
-        }:
-            presence_status = "present"
-        else:
-            presence_status = "unknown"
+        presence_status = work_mode(todays[-1]) if todays else "unknown"
 
         if working_day:
             if not todays and cutoff > expected_start:
@@ -249,13 +259,7 @@ def build_dashboard(
     denominator = len(users) or 1
 
     if period == "week":
-        bars = [
-            {
-                **bar,
-                "hours": round(bar["hours"] / denominator, 2),
-            }
-            for bar in day_bars(selected_sessions)
-        ]
+        bars = day_bars(selected_sessions, denominator)
     else:
         bars = []
         lower = start
@@ -271,11 +275,7 @@ def build_dashboard(
                     f"{lower:%d/%m}–"
                     f"{upper - timedelta(days=1):%d/%m}"
                 ),
-                "hours": round(
-                    hours(selected_sessions, lower, upper)
-                    / denominator,
-                    2,
-                ),
+                **hour_totals(selected_sessions, lower, upper, denominator),
             })
 
             lower = upper
