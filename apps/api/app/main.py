@@ -15,6 +15,7 @@ from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
+from app.routers.password_reset import router as password_reset_router
 
 # -----------------------------------------------------------------------------
 # Application
@@ -47,6 +48,7 @@ app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
+app.include_router(password_reset_router)
 app.include_router(register_router)
 # app.include_router(test_work_time_router)
 # -----------------------------------------------------------------------------

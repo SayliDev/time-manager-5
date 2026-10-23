@@ -7,6 +7,12 @@ from pydantic import ValidationError
 from app.models.users import ResetPasswordRequest
 from app.services import password_reset_service as service
 
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
+ROUTER = "app.routers.password_reset.reset_password"
+URL = "/api/auth/reset-password"
 REPO = "app.services.password_reset_service.password_reset_repository"
 
 
@@ -64,3 +70,35 @@ def test_reset_password_hashes_token_and_password():
 def test_reset_password_returns_false_for_invalid_token():
     with patch(f"{REPO}.consume", return_value=False):
         assert service.reset_password(token="x", new_password="Secret123") is False
+
+
+def test_reset_endpoint_success():
+    with patch(ROUTER, return_value=True) as mocked:
+        response = client.post(URL, json={"token": "abc", "new_password": "Secret123"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "access_token" not in body
+    assert "token" not in body
+    mocked.assert_called_once_with(token="abc", new_password="Secret123")
+
+
+def test_reset_endpoint_invalid_token_returns_400():
+    with patch(ROUTER, return_value=False):
+        response = client.post(URL, json={"token": "bad", "new_password": "Secret123"})
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Lien invalide ou expiré"
+
+
+def test_reset_endpoint_weak_password_returns_422():
+    with patch(ROUTER) as mocked:
+        response = client.post(URL, json={"token": "abc", "new_password": "court1"})
+
+    assert response.status_code == 422
+    mocked.assert_not_called()
+
+
+def test_reset_endpoint_missing_token_returns_422():
+    response = client.post(URL, json={"new_password": "Secret123"})
+    assert response.status_code == 422
