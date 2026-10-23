@@ -61,7 +61,6 @@ export function useActivity() {
   });
 }
 
-/** Heures agrégées de l'équipe. Garde la période précédente affichée pendant le changement. */
 export function useHours(period: DashboardPeriod) {
   return useQuery({
     queryKey: mockQueryKeys.hours(period),
