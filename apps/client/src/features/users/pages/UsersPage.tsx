@@ -7,16 +7,19 @@ import {
   ListBox,
   SearchField,
   Select,
+  Skeleton,
   toast,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { fullName, teams, users } from '@/data/mock';
+import { fullName } from '@/data/mock';
+import { useTeams, useUsers } from '@/data/mockQueries';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
 import type { User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 export function UsersPage() {
   const [query, setQuery] = useState('');
@@ -27,6 +30,9 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
+
+  const { data: users = [], isPending: usersLoading } = useUsers();
+  const { data: teams = [] } = useTeams();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -39,7 +45,7 @@ export function UsersPage() {
         u.email.toLowerCase().includes(q)
       );
     });
-  }, [query, role, teamId]);
+  }, [users, query, role, teamId]);
 
   const openCreate = () => {
     setEditUser(null);
@@ -147,6 +153,8 @@ export function UsersPage() {
         <Card.Content>
           <EmployeesTable
             showRole
+            isLoading={usersLoading}
+            skeletonRows={8}
             users={filtered}
             onDelete={setDeleteUser}
             onEdit={openEdit}
@@ -155,10 +163,19 @@ export function UsersPage() {
         </Card.Content>
 
         <Card.Footer className='justify-between text-sm text-muted'>
-          <span>
-            {filtered.length} employé{filtered.length > 1 ? 's' : ''} sur{' '}
-            {users.length}
-          </span>
+          <SkeletonSwap
+            isLoading={usersLoading}
+            skeleton={
+              <span className='flex h-5 items-center'>
+                <Skeleton className='h-3.5 w-36 rounded-md' />
+              </span>
+            }
+          >
+            <span>
+              {filtered.length} employé{filtered.length > 1 ? 's' : ''} sur{' '}
+              {users.length}
+            </span>
+          </SkeletonSwap>
         </Card.Footer>
       </Card>
 

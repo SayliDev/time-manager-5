@@ -1,8 +1,5 @@
-import { Pulse } from '@gravity-ui/icons';
-import { Chip, toast } from '@heroui/react';
-import { useMemo, useState } from 'react';
-import { fullName, users } from '@/data/mock';
-import { AttentionAlert } from '@/features/dashboard/components/AttentionAlert';
+import { fullName } from '@/data/mock';
+import { useUsers } from '@/data/mockQueries';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -15,6 +12,9 @@ import { UserFormModal } from '@/features/users/components/UserFormModal';
 import type { PresenceStatus, User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { Pulse } from '@gravity-ui/icons';
+import { Chip, toast } from '@heroui/react';
+import { useMemo, useState } from 'react';
 
 export function ManagerDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('week');
@@ -25,15 +25,17 @@ export function ManagerDashboardPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-  const scoped = useMemo(
-    () => (teamId === 'all' ? users : users.filter((u) => u.teamId === teamId)),
-    [teamId]
-  );
+  const { data: users, isPending: usersLoading } = useUsers();
+
+  const scoped = useMemo(() => {
+    const list = users ?? [];
+    return teamId === 'all' ? list : list.filter((u) => u.teamId === teamId);
+  }, [users, teamId]);
 
   const countBy = (status: PresenceStatus) =>
     scoped.filter((u) => u.presence === status).length;
   const clockedIn = scoped.filter((u) =>
-    ['present', 'remote', 'late'].includes(u.presence)
+    ['present', 'remote', 'late'].includes(u.presence),
   ).length;
   const lateCount = countBy('late');
   const absentCount = countBy('absent');
@@ -70,21 +72,25 @@ export function ManagerDashboardPage() {
         onTeamChange={setTeamId}
       />
 
-      <AttentionAlert absentCount={absentCount} lateCount={lateCount} />
+      {/* {usersLoading ? null : (
+        <AttentionAlert absentCount={absentCount} lateCount={lateCount} />
+      )} */}
 
       <DashboardKpis
         alerts={alerts}
         clockedIn={clockedIn}
+        isLoading={usersLoading}
         totalEmployees={scoped.length}
       />
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <HoursOverviewCard period={period} />
-        <PresenceBreakdownCard users={scoped} />
+        <PresenceBreakdownCard isLoading={usersLoading} users={scoped} />
       </section>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <TeamOverviewCard
+          isLoading={usersLoading}
           users={scoped}
           onDelete={setDeleteUser}
           onEdit={openEdit}
