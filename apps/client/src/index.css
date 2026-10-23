@@ -46,8 +46,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
 
   --breakpoint-3xl: 1600px;
   --breakpoint-4xl: 1920px;
@@ -102,7 +103,8 @@ body {
   --tm-hero-y2: 100%;
   --tm-hero-angle: 160deg;
 
-  background: radial-gradient(
+  background:
+    radial-gradient(
       58rem 36rem at var(--tm-hero-x1) var(--tm-hero-y1),
       color-mix(in oklch, var(--accent) 62%, transparent),
       transparent 58%
@@ -122,7 +124,8 @@ body {
 
 .dark .tm-hero-bg,
 [data-theme='dark'] .tm-hero-bg {
-  background: radial-gradient(
+  background:
+    radial-gradient(
       58rem 36rem at var(--tm-hero-x1) var(--tm-hero-y1),
       color-mix(in oklch, var(--accent) 48%, transparent),
       transparent 58%
@@ -231,4 +234,37 @@ body {
   [data-sileo-viewport][data-theme='dark']
   [data-sileo-description] {
   color: rgb(15 23 42 / 55%);
+}
+
+@keyframes tm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tm-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.tm-fade-in {
+  animation: tm-fade-in 400ms ease-out both;
+}
+
+.tm-fade-out {
+  animation: tm-fade-out 400ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-fade-in,
+  .tm-fade-out {
+    animation-duration: 1ms;
+  }
 }

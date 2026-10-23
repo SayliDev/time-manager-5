@@ -1,8 +1,17 @@
 import { Briefcase, Envelope, Handset, Pencil } from '@gravity-ui/icons';
-import { Button, Drawer, Label, ProgressBar, Separator } from '@heroui/react';
+import {
+  Button,
+  Drawer,
+  Label,
+  ProgressBar,
+  Separator,
+  Skeleton,
+} from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
-import { fullName, getTeam, myEntries, weekHours } from '../../data/mock';
+import { fullName, getTeam } from '@/data/mock';
+import { useTimeEntries, useUserHours } from '@/data/mockQueries';
 import type { User } from '@/features/users/types';
+import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
 import {
   EntryStatusChip,
@@ -10,6 +19,7 @@ import {
   RoleChip,
 } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
+import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { formatDecimal } from '@/shared/lib/format';
 
 interface EmployeeDrawerProps {
@@ -34,6 +44,10 @@ export function EmployeeDrawer({
 }: EmployeeDrawerProps) {
   const navigate = useNavigate();
   const team = getTeam(user?.teamId);
+  const hours = useUserHours(user?.id);
+  const entries = useTimeEntries(user?.id);
+  const hoursLoading = hours.isPending || hours.isPlaceholderData;
+  const entriesLoading = entries.isPending || entries.isPlaceholderData;
   const progress = user
     ? Math.min(100, (user.weeklyHours / WEEKLY_TARGET) * 100)
     : 0;
@@ -120,7 +134,16 @@ export function EmployeeDrawer({
                       +{formatDecimal(overtime)} h au-dessus de l’objectif
                     </p>
                   ) : null}
-                  <HoursBarChart data={weekHours} height={170} target={7} />
+                  <SkeletonSwap
+                    isLoading={hoursLoading}
+                    skeleton={<ChartSkeleton height={170} />}
+                  >
+                    <HoursBarChart
+                      data={hours.data ?? []}
+                      height={170}
+                      target={7}
+                    />
+                  </SkeletonSwap>
                 </section>
 
                 <Separator />
@@ -132,29 +155,52 @@ export function EmployeeDrawer({
                   <h3 className='mb-1 text-sm font-semibold'>
                     Derniers pointages
                   </h3>
-                  <ul className='flex flex-col divide-y divide-separator'>
-                    {myEntries.slice(0, 4).map((entry) => (
-                      <li
-                        className='flex items-center justify-between gap-3 py-2.5'
-                        key={entry.id}
-                      >
-                        <div>
-                          <p className='text-sm font-medium capitalize'>
-                            {formatDate(entry.date)}
-                          </p>
-                          <p className='tabular text-xs text-muted'>
-                            {entry.arrival ?? '—'} → {entry.departure ?? '—'}
-                          </p>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <span className='tabular text-sm font-medium'>
-                            {formatDecimal(entry.hours)} h
-                          </span>
-                          <EntryStatusChip status={entry.status} />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                  <SkeletonSwap
+                    isLoading={entriesLoading}
+                    skeleton={
+                      <ul className='flex flex-col divide-y divide-separator'>
+                        {Array.from({ length: 4 }, (_, i) => (
+                          <li
+                            className='flex items-center justify-between gap-3 py-2.5'
+                            key={i}
+                          >
+                            <div className='flex flex-col gap-1.5 py-0.5'>
+                              <Skeleton className='h-3.5 w-24 rounded-md' />
+                              <Skeleton className='h-3 w-20 rounded-md' />
+                            </div>
+                            <div className='flex items-center gap-3'>
+                              <Skeleton className='h-3.5 w-10 rounded-md' />
+                              <Skeleton className='h-5 w-16 rounded-2xl' />
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    }
+                  >
+                    <ul className='flex flex-col divide-y divide-separator'>
+                      {(entries.data ?? []).slice(0, 4).map((entry) => (
+                        <li
+                          className='flex items-center justify-between gap-3 py-2.5'
+                          key={entry.id}
+                        >
+                          <div>
+                            <p className='text-sm font-medium capitalize'>
+                              {formatDate(entry.date)}
+                            </p>
+                            <p className='tabular text-xs text-muted'>
+                              {entry.arrival ?? '—'} → {entry.departure ?? '—'}
+                            </p>
+                          </div>
+                          <div className='flex items-center gap-3'>
+                            <span className='tabular text-sm font-medium'>
+                              {formatDecimal(entry.hours)} h
+                            </span>
+                            <EntryStatusChip status={entry.status} />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </SkeletonSwap>
                 </section>
               </Drawer.Body>
 
