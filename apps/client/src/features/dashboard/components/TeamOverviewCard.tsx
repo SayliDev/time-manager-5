@@ -1,5 +1,6 @@
 import { Card, Link } from '@heroui/react';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
+import { appPath } from '@/features/widgets/layout/nav';
 import type { User } from '@/features/users/types';
 
 interface TeamOverviewCardProps {
@@ -21,12 +22,12 @@ export function TeamOverviewCard({
     <Card className='lg:col-span-2'>
       <Card.Header className='flex-row items-start justify-between gap-3'>
         <div>
-          <Card.Title>Mon équipe</Card.Title>
+          <Card.Title>Collaborateurs</Card.Title>
           <Card.Description>
             Cliquez sur un collaborateur pour ouvrir sa fiche.
           </Card.Description>
         </div>
-        <Link href='/dashboard/users'>
+        <Link href={appPath('/users')}>
           Tout voir
           <Link.Icon />
         </Link>
@@ -34,7 +35,8 @@ export function TeamOverviewCard({
       <Card.Content>
         <EmployeesTable
           compact
-          ariaLabel='Employés de l’équipe'
+          showRole
+          ariaLabel='Collaborateurs'
           isLoading={isLoading}
           skeletonRows={6}
           users={users.slice(0, 6)}

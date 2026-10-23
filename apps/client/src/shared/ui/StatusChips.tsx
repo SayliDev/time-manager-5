@@ -1,6 +1,7 @@
 import { CircleFill } from '@gravity-ui/icons';
 import { Chip } from '@heroui/react';
 import type { EntryStatus, WorkMode } from '@/features/time/types';
+import { roleLabels } from '@/features/users/lib/names';
 import type { PresenceStatus, Role } from '@/features/users/types';
 
 type ChipColor = 'default' | 'accent' | 'success' | 'warning' | 'danger';
@@ -56,14 +57,16 @@ export function WorkModeChip({ mode }: { mode: WorkMode }) {
   );
 }
 
+const roleColors: Record<Role, ChipColor> = {
+  admin: 'warning',
+  manager: 'accent',
+  employee: 'default',
+};
+
 export function RoleChip({ role }: { role: Role }) {
   return (
-    <Chip
-      color={role === 'manager' ? 'accent' : 'default'}
-      size='sm'
-      variant='soft'
-    >
-      <Chip.Label>{role === 'manager' ? 'Manager' : 'Employé'}</Chip.Label>
+    <Chip color={roleColors[role]} size='sm' variant='soft'>
+      <Chip.Label>{roleLabels[role]}</Chip.Label>
     </Chip>
   );
 }

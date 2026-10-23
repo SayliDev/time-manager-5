@@ -21,8 +21,8 @@ function simulateRequest<T>(data: T): Promise<T> {
 }
 
 export const mockQueryKeys = {
-  users: ['users'] as const,
-  teams: ['teams'] as const,
+  presence: ['demo', 'presence'] as const,
+  teams: ['demo', 'teams'] as const,
   kpis: ['kpis'] as const,
   activity: ['activity'] as const,
   hours: (period: DashboardPeriod) => ['hours', period] as const,
@@ -33,9 +33,9 @@ export const mockQueryKeys = {
     ['weekly-summary', userId] as const,
 };
 
-export function useUsers() {
+export function useDemoPresence() {
   return useQuery({
-    queryKey: mockQueryKeys.users,
+    queryKey: mockQueryKeys.presence,
     queryFn: () => simulateRequest(users),
   });
 }

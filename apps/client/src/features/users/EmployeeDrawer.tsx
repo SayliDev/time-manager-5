@@ -8,8 +8,10 @@ import {
   Skeleton,
 } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
-import { fullName, getTeam } from '@/data/mock';
+import { appPath } from '@/features/widgets/layout/nav';
+import { getTeam } from '@/data/mock';
 import { useTimeEntries, useUserHours } from '@/data/mockQueries';
+import { fullName } from '@/features/users/lib/names';
 import type { User } from '@/features/users/types';
 import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
@@ -19,6 +21,7 @@ import {
   RoleChip,
 } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
+import { DemoBadge } from '@/shared/ui/DemoBadge';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { formatDecimal } from '@/shared/lib/format';
 
@@ -48,10 +51,13 @@ export function EmployeeDrawer({
   const entries = useTimeEntries(user?.id);
   const hoursLoading = hours.isPending || hours.isPlaceholderData;
   const entriesLoading = entries.isPending || entries.isPlaceholderData;
-  const progress = user
-    ? Math.min(100, (user.weeklyHours / WEEKLY_TARGET) * 100)
-    : 0;
-  const overtime = user ? Math.max(0, user.weeklyHours - WEEKLY_TARGET) : 0;
+  const weeklyHours = user?.weeklyHours ?? null;
+  const progress =
+    weeklyHours === null
+      ? 0
+      : Math.min(100, (weeklyHours / WEEKLY_TARGET) * 100);
+  const overtime =
+    weeklyHours === null ? 0 : Math.max(0, weeklyHours - WEEKLY_TARGET);
 
   return (
     <Drawer.Backdrop
@@ -76,7 +82,9 @@ export function EmployeeDrawer({
                     </Drawer.Heading>
                     <div className='mt-1.5 flex flex-wrap items-center gap-2'>
                       <RoleChip role={user.role} />
-                      <PresenceChip status={user.presence} />
+                      {user.presence ? (
+                        <PresenceChip status={user.presence} />
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -95,14 +103,16 @@ export function EmployeeDrawer({
                   </p>
                   <p className='flex items-center gap-2.5 text-muted'>
                     <Handset className='size-4 shrink-0' />
-                    <span className='text-foreground'>{user.phone}</span>
-                  </p>
-                  <p className='flex items-center gap-2.5 text-muted'>
-                    <Briefcase className='size-4 shrink-0' />
                     <span className='text-foreground'>
-                      {team?.name ?? 'Sans équipe'}
+                      {user.phone ?? 'Non renseigné'}
                     </span>
                   </p>
+                  {team ? (
+                    <p className='flex items-center gap-2.5 text-muted'>
+                      <Briefcase className='size-4 shrink-0' />
+                      <span className='text-foreground'>{team.name}</span>
+                    </p>
+                  ) : null}
                 </section>
 
                 <Separator />
@@ -111,24 +121,32 @@ export function EmployeeDrawer({
                   aria-label='Heures de la semaine'
                   className='flex flex-col gap-3'
                 >
-                  <ProgressBar
-                    aria-label='Heures de la semaine'
-                    color={overtime > 0 ? 'warning' : 'accent'}
-                    value={progress}
-                  >
-                    <div className='flex items-baseline justify-between'>
-                      <Label>Cette semaine</Label>
-                      <span className='tabular text-sm text-muted'>
-                        <strong className='text-base font-semibold text-foreground'>
-                          {formatDecimal(user.weeklyHours)} h
-                        </strong>{' '}
-                        / {WEEKLY_TARGET} h
-                      </span>
-                    </div>
-                    <ProgressBar.Track>
-                      <ProgressBar.Fill />
-                    </ProgressBar.Track>
-                  </ProgressBar>
+                  <div className='flex items-center justify-between gap-2'>
+                    <h3 className='text-sm font-semibold'>
+                      Heures de la semaine
+                    </h3>
+                    <DemoBadge />
+                  </div>
+                  {weeklyHours !== null ? (
+                    <ProgressBar
+                      aria-label='Heures de la semaine'
+                      color={overtime > 0 ? 'warning' : 'accent'}
+                      value={progress}
+                    >
+                      <div className='flex items-baseline justify-between'>
+                        <Label>Cette semaine</Label>
+                        <span className='tabular text-sm text-muted'>
+                          <strong className='text-base font-semibold text-foreground'>
+                            {formatDecimal(weeklyHours)} h
+                          </strong>{' '}
+                          / {WEEKLY_TARGET} h
+                        </span>
+                      </div>
+                      <ProgressBar.Track>
+                        <ProgressBar.Fill />
+                      </ProgressBar.Track>
+                    </ProgressBar>
+                  ) : null}
                   {overtime > 0 ? (
                     <p className='text-xs text-warning'>
                       +{formatDecimal(overtime)} h au-dessus de l’objectif
@@ -152,9 +170,12 @@ export function EmployeeDrawer({
                   aria-label='Derniers pointages'
                   className='flex flex-col gap-1'
                 >
-                  <h3 className='mb-1 text-sm font-semibold'>
-                    Derniers pointages
-                  </h3>
+                  <div className='mb-1 flex items-center justify-between gap-2'>
+                    <h3 className='text-sm font-semibold'>
+                      Derniers pointages
+                    </h3>
+                    <DemoBadge />
+                  </div>
                   <SkeletonSwap
                     isLoading={entriesLoading}
                     skeleton={
@@ -209,7 +230,7 @@ export function EmployeeDrawer({
                   variant='tertiary'
                   onPress={() => {
                     onOpenChange(false);
-                    navigate('/mcp/time');
+                    navigate(appPath('/time'));
                   }}
                 >
                   Voir tous les pointages

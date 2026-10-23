@@ -1,5 +1,5 @@
 import { Card } from '@heroui/react';
-import { fullName } from '@/data/mock';
+import { fullName } from '@/features/users/lib/names';
 import type { ActivityItem } from '@/features/dashboard/types';
 import type { User } from '@/features/users/types';
 import { UserAvatar } from '@/shared/ui/UserAvatar';

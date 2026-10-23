@@ -1,7 +1,10 @@
 import { Pulse } from '@gravity-ui/icons';
-import { Chip, toast } from '@heroui/react';
-import { useEffect, useState } from 'react';
-import {fetchDashboard, type DashboardData} from '@/features/dashboard/api';
+import { Chip } from '@heroui/react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { DeleteUserDialog } from '@/features/users/components/DeleteUserDialog';
+import { fetchDashboard } from '@/features/dashboard/api';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -12,42 +15,24 @@ import type { DashboardPeriod } from '@/features/dashboard/types';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
 import type { User } from '@/features/users/types';
-import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
 
-const fullName = (user: User) =>
-  `${user.firstName} ${user.lastName}`;
 
 export function ManagerDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('week');
-  const [teamId, setTeamId] = useState<string>('all');
+  const [teamId, setTeamId] = useState('all');
 
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-const [error, setError] = useState('');
-
-useEffect(() => {
-  const controller = new AbortController();
-
-  setDashboard(null);
-  setError('');
-
-  fetchDashboard(teamId, period, controller.signal)
-    .then(setDashboard)
-    .catch((error: Error) => {
-      if (error.name !== 'AbortError') {
-        setError(error.message);
-      }
-    });
-
-  return () => controller.abort();
-}, [teamId, period]);
-
-const scoped = dashboard?.users ?? [];
+  const { data: currentUser } = useCurrentUser();
+  const { data: dashboard, error } = useQuery({
+    queryKey: ['dashboard', teamId, period],
+    queryFn: ({ signal }) => fetchDashboard(teamId, period, signal),
+  });
+  const scoped = dashboard?.users ?? [];
 
   const openCreate = () => {
     setEditUser(null);
@@ -59,7 +44,7 @@ const scoped = dashboard?.users ?? [];
     setFormOpen(true);
   };
   if (error) {
-    return <p role='alert'>{error}</p>;
+    return <p role='alert'>{error.message}</p>;
   }
 
   if (!dashboard) {
@@ -76,16 +61,16 @@ const scoped = dashboard?.users ?? [];
             <Chip.Label>Espace manager</Chip.Label>
           </Chip>
         }
-        title={`Bonjour 👋`}
+        title={currentUser ? `Bonjour, ${currentUser.firstName}` : 'Bonjour'}
       />
 
       <DashboardToolbar
         teams={dashboard.teams}
-        period={period}
         teamId={teamId}
+        onTeamChange={setTeamId}
+        period={period}
         onCreateEmployee={openCreate}
         onPeriodChange={setPeriod}
-        onTeamChange={setTeamId}
       />
 
       {/*<AttentionAlert absentCount={absentCount} lateCount={lateCount} />*/}
@@ -133,25 +118,7 @@ const scoped = dashboard?.users ?? [];
         user={editUser}
         onOpenChange={setFormOpen}
       />
-      <ConfirmDialog
-        confirmLabel='Supprimer'
-        description={
-          <>
-            Vous allez supprimer{' '}
-            <strong>{deleteUser ? fullName(deleteUser) : ''}</strong>. Son
-            compte et ses accès seront définitivement invalidés.
-          </>
-        }
-        isOpen={deleteUser !== null}
-        title='Supprimer cet employé ?'
-        onConfirm={() => {
-          toast.danger('suprétion non connecté a l api', {
-            
-          });
-          setDeleteUser(null);
-        }}
-        onOpenChange={(open) => !open && setDeleteUser(null)}
-      />
+      <DeleteUserDialog user={deleteUser} onClose={() => setDeleteUser(null)} />
     </>
   );
 }

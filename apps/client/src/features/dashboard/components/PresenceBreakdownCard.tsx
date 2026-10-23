@@ -20,7 +20,9 @@ export function PresenceBreakdownCard({
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Répartition du jour</Card.Title>
+        <div className='flex items-center justify-between gap-2'>
+          <Card.Title>Répartition du jour</Card.Title>
+        </div>
         <Card.Description>Statut de présence de l’équipe</Card.Description>
       </Card.Header>
       <Card.Content>
