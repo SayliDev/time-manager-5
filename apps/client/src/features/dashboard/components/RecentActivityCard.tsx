@@ -1,6 +1,8 @@
 import { Card, Skeleton } from '@heroui/react';
-import { fullName, getUser } from '@/data/mock';
+import { getUser } from '@/data/mock';
 import { useActivity } from '@/data/mockQueries';
+import { fullName } from '@/features/users/lib/names';
+import { DemoBadge } from '@/shared/ui/DemoBadge';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
 
@@ -12,7 +14,10 @@ export function RecentActivityCard() {
   return (
     <Card>
       <Card.Header>
-        <Card.Title>Activité récente</Card.Title>
+        <div className='flex items-center justify-between gap-2'>
+          <Card.Title>Activité récente</Card.Title>
+          <DemoBadge />
+        </div>
         <Card.Description>Derniers pointages et alertes</Card.Description>
       </Card.Header>
       <Card.Content>

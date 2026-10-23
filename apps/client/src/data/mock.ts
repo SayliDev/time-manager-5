@@ -7,8 +7,13 @@ import type { User } from '@/features/users/types';
 import type { DayHours, TimeEntry } from '@/features/time/types';
 import type { ActivityItem } from '@/features/dashboard/types';
 import type { Kpi } from '@/features/reports/types';
+import { fullName, initials } from '@/features/users/lib/names';
 
-export const users: User[] = [
+export { fullName, initials };
+
+type DemoUser = Omit<User, 'createdAt' | 'deactivatedAt'>;
+
+const demoUsers: DemoUser[] = [
   {
     id: 'u1',
     firstName: 'John',
@@ -154,6 +159,12 @@ export const users: User[] = [
     lastClock: 'Arrivée 08:20',
   },
 ];
+
+export const users: User[] = demoUsers.map((user) => ({
+  ...user,
+  createdAt: null,
+  deactivatedAt: null,
+}));
 
 export const teams: Team[] = [
   {
@@ -377,15 +388,7 @@ export const kpis: Kpi[] = [
   },
 ];
 
-/** Employé « connecté » dans la démo, selon le rôle choisi */
-export const CURRENT_MANAGER_ID = 'u1';
-export const CURRENT_EMPLOYEE_ID = 'u2';
-
 export const getUser = (id: string | null | undefined) =>
   users.find((u) => u.id === id);
 export const getTeam = (id: string | null | undefined) =>
   teams.find((t) => t.id === id);
-export const fullName = (u: Pick<User, 'firstName' | 'lastName'>) =>
-  `${u.firstName} ${u.lastName}`;
-export const initials = (u: Pick<User, 'firstName' | 'lastName'>) =>
-  `${u.firstName[0]}${u.lastName[0]}`;

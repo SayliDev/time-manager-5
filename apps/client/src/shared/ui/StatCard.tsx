@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp } from '@gravity-ui/icons';
 import { Card, Chip, Skeleton } from '@heroui/react';
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, ReactNode, SVGProps } from 'react';
 import type { TrendPoint } from '@/features/reports/types';
 import { Sparkline } from '@/shared/charts/Sparkline';
 import { formatDecimal } from '@/shared/lib/format';
@@ -15,6 +15,7 @@ interface StatCardProps {
   hint?: string;
   trend?: TrendPoint[];
   tone?: 'accent' | 'success' | 'warning' | 'danger';
+  badge?: ReactNode;
 }
 
 const toneClasses: Record<NonNullable<StatCardProps['tone']>, string> = {
@@ -41,6 +42,7 @@ export function StatCard({
   hint,
   trend,
   tone = 'accent',
+  badge,
 }: StatCardProps) {
   const isGood = delta === undefined ? true : delta > 0 === positiveIsGood;
   const DeltaIcon = delta !== undefined && delta < 0 ? ArrowDown : ArrowUp;
@@ -49,7 +51,10 @@ export function StatCard({
     <Card className='gap-3 overflow-hidden'>
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
-          <p className='truncate text-sm font-medium text-muted'>{label}</p>
+          <div className='flex h-5 items-center gap-2'>
+            <p className='truncate text-sm font-medium text-muted'>{label}</p>
+            {badge}
+          </div>
           <p className='tabular mt-1 flex items-baseline gap-1 text-3xl font-semibold tracking-tight text-foreground'>
             {value}
             {unit ? (

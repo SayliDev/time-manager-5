@@ -3,6 +3,7 @@ import { useHours } from '@/data/mockQueries';
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
+import { DemoBadge } from '@/shared/ui/DemoBadge';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 interface HoursOverviewCardProps {
@@ -15,11 +16,14 @@ export function HoursOverviewCard({ period }: HoursOverviewCardProps) {
   return (
     <Card className='lg:col-span-2'>
       <Card.Header>
-        <Card.Title>
-          {period === 'week'
-            ? 'Présentiel vs télétravail'
-            : 'Présentiel vs télétravail (mois)'}
-        </Card.Title>
+        <div className='flex items-center justify-between gap-2'>
+          <Card.Title>
+            {period === 'week'
+              ? 'Présentiel vs télétravail'
+              : 'Présentiel vs télétravail (mois)'}
+          </Card.Title>
+          <DemoBadge />
+        </div>
         <Card.Description>
           Comparaison des heures moyennes{' '}
           {period === 'week' ? 'par jour' : 'par semaine'} · objectif en
