@@ -11,8 +11,9 @@ import {
   toast,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { fullName } from '@/data/mock';
-import { useTeams, useUsers } from '@/data/mockQueries';
+import { fullName } from '@/shared/lib/user';
+import { useTeams } from '@/features/teams/hooks/useTeams';
+import { useUsers } from '@/features/users/hooks/useUsers';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
@@ -31,7 +32,7 @@ export function UsersPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-  const { data: users = [], isPending: usersLoading } = useUsers();
+  const { data: users = [], isPending: usersLoading, error: usersError } = useUsers();
   const { data: teams = [] } = useTeams();
 
   const filtered = useMemo(() => {
@@ -56,6 +57,8 @@ export function UsersPage() {
     setEditUser(user);
     setFormOpen(true);
   };
+
+  if (usersError) return <p role='alert'>{usersError.message}</p>;
 
   return (
     <>

@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '@heroui/react';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { authQueryKeys } from '@/features/auth/api/authApi';
+import { authQueryKeys } from '@/shared/api/client';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 
 function readTokenFromHash(): string | null {

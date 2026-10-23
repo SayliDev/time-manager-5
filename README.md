@@ -39,6 +39,9 @@ npm run dev
 
 ## Qualité
 
+Les conventions de nommage des fichiers sont décrites dans
+[docs/file-naming-conventions.md](docs/file-naming-conventions.md).
+
 ```bash
 cd apps/api && ruff check . && pytest
 cd apps/client && npm run lint && npm run build

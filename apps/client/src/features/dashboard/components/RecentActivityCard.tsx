@@ -1,5 +1,5 @@
 import { Card } from '@heroui/react';
-import { fullName } from '@/data/mock';
+import { fullName } from '@/shared/lib/user';
 import type { ActivityItem } from '@/features/dashboard/types';
 import type { User } from '@/features/users/types';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
@@ -9,6 +9,7 @@ interface RecentActivityCardProps {
   users: User[];
 }
 
+/** Associe chaque événement à son collaborateur ; ignore ceux absents de la liste fournie. */
 export function RecentActivityCard({ activity, users }: RecentActivityCardProps) {
   return (
     <Card>

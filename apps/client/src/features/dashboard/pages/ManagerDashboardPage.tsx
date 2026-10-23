@@ -1,7 +1,8 @@
 import { Pulse } from '@gravity-ui/icons';
-import { Chip, toast } from '@heroui/react';
-import { useEffect, useState } from 'react';
-import {fetchDashboard, type DashboardData} from '@/features/dashboard/api';
+import { Button, Card, Chip, toast } from '@heroui/react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchDashboard } from '@/shared/api/client';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -14,11 +15,14 @@ import { UserFormModal } from '@/features/users/components/UserFormModal';
 import type { User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { useProfile } from '@/features/auth/hooks/useProfile';
+import { Link } from 'react-router-dom';
 
 const fullName = (user: User) =>
   `${user.firstName} ${user.lastName}`;
 
 export function ManagerDashboardPage() {
+  const profile = useProfile();
   const [period, setPeriod] = useState<DashboardPeriod>('week');
   const [teamId, setTeamId] = useState<string>('all');
 
@@ -27,27 +31,13 @@ export function ManagerDashboardPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-const [error, setError] = useState('');
+  const { data: dashboard, error, refetch, isFetching } = useQuery({
+    queryKey: ['dashboard', teamId, period],
+    queryFn: ({ signal }) => fetchDashboard(teamId, period, signal),
+    refetchInterval: 60_000,
+  });
 
-useEffect(() => {
-  const controller = new AbortController();
-
-  setDashboard(null);
-  setError('');
-
-  fetchDashboard(teamId, period, controller.signal)
-    .then(setDashboard)
-    .catch((error: Error) => {
-      if (error.name !== 'AbortError') {
-        setError(error.message);
-      }
-    });
-
-  return () => controller.abort();
-}, [teamId, period]);
-
-const scoped = dashboard?.users ?? [];
+  const scoped = dashboard?.users ?? [];
 
   const openCreate = () => {
     setEditUser(null);
@@ -58,12 +48,36 @@ const scoped = dashboard?.users ?? [];
     setEditUser(user);
     setFormOpen(true);
   };
-  if (error) {
-    return <p role='alert'>{error}</p>;
+  if (error || profile.error) {
+    return <p role='alert'>{(error || profile.error)?.message}</p>;
   }
 
-  if (!dashboard) {
+  if (!dashboard || profile.isPending) {
     return <p role='status'>Chargement…</p>;
+  }
+
+  if (profile.data?.role === 'manager' && dashboard.teams.length === 0) {
+    return (
+      <>
+        <PageHeader title='Tableau de bord' description={`Bonjour ${profile.data.firstName}`} />
+        <Card>
+          <Card.Header>
+            <Card.Title>Aucune équipe à gérer</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <p role='status'>
+              Votre compte manager n’est encore responsable d’aucune équipe.
+              Un administrateur doit vous rattacher à une équipe pour afficher ses collaborateurs,
+              ses pointages et ses indicateurs.
+            </p>
+          </Card.Content>
+          <Card.Footer className='gap-3'>
+            <Button isDisabled={isFetching} onPress={() => { void refetch(); }}>Actualiser</Button>
+            <Link to={`/dashboard/time?user_id=${encodeURIComponent(profile.data.id)}`}>Voir mes pointages</Link>
+          </Card.Footer>
+        </Card>
+      </>
+    );
   }
 
   return (
@@ -91,10 +105,11 @@ const scoped = dashboard?.users ?? [];
       {/*<AttentionAlert absentCount={absentCount} lateCount={lateCount} />*/}
 
       <DashboardKpis
-        alerts={dashboard.stats.alerts}
+        indicators={dashboard.kpis}
+        alerts={dashboard.kpis.alerts}
         clockedIn={dashboard.stats.clockedToday}
-        attendance={dashboard.stats.attendance}
-        averageWeeklyHours={dashboard.stats.averageWeeklyHours}
+        attendance={dashboard.kpis.attendance_rate.value}
+        averageWeeklyHours={dashboard.kpis.avg_weekly_hours.value}
         totalEmployees={scoped.length}
 />
 

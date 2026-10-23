@@ -7,6 +7,8 @@
 
 ## Frontend
 
+- `cd apps/client && npm test`: API adapter tests (authentication, date/team filters,
+  open sessions and clocking conflicts), using Node's test runner and TypeScript.
 - `cd apps/client && npm run lint`: ESLint checks.
 - `cd apps/client && npm run build`: TypeScript and Vite production build.
 

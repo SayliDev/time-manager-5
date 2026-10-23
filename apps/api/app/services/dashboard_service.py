@@ -10,6 +10,10 @@ WORKDAY_START = time(9)
 
 
 def period_bounds(day: date, period: str) -> tuple[date, date]:
+    """Détermine les bornes d’une semaine ou d’un mois, avec fin exclusive.
+
+    La semaine commence le lundi ; les valeurs de period sont validées en route.
+    """
     if period == "week":
         start = day - timedelta(days=day.weekday())
         return start, start + timedelta(days=7)
@@ -20,6 +24,10 @@ def period_bounds(day: date, period: str) -> tuple[date, date]:
 
 
 def work_mode(session) -> str:
+    """Normalise les valeurs historiques de work_mode pour les vues dashboard.
+
+    Retourne present, remote ou unknown si la valeur ne peut pas être reconnue.
+    """
     mode = str(session.get("work_mode") or "").strip().lower()
     if mode in {"remote", "teletravail", "télétravail", "distanciel", "distancielle"}:
         return "remote"
@@ -43,6 +51,11 @@ def build_dashboard(
     period: str,
     cutoff: datetime,
 ) -> dict:
+    """Construit la projection historique du dashboard à la date de référence.
+
+    Les calculs utilisent le calendrier de Paris et ignorent les sessions
+    annulées ou futures. Le périmètre doit déjà être filtré par l’appelant.
+    """
     week_start, week_end = period_bounds(reference_date, "week")
     start, end = period_bounds(reference_date, period)
 
@@ -53,6 +66,7 @@ def build_dashboard(
             by_user[session["id_user"]].append(session)
 
     def hours(sessions, lower, upper):
+        """Cumule les sessions terminées avant cutoff sur des journées à fin exclusive."""
         completed = [
             session
             for session in sessions
@@ -64,6 +78,7 @@ def build_dashboard(
         return duration.total_seconds() / 3600
 
     def hour_totals(sessions, lower, upper, denominator=1):
+        """Ventile les heures totales par mode, éventuellement en moyenne par personne."""
         return {
             "hours": round(hours(sessions, lower, upper) / denominator, 2),
             "onsite": round(hours(
@@ -77,6 +92,7 @@ def build_dashboard(
         }
 
     def day_bars(sessions, denominator=1):
+        """Prépare les sept points quotidiens de la semaine, jours sans travail inclus."""
         return [
             {
                 "day": DAY_NAMES[index],

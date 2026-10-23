@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { authQueryKeys, getMe } from '@/features/auth/api/authApi';
+import { authQueryKeys, getMe } from '@/shared/api/client';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 
 export function useSession() {

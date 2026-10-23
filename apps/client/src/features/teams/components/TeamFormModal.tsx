@@ -15,7 +15,8 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
-import { fullName, users } from '@/data/mock';
+import { fullName } from '@/shared/lib/user';
+import { useUsers } from '@/features/users/hooks/useUsers';
 import type { Team } from '@/features/teams/types';
 
 interface TeamFormModalProps {
@@ -25,13 +26,15 @@ interface TeamFormModalProps {
 }
 
 const FORM_ID = 'team-form';
-const managers = users.filter((u) => u.role === 'manager');
+
 
 export function TeamFormModal({
   isOpen,
   onOpenChange,
   team,
 }: TeamFormModalProps) {
+  const { data: users = [] } = useUsers();
+  const managers = users.filter(u => u.role === 'manager');
   const isEdit = Boolean(team);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

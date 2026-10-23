@@ -12,7 +12,8 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
-import { fullName, teams } from '@/data/mock';
+import { fullName } from '@/shared/lib/user';
+import { useTeams } from '@/features/teams/hooks/useTeams';
 import type { User } from '@/features/users/types';
 
 interface UserFormModalProps {
@@ -28,6 +29,7 @@ export function UserFormModal({
   onOpenChange,
   user,
 }: UserFormModalProps) {
+  const { data: teams = [] } = useTeams();
   const isEdit = Boolean(user);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

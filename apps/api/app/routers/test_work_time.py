@@ -18,10 +18,15 @@ router = APIRouter(prefix="/test-work-time", tags=["Tests temps de travail"])
 
 @router.get("/data")
 def get_chart_data(user_id: int = Query(..., gt=0)):
+    """Prépare les graphiques de démonstration à la date fixe du 2 octobre 2026.
+
+    Ce routeur de test n’est pas enregistré dans l’application principale.
+    """
     sessions = list(work_session.get_all_by_user_id(user_id))# Date de référence pour tester les données de démonstration
     today = datetime(2026, 10, 2).date()
 
     def bar(label, duration):
+        """Présente une durée en heures décimales et sous forme lisible pour le graphique."""
         return {
             "label": label,
             "hours": duration.total_seconds() / 3600,
@@ -67,6 +72,7 @@ def get_chart_data(user_id: int = Query(..., gt=0)):
 
 @router.get("", response_class=HTMLResponse)
 def test_page():
+    """Retourne la page HTML autonome de vérification des calculs de temps."""
     return HTML_PAGE
 
 

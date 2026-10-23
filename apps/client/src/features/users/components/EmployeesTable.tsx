@@ -11,7 +11,8 @@ import {
   type SortDescriptor,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { fullName, getTeam } from '@/data/mock';
+import { fullName } from '@/shared/lib/user';
+import { useTeams } from '@/features/teams/hooks/useTeams';
 import type { User } from '@/features/users/types';
 import { PresenceChip, RoleChip } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
@@ -20,7 +21,7 @@ import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 const WEEKLY_TARGET = 35;
 
-/** Largeurs variées d'une ligne à l'autre pour un rendu plus naturel. */
+/** Largeurs variÃ©es d'une ligne Ã  l'autre pour un rendu plus naturel. */
 const NAME_WIDTHS = ['w-28', 'w-36', 'w-24', 'w-32', 'w-40', 'w-28'];
 const EMAIL_WIDTHS = ['w-44', 'w-52', 'w-40', 'w-48', 'w-56', 'w-44'];
 
@@ -47,6 +48,8 @@ export function EmployeesTable({
   isLoading = false,
   skeletonRows = 6,
 }: EmployeesTableProps) {
+  const { data: teams = [] } = useTeams();
+  const getTeam = (id: string | null | undefined) => teams.find(t => t.id === id);
   const [sort, setSort] = useState<SortDescriptor>({
     column: 'name',
     direction: 'ascending',
@@ -61,8 +64,8 @@ export function EmployeesTable({
         case 'presence':
           return a.presence.localeCompare(b.presence);
         case 'team':
-          return (getTeam(a.teamId)?.name ?? '').localeCompare(
-            getTeam(b.teamId)?.name ?? '',
+          return (teams.find(t => t.id === a.teamId)?.name ?? '').localeCompare(
+            teams.find(t => t.id === b.teamId)?.name ?? '',
           );
         default:
           return fullName(a).localeCompare(fullName(b));
@@ -72,7 +75,7 @@ export function EmployeesTable({
       sort.direction === 'descending' ? -compare(a, b) : compare(a, b),
     );
     return list;
-  }, [users, sort]);
+  }, [users, sort, teams]);
 
   const header =
     (label: string) =>

@@ -76,7 +76,7 @@ export function EntriesTable({
                     </Table.Cell>
                     <Table.Cell>
                       <span className='tabular text-sm font-medium'>
-                        {entry.hours > 0 ? formatHours(entry.hours) : '—'}
+                        {entry.hours !== null ? formatHours(entry.hours) : '—'}
                       </span>
                     </Table.Cell>
                     <Table.Cell>

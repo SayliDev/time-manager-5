@@ -1,3 +1,4 @@
+import type { Indicator } from '@/shared/api/client';
 import {
   Clock,
   PersonWorker,
@@ -7,6 +8,7 @@ import {
 import { StatCard } from '@/shared/ui/StatCard';
 
 interface DashboardKpisProps {
+  indicators: { attendance_rate: Indicator; avg_weekly_hours: Indicator };
   clockedIn: number;
   alerts: number | null;
   totalEmployees: number;
@@ -18,6 +20,7 @@ const gridClassName =
   'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 3xl:gap-5 4xl:gap-6';
 
 export function DashboardKpis({
+  indicators,
   clockedIn,
   alerts,
   totalEmployees,
@@ -31,6 +34,8 @@ export function DashboardKpis({
       className={gridClassName}
     >
       <StatCard
+        delta={indicators.attendance_rate.delta}
+        trend={indicators.attendance_rate.trend.map((value, i) => ({ label: String(i), value }))}
         icon={Pulse}
         label='Taux de présence'
         unit={attendance === null ? undefined : '%'}
@@ -38,6 +43,8 @@ export function DashboardKpis({
       />
       <StatCard
         hint='vs période préc.'
+        delta={indicators.avg_weekly_hours.delta}
+        trend={indicators.avg_weekly_hours.trend.map((value, i) => ({ label: String(i), value }))}
         icon={Clock}
         label='Heures moyennes'
         unit='h'

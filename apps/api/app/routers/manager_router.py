@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
-from app.repositories import dashboard_repository, users_repository
+from app.repositories import users_repository
 from app.services.dashboard_service import build_dashboard, period_bounds
 from app.services.time_service import PARIS, _midnight
 from core.security import decode_access_token
@@ -20,12 +20,18 @@ bearer = OAuth2PasswordBearer(
 )
 
 
-def require_manager(
+def get_current_user(
     request: Request,
     token: str | None = Depends(bearer),
 ) -> dict:
     # Preserve bearer authentication, but let a valid Microsoft cookie
     # replace an expired or invalid token left in the browser's local storage.
+    """Authentifie le compte actif via un JWT Bearer ou un cookie Microsoft.
+
+    Le cookie sert de repli uniquement si le Bearer est absent ou invalide.
+    Un Bearer valide détermine toujours le compte, quel que soit son rôle.
+    Renvoie 401 pour une session ou un compte invalide, 503 si la base échoue.
+    """
     for candidate in (token, request.cookies.get("access_token")):
         if not candidate:
             continue
@@ -56,6 +62,12 @@ def require_manager(
             detail="Compte indisponible.",
         )
 
+    return user
+
+
+def require_manager(request: Request, token: str | None = Depends(bearer)) -> dict:
+    """Exige un compte actif manager ou admin ; refuse un employé avec 403."""
+    user = get_current_user(request, token)
     if user["role"] not in {"manager", "admin"}:
         raise HTTPException(
             status_code=403,
@@ -72,6 +84,11 @@ def get_dashboard(
     reference_date: date | None = None,
     manager: dict = Depends(require_manager),
 ):
+    """Conserve la réponse agrégée historique du dashboard pour les managers.
+
+    Applique le périmètre des équipes et interdit une référence future.
+    Les nouvelles pages utilisent les routes détaillées /api/dashboard/*.
+    """
     now = datetime.now(PARIS)
     day = reference_date or now.date()
 
@@ -81,22 +98,15 @@ def get_dashboard(
             detail="La date de référence ne peut pas être future.",
         )
 
-    cutoff = (
-        now
-        if day == now.date()
-        else _midnight(day + timedelta(days=1))
-    )
+    cutoff = now if day == now.date() else _midnight(day + timedelta(days=1))
 
     start, _ = period_bounds(day, period)
     week_start, _ = period_bounds(day, "week")
 
     try:
-        data = dashboard_repository.load_dashboard(
-            reference_date=day,
-            team_id=team_id,
-            start_at=_midnight(min(start, week_start)),
-            cutoff=cutoff,
-        )
+        from app.repositories.time_api import load_scope
+
+        data = load_scope(manager, day, team_id)
     except LookupError as error:
         raise HTTPException(
             status_code=404,
@@ -108,9 +118,24 @@ def get_dashboard(
             detail="Base de données indisponible.",
         ) from error
 
-    return build_dashboard(
+    result = build_dashboard(
         data,
         reference_date=day,
         period=period,
         cutoff=cutoff,
     )
+    from app.services.time_api import presence
+
+    statuses = {p["id_user"]: p for p in presence(data, day, cutoff)}
+    result["presence"] = {
+        key: 0 for key in ("present", "remote", "late", "absent", "off")
+    }
+    for employee in result["users"]:
+        state = statuses[int(employee["id"])]
+        employee["presence"] = state["presence"]
+        employee["weeklyHours"] = state["weekly_hours"]
+        result["presence"][state["presence"]] += 1
+    result["stats"]["alerts"] = (
+        result["presence"]["late"] + result["presence"]["absent"]
+    )
+    return result

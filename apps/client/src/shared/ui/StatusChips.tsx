@@ -43,6 +43,7 @@ export function EntryStatusChip({ status }: { status: EntryStatus }) {
 }
 
 const workModeMap: Record<WorkMode, { label: string; color: ChipColor }> = {
+  unknown: { label: 'Non renseigné', color: 'default' },
   onsite: { label: 'Présentiel', color: 'accent' },
   remote: { label: 'Distanciel', color: 'success' },
 };

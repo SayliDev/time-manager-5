@@ -12,11 +12,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./database/init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/init/10-time-api.sql:/docker-entrypoint-initdb.d/10-time-api.sql:ro
+      - ./database/init/11-team-managers.sql:/docker-entrypoint-initdb.d/11-team-managers.sql:ro
       - ./database/seeds/02-donnees-test.sql:/docker-entrypoint-initdb.d/02-donnees-test.sql:ro
       - ./database/seeds/04-varier-horaires.sql:/docker-entrypoint-initdb.d/04-varier-horaires.sql:ro
       - ./database/seeds/06-scenarios-presence.sql:/docker-entrypoint-initdb.d/06-scenarios-presence.sql:ro
       - ./database/seeds/07-octobre-complet.sql:/docker-entrypoint-initdb.d/07-octobre-complet.sql:ro
       - ./database/seeds/08-separer-sarah-john.sql:/docker-entrypoint-initdb.d/08-separer-sarah-john.sql:ro
+      - ./database/seeds/09-heures-supplementaires.sql:/docker-entrypoint-initdb.d/09-heures-supplementaires.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 5s

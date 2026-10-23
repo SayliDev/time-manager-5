@@ -2,14 +2,13 @@ import { Briefcase, Envelope, Handset, Pencil } from '@gravity-ui/icons';
 import {
   Button,
   Drawer,
-  Label,
-  ProgressBar,
   Separator,
   Skeleton,
 } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
-import { fullName, getTeam } from '@/data/mock';
-import { useTimeEntries, useUserHours } from '@/data/mockQueries';
+import { fullName } from '@/shared/lib/user';
+import { useTeams } from '@/features/teams/hooks/useTeams';
+import { useTimeEntries, useUserHours, useTimeSummary } from '@/features/time/hooks/useTimekeeping';
 import type { User } from '@/features/users/types';
 import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
@@ -20,7 +19,7 @@ import {
 } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
-import { formatDecimal } from '@/shared/lib/format';
+import { formatDecimal, currentWeekRange } from '@/shared/lib/format';
 
 interface EmployeeDrawerProps {
   user: User | null;
@@ -28,7 +27,6 @@ interface EmployeeDrawerProps {
   onEdit?: (user: User) => void;
 }
 
-const WEEKLY_TARGET = 35;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', {
@@ -43,15 +41,15 @@ export function EmployeeDrawer({
   onEdit,
 }: EmployeeDrawerProps) {
   const navigate = useNavigate();
+  const { data: teams = [] } = useTeams();
+  const getTeam = (id: string | null | undefined) => teams.find(t => t.id === id);
   const team = getTeam(user?.teamId);
   const hours = useUserHours(user?.id);
   const entries = useTimeEntries(user?.id);
   const hoursLoading = hours.isPending || hours.isPlaceholderData;
   const entriesLoading = entries.isPending || entries.isPlaceholderData;
-  const progress = user
-    ? Math.min(100, (user.weeklyHours / WEEKLY_TARGET) * 100)
-    : 0;
-  const overtime = user ? Math.max(0, user.weeklyHours - WEEKLY_TARGET) : 0;
+  const summary = useTimeSummary(user?.id, currentWeekRange());
+  const overtime = summary.data?.overtime_hours ?? 0;
 
   return (
     <Drawer.Backdrop
@@ -111,29 +109,17 @@ export function EmployeeDrawer({
                   aria-label='Heures de la semaine'
                   className='flex flex-col gap-3'
                 >
-                  <ProgressBar
-                    aria-label='Heures de la semaine'
-                    color={overtime > 0 ? 'warning' : 'accent'}
-                    value={progress}
-                  >
-                    <div className='flex items-baseline justify-between'>
-                      <Label>Cette semaine</Label>
-                      <span className='tabular text-sm text-muted'>
-                        <strong className='text-base font-semibold text-foreground'>
-                          {formatDecimal(user.weeklyHours)} h
-                        </strong>{' '}
-                        / {WEEKLY_TARGET} h
-                      </span>
-                    </div>
-                    <ProgressBar.Track>
-                      <ProgressBar.Fill />
-                    </ProgressBar.Track>
-                  </ProgressBar>
+                  <p className='flex items-baseline justify-between'>
+                    <span>Cette semaine</span>
+                    <strong>{formatDecimal(user.weeklyHours)} h</strong>
+                  </p>
+                  {summary.isError && <p role='alert'>{summary.error.message}</p>}
                   {overtime > 0 ? (
                     <p className='text-xs text-warning'>
                       +{formatDecimal(overtime)} h au-dessus de l’objectif
                     </p>
                   ) : null}
+                  {hours.isError && <p role='alert'>{hours.error.message}</p>}
                   <SkeletonSwap
                     isLoading={hoursLoading}
                     skeleton={<ChartSkeleton height={170} />}
@@ -141,7 +127,6 @@ export function EmployeeDrawer({
                     <HoursBarChart
                       data={hours.data ?? []}
                       height={170}
-                      target={7}
                     />
                   </SkeletonSwap>
                 </section>
@@ -155,6 +140,7 @@ export function EmployeeDrawer({
                   <h3 className='mb-1 text-sm font-semibold'>
                     Derniers pointages
                   </h3>
+                  {entries.isError && <p role='alert'>{entries.error.message}</p>}
                   <SkeletonSwap
                     isLoading={entriesLoading}
                     skeleton={
@@ -193,7 +179,7 @@ export function EmployeeDrawer({
                           </div>
                           <div className='flex items-center gap-3'>
                             <span className='tabular text-sm font-medium'>
-                              {formatDecimal(entry.hours)} h
+                              {entry.hours === null ? '\u2014' : `${formatDecimal(entry.hours)} h`}
                             </span>
                             <EntryStatusChip status={entry.status} />
                           </div>
@@ -209,7 +195,7 @@ export function EmployeeDrawer({
                   variant='tertiary'
                   onPress={() => {
                     onOpenChange(false);
-                    navigate('/mcp/time');
+                    navigate(`/dashboard/time?user_id=${encodeURIComponent(user.id)}`);
                   }}
                 >
                   Voir tous les pointages

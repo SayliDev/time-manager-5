@@ -8,6 +8,7 @@ interface HoursOverviewCardProps {
   data: DayHours[];
 }
 
+/** Affiche les heures réelles par mode avec un libellé adapté à la période choisie. */
 export function HoursOverviewCard({ period, data }: HoursOverviewCardProps) {
   return (
     <Card className='lg:col-span-2'>

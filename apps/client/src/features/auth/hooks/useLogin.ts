@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { authQueryKeys, login } from '@/features/auth/api/authApi';
+import { authQueryKeys, login } from '@/shared/api/client';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 import type { LoginCredentials } from '@/features/auth/types';
 

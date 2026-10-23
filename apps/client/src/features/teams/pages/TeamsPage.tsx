@@ -21,8 +21,9 @@ import {
   toast,
 } from '@heroui/react';
 import { useState } from 'react';
-import { fullName, getUser, initials } from '@/data/mock';
-import { useTeams } from '@/data/mockQueries';
+import { fullName, initials } from '@/shared/lib/user';
+import { useTeams } from '@/features/teams/hooks/useTeams';
+import { useUsers } from '@/features/users/hooks/useUsers';
 import { TeamFormModal } from '@/features/teams/components/TeamFormModal';
 import type { Team } from '@/features/teams/types';
 import { formatDecimal } from '@/shared/lib/format';
@@ -39,12 +40,14 @@ const newTeamTileClassName =
   'flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border text-muted outline-none transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-soft-foreground focus-visible:ring-2 focus-visible:ring-focus';
 
 export function TeamsPage() {
+  const { data: users = [] } = useUsers();
+  const getUser = (id: string | undefined) => users.find(u => u.id === id);
   const [formOpen, setFormOpen] = useState(false);
   const [editTeam, setEditTeam] = useState<Team | null>(null);
   const [viewTeam, setViewTeam] = useState<Team | null>(null);
   const [deleteTeam, setDeleteTeam] = useState<Team | null>(null);
 
-  const { data: teams = [], isPending: teamsLoading } = useTeams();
+  const { data: teams = [], isPending: teamsLoading, error: teamsError } = useTeams();
 
   const openCreate = () => {
     setEditTeam(null);
@@ -57,6 +60,8 @@ export function TeamsPage() {
   };
 
   const viewManager = getUser(viewTeam?.managerId);
+
+  if (teamsError) return <p role='alert'>{teamsError.message}</p>;
 
   return (
     <>

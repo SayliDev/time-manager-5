@@ -10,6 +10,12 @@ def load_dashboard(
     start_at: datetime,
     cutoff: datetime,
 ) -> dict:
+    """Charge un instantané cohérent des équipes, utilisateurs et sessions.
+
+    Les affectations sont évaluées à reference_date et les sessions avant cutoff.
+    Cette lecture historique ne vérifie pas les droits du demandeur : les routes
+    actuelles utilisent load_scope pour appliquer les autorisations.
+    """
     with get_connection() as connection:
         connection.execute(
             "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
