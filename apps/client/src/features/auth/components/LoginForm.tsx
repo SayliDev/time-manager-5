@@ -46,7 +46,11 @@ function LoginForm({ onSignIn }: { onSignIn: () => void }) {
       nextFieldErrors.password = 'Veuillez renseigner votre mot de passe.';
     }
 
-    if (Object.keys(nextFieldErrors).length > 0) {
+    if (
+      typeof username !== 'string' ||
+      typeof password !== 'string' ||
+      Object.keys(nextFieldErrors).length > 0
+    ) {
       setFieldErrors(nextFieldErrors);
       setIsSubmitting(false);
       return;

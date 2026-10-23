@@ -33,7 +33,7 @@ export function TeamOverviewCard({
         <EmployeesTable
           compact
           ariaLabel='Employés de l’équipe'
-          users={users.slice(0, 6)}
+          users={users}
           onDelete={onDelete}
           onEdit={onEdit}
           onView={onView}

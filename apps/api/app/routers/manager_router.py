@@ -24,12 +24,18 @@ def require_manager(
     request: Request,
     token: str | None = Depends(bearer),
 ) -> dict:
-    token = token or request.cookies.get("access_token")
-
-    try:
-        payload = decode_access_token(token) if token else {}
-        user_id = int(payload["sub"])
-    except (JWTError, KeyError, ValueError, TypeError):
+    # Preserve bearer authentication, but let a valid Microsoft cookie
+    # replace an expired or invalid token left in the browser's local storage.
+    for candidate in (token, request.cookies.get("access_token")):
+        if not candidate:
+            continue
+        try:
+            payload = decode_access_token(candidate)
+            user_id = int(payload["sub"])
+            break
+        except (JWTError, KeyError, ValueError, TypeError):
+            continue
+    else:
         raise HTTPException(
             status_code=401,
             detail="Connexion requise.",

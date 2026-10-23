@@ -1,10 +1,12 @@
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from app.services.time_service import PARIS, _midnight, calc_work_time
 
 
 DAY_NAMES = ("Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim")
+# Demo schedule until individual working calendars are available.
+WORKDAY_START = time(9)
 
 
 def period_bounds(day: date, period: str) -> tuple[date, date]:
@@ -63,16 +65,19 @@ def build_dashboard(
     users = []
     activity = []
     clocked_in = 0
+    attended = 0
 
     presence = {
         "present": 0,
         "remote": 0,
-        "late": None,
-        "absent": None,
+        "late": 0,
+        "absent": 0,
     }
 
     day_start = _midnight(reference_date)
     day_end = _midnight(reference_date + timedelta(days=1))
+    working_day = reference_date.weekday() < 5
+    expected_start = datetime.combine(reference_date, WORKDAY_START, tzinfo=PARIS)
 
     for user in data["users"]:
         sessions = sorted(
@@ -105,6 +110,7 @@ def build_dashboard(
         ]
 
         clocked_in += bool(active)
+        attended += bool(todays)
 
         mode = (
             str(todays[-1].get("work_mode") or "").strip().lower()
@@ -112,7 +118,7 @@ def build_dashboard(
             else ""
         )
 
-        if mode in {"remote", "teletravail", "télétravail"}:
+        if mode in {"remote", "teletravail", "télétravail", "distanciel", "distancielle"}:
             presence_status = "remote"
         elif mode in {
             "onsite",
@@ -125,6 +131,13 @@ def build_dashboard(
             presence_status = "present"
         else:
             presence_status = "unknown"
+
+        if working_day:
+            if not todays and cutoff > expected_start:
+                presence_status = "absent"
+            elif todays and todays[0]["start_at"] > expected_start:
+                # The first clock-in determines lateness, not the lunch return.
+                presence_status = "late"
 
         if presence_status in presence:
             presence[presence_status] += 1
@@ -296,8 +309,11 @@ def build_dashboard(
         "referenceDate": reference_date.isoformat(),
         "stats": {
             "clockedIn": clocked_in,
-            "attendance": None,
-            "alerts": None,
+            "clockedToday": attended,
+            "attendance": (
+                round(attended / len(users) * 100, 1) if users else None
+            ),
+            "alerts": presence["late"] + presence["absent"],
             "averageWeeklyHours": round(
                 hours(selected_sessions, week_start, week_end)
                 / denominator,

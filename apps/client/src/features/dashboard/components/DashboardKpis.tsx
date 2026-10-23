@@ -45,7 +45,7 @@ export function DashboardKpis({
       <StatCard
         hint={`sur ${totalEmployees} collaborateurs`}
         icon={PersonWorker}
-        label='Pointés maintenant'
+        label='Ayant pointé aujourd’hui'
         tone='success'
         value={String(clockedIn)}
       />

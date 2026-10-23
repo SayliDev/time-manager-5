@@ -1,13 +1,14 @@
 import { Card } from '@heroui/react';
-import { monthHours, weekHours } from '@/data/mock';
+import type { DayHours } from '@/features/time/types';
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
 
 interface HoursOverviewCardProps {
   period: DashboardPeriod;
+  data: DayHours[];
 }
 
-export function HoursOverviewCard({ period }: HoursOverviewCardProps) {
+export function HoursOverviewCard({ period, data }: HoursOverviewCardProps) {
   return (
     <Card className='lg:col-span-2'>
       <Card.Header>
@@ -25,7 +26,7 @@ export function HoursOverviewCard({ period }: HoursOverviewCardProps) {
       <Card.Content>
         <HoursBarChart
           compareModes
-          data={period === 'week' ? weekHours : monthHours}
+          data={data}
           target={period === 'week' ? 7 : 35}
           targetLabel={period === 'week' ? '7 h' : '35 h'}
         />

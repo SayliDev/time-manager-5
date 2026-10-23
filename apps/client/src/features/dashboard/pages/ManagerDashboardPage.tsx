@@ -92,7 +92,7 @@ const scoped = dashboard?.users ?? [];
 
       <DashboardKpis
         alerts={dashboard.stats.alerts}
-        clockedIn={dashboard.stats.clockedIn}
+        clockedIn={dashboard.stats.clockedToday}
         attendance={dashboard.stats.attendance}
         averageWeeklyHours={dashboard.stats.averageWeeklyHours}
         totalEmployees={scoped.length}
@@ -105,8 +105,7 @@ const scoped = dashboard?.users ?? [];
         />
 
         <PresenceBreakdownCard
-          counts={dashboard.presence}
-          total={scoped.length}
+          users={scoped}
         />
       </section>
 

@@ -1,8 +1,15 @@
 import { Card } from '@heroui/react';
-import { activity, fullName, getUser } from '@/data/mock';
+import { fullName } from '@/data/mock';
+import type { ActivityItem } from '@/features/dashboard/types';
+import type { User } from '@/features/users/types';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
 
-export function RecentActivityCard() {
+interface RecentActivityCardProps {
+  activity: ActivityItem[];
+  users: User[];
+}
+
+export function RecentActivityCard({ activity, users }: RecentActivityCardProps) {
   return (
     <Card>
       <Card.Header>
@@ -12,7 +19,7 @@ export function RecentActivityCard() {
       <Card.Content>
         <ol className='flex flex-col gap-4'>
           {activity.map((item) => {
-            const user = getUser(item.userId);
+            const user = users.find((user) => user.id === item.userId);
             if (!user) return null;
             const tone =
               item.type === 'alert'

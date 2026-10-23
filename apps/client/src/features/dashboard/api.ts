@@ -10,6 +10,7 @@ export interface DashboardData {
   activity: ActivityItem[];
   stats: {
     clockedIn: number;
+    clockedToday: number;
     attendance: number | null;
     alerts: number | null;
     averageWeeklyHours: number;
