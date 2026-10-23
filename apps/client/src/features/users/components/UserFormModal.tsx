@@ -12,8 +12,10 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
-import { fullName, teams } from '@/data/mock';
-import type { User } from '@/features/users/types';
+import { useCreateUser } from '@/features/users/hooks/useUserMutations';
+import { fullName } from '@/features/users/lib/names';
+import type { Role, User } from '@/features/users/types';
+import { ApiError } from '@/shared/api/client';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface UserFormModalProps {
 }
 
 const FORM_ID = 'user-form';
+const MIN_PASSWORD_LENGTH = 8;
 
 export function UserFormModal({
   isOpen,
@@ -29,17 +32,39 @@ export function UserFormModal({
   user,
 }: UserFormModalProps) {
   const isEdit = Boolean(user);
+  const createUser = useCreateUser();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // TODO
+    if (isEdit) return;
+
     const data = new FormData(e.currentTarget);
-    const name = `${data.get('firstName')} ${data.get('lastName')}`;
-    toast.success(isEdit ? 'Employé mis à jour' : 'Employé créé', {
-      description: isEdit
-        ? `Les informations de ${name} ont été enregistrées.`
-        : `${name} pourra se connecter avec son email professionnel.`,
+    const field = (name: string) => String(data.get(name) ?? '').trim();
+    const input = {
+      firstName: field('firstName'),
+      lastName: field('lastName'),
+      email: field('email'),
+      password: String(data.get('password') ?? ''),
+      role: field('role') as Role,
+      phone: field('phone') || null,
+    };
+
+    createUser.mutate(input, {
+      onSuccess: (created) => {
+        toast.success('Employé créé', {
+          description: `${fullName(created)} peut se connecter avec son email professionnel.`,
+        });
+        onOpenChange(false);
+      },
+      onError: (error) =>
+        toast.danger('Création impossible', {
+          description:
+            error instanceof ApiError
+              ? error.detail
+              : 'Une erreur est survenue.',
+        }),
     });
-    onOpenChange(false);
   };
 
   return (
@@ -67,7 +92,7 @@ export function UserFormModal({
             </p>
           </Modal.Header>
 
-          <Modal.Body>
+          <Modal.Body className='flex flex-col gap-4'>
             <Form
               className='grid grid-cols-1 gap-4 sm:grid-cols-2'
               id={FORM_ID}
@@ -76,6 +101,7 @@ export function UserFormModal({
               <TextField
                 isRequired
                 defaultValue={user?.firstName}
+                isDisabled={isEdit}
                 name='firstName'
                 variant='secondary'
               >
@@ -86,6 +112,7 @@ export function UserFormModal({
               <TextField
                 isRequired
                 defaultValue={user?.lastName}
+                isDisabled={isEdit}
                 name='lastName'
                 variant='secondary'
               >
@@ -98,6 +125,7 @@ export function UserFormModal({
                 isRequired
                 className='sm:col-span-2'
                 defaultValue={user?.email}
+                isDisabled={isEdit}
                 name='email'
                 type='email'
                 variant='secondary'
@@ -110,9 +138,28 @@ export function UserFormModal({
                 <FieldError />
               </TextField>
 
+              {isEdit ? null : (
+                <TextField
+                  isRequired
+                  className='sm:col-span-2'
+                  minLength={MIN_PASSWORD_LENGTH}
+                  name='password'
+                  type='password'
+                  variant='secondary'
+                >
+                  <Label>Mot de passe provisoire</Label>
+                  <Input autoComplete='new-password' />
+                  <Description>
+                    {MIN_PASSWORD_LENGTH} caractères minimum, à transmettre au
+                    collaborateur.
+                  </Description>
+                  <FieldError />
+                </TextField>
+              )}
+
               <TextField
-                className='sm:col-span-2'
-                defaultValue={user?.phone}
+                defaultValue={user?.phone ?? undefined}
+                isDisabled={isEdit}
                 name='phone'
                 type='tel'
                 variant='secondary'
@@ -126,6 +173,7 @@ export function UserFormModal({
                 isRequired
                 defaultValue={user?.role ?? 'employee'}
                 fullWidth
+                isDisabled={isEdit}
                 name='role'
                 placeholder='Choisir un rôle'
                 variant='secondary'
@@ -148,45 +196,22 @@ export function UserFormModal({
                   </ListBox>
                 </Select.Popover>
               </Select>
-
-              <Select
-                isRequired
-                defaultValue={user?.teamId ?? undefined}
-                fullWidth
-                name='teamId'
-                placeholder='Choisir une équipe'
-                variant='secondary'
-              >
-                <Label>Équipe</Label>
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {teams.map((team) => (
-                      <ListBox.Item
-                        id={team.id}
-                        key={team.id}
-                        textValue={team.name}
-                      >
-                        {team.name}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
             </Form>
           </Modal.Body>
 
           <Modal.Footer>
             <Button slot='close' variant='tertiary'>
-              Annuler
+              {isEdit ? 'Fermer' : 'Annuler'}
             </Button>
-            <Button form={FORM_ID} type='submit'>
-              {isEdit ? 'Enregistrer' : 'Créer l’employé'}
-            </Button>
+            {isEdit ? null : (
+              <Button
+                form={FORM_ID}
+                isPending={createUser.isPending}
+                type='submit'
+              >
+                Créer l’employé
+              </Button>
+            )}
           </Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>
