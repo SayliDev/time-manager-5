@@ -2,9 +2,11 @@
 import logging
 
 from datetime import datetime
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from app.dependencies import ADMIN, get_current_user, require_management
 from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
 
 logger = logging.getLogger(__name__)
@@ -31,13 +33,43 @@ class UserResponse(BaseModel):
 router = APIRouter(
     prefix="/api",
     tags=["Users"],
+    dependencies=[Depends(get_current_user)],
 )
+
+
+def ensure_can_manage_admin(current_user: dict[str, Any], *roles: str | None) -> None:
+    """Seul un administrateur peut créer, modifier ou désactiver un administrateur."""
+    if ADMIN in roles and current_user["role"] != ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seul un administrateur peut gérer un compte administrateur.",
+        )
+
+
+def get_existing_user(user_id: int) -> dict[str, Any]:
+    try:
+        user = get_user_by_id(user_id=user_id)
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user
 
 
 @router.post("/addUsers",response_model=UserResponse,status_code=status.HTTP_201_CREATED,)
 def create_user_endpoint(
     payload: UserCreate,
+    current_user: dict[str, Any] = Depends(require_management),
 ):
+    ensure_can_manage_admin(current_user, payload.role)
+
     try:
         user = create_user(
             first_name=payload.first_name,
@@ -58,23 +90,9 @@ def create_user_endpoint(
 
 @router.get("/getUsers/{user_id}",response_model=UserResponse,status_code=status.HTTP_200_OK,)
 def get_user_endpoint(user_id: int):
-    try:
-        user = get_user_by_id(user_id=user_id)
-
-        logger.info("User retrieved: id=%s", user_id)
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-        
-        return user 
-    except RuntimeError as error:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(error),
-        )
+    user = get_existing_user(user_id)
+    logger.info("User retrieved: id=%s", user_id)
+    return user
 
 @router.get("/getAllUsers",response_model=list[UserResponse],status_code=status.HTTP_200_OK,)
 def get_all_users_endpoint():
@@ -88,7 +106,19 @@ def get_all_users_endpoint():
         )
 
 @router.delete("/deactivateUser/{user_id}",status_code=status.HTTP_204_NO_CONTENT,)
-def deactivate_user_endpoint(user_id: int):
+def deactivate_user_endpoint(
+    user_id: int,
+    current_user: dict[str, Any] = Depends(require_management),
+):
+    if user_id == current_user["id_user"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vous ne pouvez pas désactiver votre propre compte.",
+        )
+
+    target = get_existing_user(user_id)
+    ensure_can_manage_admin(current_user, target["role"])
+
     try:
         deactivate_user(user_id=user_id)
     except RuntimeError as error:
@@ -99,7 +129,14 @@ def deactivate_user_endpoint(user_id: int):
     return None
 
 @router.put("/updateUser/{user_id}",response_model=UserResponse,status_code=status.HTTP_200_OK,)
-def update_user_endpoint(user_id: int, payload: UserCreate):
+def update_user_endpoint(
+    user_id: int,
+    payload: UserCreate,
+    current_user: dict[str, Any] = Depends(require_management),
+):
+    target = get_existing_user(user_id)
+    ensure_can_manage_admin(current_user, target["role"], payload.role)
+
     try:
         user = update_user(
             user_id=user_id,
@@ -126,7 +163,7 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(error),
-        )   
+        )
 
 @router.get("/userByEmail",response_model=UserResponse,status_code=status.HTTP_200_OK,)
 def get_user_by_email_endpoint(email: str):

@@ -1,5 +1,5 @@
 import { Avatar } from '@heroui/react';
-import { fullName, initials } from '@/data/mock';
+import { fullName, initials } from '@/features/users/lib/names';
 import type { User } from '@/features/users/types';
 
 const colors = ['accent', 'success', 'warning', 'danger', 'default'] as const;

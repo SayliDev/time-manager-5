@@ -290,11 +290,14 @@ export function TeamsPage() {
                                   {fullName(u)}
                                 </p>
                                 <p className='tabular text-xs text-muted'>
-                                  {formatDecimal(u.weeklyHours)} h cette semaine
+                                  {formatDecimal(u.weeklyHours ?? 0)} h cette
+                                  semaine
                                 </p>
                               </div>
                             </div>
-                            <PresenceChip status={u.presence} />
+                            {u.presence ? (
+                              <PresenceChip status={u.presence} />
+                            ) : null}
                           </li>
                         );
                       })}
