@@ -7,6 +7,7 @@ interface TeamOverviewCardProps {
   onView: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  isLoading?: boolean;
 }
 
 export function TeamOverviewCard({
@@ -14,6 +15,7 @@ export function TeamOverviewCard({
   onView,
   onEdit,
   onDelete,
+  isLoading = false,
 }: TeamOverviewCardProps) {
   return (
     <Card className='lg:col-span-2'>
@@ -33,7 +35,9 @@ export function TeamOverviewCard({
         <EmployeesTable
           compact
           ariaLabel='Employés de l’équipe'
-          users={users}
+          isLoading={isLoading}
+          skeletonRows={6}
+          users={users.slice(0, 6)}
           onDelete={onDelete}
           onEdit={onEdit}
           onView={onView}

@@ -5,12 +5,15 @@ interface AttentionAlertProps {
   absentCount: number;
 }
 
-export function AttentionAlert({ lateCount, absentCount }: AttentionAlertProps) {
+export function AttentionAlert({
+  lateCount,
+  absentCount,
+}: AttentionAlertProps) {
   const alerts = lateCount + absentCount;
   if (alerts === 0) return null;
 
   return (
-    <Alert status='warning'>
+    <Alert className='tm-fade-in' status='warning'>
       <Alert.Indicator />
       <Alert.Content>
         <Alert.Title>

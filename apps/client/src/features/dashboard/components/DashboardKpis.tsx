@@ -14,6 +14,9 @@ interface DashboardKpisProps {
   averageWeeklyHours: number;
 }
 
+const gridClassName =
+  'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 3xl:gap-5 4xl:gap-6';
+
 export function DashboardKpis({
   clockedIn,
   alerts,
@@ -25,7 +28,7 @@ export function DashboardKpis({
   return (
     <section
       aria-label='Indicateurs clés'
-      className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 3xl:gap-5 4xl:gap-6'
+      className={gridClassName}
     >
       <StatCard
         icon={Pulse}

@@ -20,6 +20,7 @@ export function DashboardToolbar({
   onPeriodChange,
   onCreateEmployee,
 }: DashboardToolbarProps) {
+
   return (
     <div className='flex flex-wrap items-center gap-2'>
       <Select
@@ -51,7 +52,9 @@ export function DashboardToolbar({
 
       <Tabs
         selectedKey={period}
-        onSelectionChange={(key) => onPeriodChange(String(key) as DashboardPeriod)}
+        onSelectionChange={(key) =>
+          onPeriodChange(String(key) as DashboardPeriod)
+        }
       >
         <Tabs.ListContainer>
           <Tabs.List aria-label='Période'>

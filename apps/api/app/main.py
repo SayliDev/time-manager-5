@@ -3,15 +3,13 @@
 import logging
 import os
 import psycopg
-CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 from fastapi import (Depends,FastAPI,HTTPException,status,)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import (OAuth2PasswordBearer,OAuth2PasswordRequestForm,)
+from fastapi.security import (OAuth2PasswordBearer,)
 from jose import JWTError
-from core.security import (create_access_token,decode_access_token,)
+from core.security import decode_access_token
 from app.routers.users_routers import router as users_router
 from app.routers.register import router as register_router
-from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 # from app.routers.register_routers import router as register_router
@@ -21,7 +19,7 @@ from app.routers.manager_router import router as manager_router
 # Application
 # -----------------------------------------------------------------------------
 
-CLIENT_PORT = os.getenv("CLIENT_PORT")
+CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 
 app = FastAPI(
     title="Time Manager API",

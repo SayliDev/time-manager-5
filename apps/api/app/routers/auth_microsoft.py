@@ -107,12 +107,6 @@ def callback(request: Request):
             "email": user["email"],
         }
     )
-    response = RedirectResponse(f"http://localhost:{CLIENT_PORT}/dashboard")
-    response.set_cookie(
-        key="access_token",
-        value=jwt_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
+    return RedirectResponse(
+        f"http://localhost:{CLIENT_PORT}/auth/callback#token={jwt_token}"
     )
-    return response
