@@ -11,8 +11,12 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: (input: CreateUserInput) => createUser(input),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: usersQueryKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: usersQueryKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]);
+    },
   });
 }
 
@@ -21,7 +25,11 @@ export function useDeactivateUser() {
 
   return useMutation({
     mutationFn: (id: string) => deactivateUser(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: usersQueryKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: usersQueryKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]);
+    },
   });
 }

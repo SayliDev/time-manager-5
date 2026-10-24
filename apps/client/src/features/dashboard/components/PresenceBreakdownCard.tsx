@@ -1,7 +1,6 @@
 import { Card, Label, ProgressBar, Skeleton } from '@heroui/react';
 import { presenceBars } from '@/features/dashboard/constants/presenceBars';
 import type { PresenceStatus, User } from '@/features/users/types';
-import { DemoBadge } from '@/shared/ui/DemoBadge';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 interface PresenceBreakdownCardProps {
@@ -23,7 +22,6 @@ export function PresenceBreakdownCard({
       <Card.Header>
         <div className='flex items-center justify-between gap-2'>
           <Card.Title>Répartition du jour</Card.Title>
-          <DemoBadge />
         </div>
         <Card.Description>Statut de présence de l’équipe</Card.Description>
       </Card.Header>

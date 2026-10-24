@@ -1,8 +1,10 @@
 import { Pulse } from '@gravity-ui/icons';
 import { Chip } from '@heroui/react';
 import { useState } from 'react';
-import { useDemoPresence } from '@/data/mockQueries';
+import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { DeleteUserDialog } from '@/features/users/components/DeleteUserDialog';
+import { fetchDashboard } from '@/features/dashboard/api';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -11,14 +13,14 @@ import { RecentActivityCard } from '@/features/dashboard/components/RecentActivi
 import { TeamOverviewCard } from '@/features/dashboard/components/TeamOverviewCard';
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
-import { DeleteUserDialog } from '@/features/users/components/DeleteUserDialog';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
-import { useUsers } from '@/features/users/hooks/useUsers';
 import type { User } from '@/features/users/types';
 import { PageHeader } from '@/shared/ui/PageHeader';
 
+
 export function ManagerDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>('week');
+  const [teamId, setTeamId] = useState('all');
 
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -26,8 +28,11 @@ export function ManagerDashboardPage() {
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
   const { data: currentUser } = useCurrentUser();
-  const { data: users = [], isPending: usersLoading } = useUsers();
-  const presence = useDemoPresence();
+  const { data: dashboard, error } = useQuery({
+    queryKey: ['dashboard', teamId, period],
+    queryFn: ({ signal }) => fetchDashboard(teamId, period, signal),
+  });
+  const scoped = dashboard?.users ?? [];
 
   const openCreate = () => {
     setEditUser(null);
@@ -38,6 +43,13 @@ export function ManagerDashboardPage() {
     setEditUser(user);
     setFormOpen(true);
   };
+  if (error) {
+    return <p role='alert'>{error.message}</p>;
+  }
+
+  if (!dashboard) {
+    return <p role='status'>Chargement…</p>;
+  }
 
   return (
     <>
@@ -49,36 +61,50 @@ export function ManagerDashboardPage() {
             <Chip.Label>Espace manager</Chip.Label>
           </Chip>
         }
-        title={
-          currentUser ? `Bonjour, ${currentUser.firstName} 👋` : 'Bonjour 👋'
-        }
+        title={currentUser ? `Bonjour, ${currentUser.firstName}` : 'Bonjour'}
       />
 
       <DashboardToolbar
+        teams={dashboard.teams}
+        teamId={teamId}
+        onTeamChange={setTeamId}
         period={period}
         onCreateEmployee={openCreate}
         onPeriodChange={setPeriod}
       />
 
-      <DashboardKpis isLoading={usersLoading} users={users} />
+      {/*<AttentionAlert absentCount={absentCount} lateCount={lateCount} />*/}
+
+      <DashboardKpis
+        alerts={dashboard.stats.alerts}
+        clockedIn={dashboard.stats.clockedToday}
+        attendance={dashboard.stats.attendance}
+        averageWeeklyHours={dashboard.stats.averageWeeklyHours}
+        totalEmployees={scoped.length}
+/>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
-        <HoursOverviewCard period={period} />
+        <HoursOverviewCard
+          period={period}
+          data={dashboard.hours}
+        />
+
         <PresenceBreakdownCard
-          isLoading={presence.isPending}
-          users={presence.data ?? []}
+          users={scoped}
         />
       </section>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <TeamOverviewCard
-          isLoading={usersLoading}
-          users={users}
+          users={scoped}
           onDelete={setDeleteUser}
           onEdit={openEdit}
           onView={setViewUser}
         />
-        <RecentActivityCard />
+        <RecentActivityCard
+          activity={dashboard.activity}
+          users={scoped}
+        />
       </section>
 
       <EmployeeDrawer

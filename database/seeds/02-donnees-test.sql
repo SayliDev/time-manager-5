@@ -6,12 +6,12 @@ DO $$
 DECLARE
     v_first_names TEXT[] := ARRAY[
         'Alexandre', 'Alice', 'Karim', 'Emma', 'Lucas',
-        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah'
+        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah', 'John', 'Jane'
     ];
 
     v_last_names TEXT[] := ARRAY[
         'Martin', 'Bernard', 'Dubois', 'Petit', 'Robert',
-        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent'
+        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent', 'Doe', 'Doe'
     ];
 
     v_emails TEXT[] := ARRAY[
@@ -24,7 +24,9 @@ DECLARE
         'hugo.durand.demo@example.com',
         'lea.moreau.demo@example.com',
         'nathan.simon.demo@example.com',
-        'sarah.laurent.demo@example.com'
+        'sarah.laurent.demo@example.com',
+        'john.doe.demo@example.com',
+        'jane.doe.demo@example.com'
     ];
 
     v_user_ids INTEGER[] := ARRAY[]::INTEGER[];
@@ -44,6 +46,7 @@ DECLARE
     v_day_offset INTEGER;
 
     v_work_day DATE;
+    v_work_mode TEXT;
     v_session_start TIMESTAMPTZ;
     v_session_end TIMESTAMPTZ;
 
@@ -58,8 +61,8 @@ BEGIN
             'Jeu de test déjà présent ou email en conflit. Aucune donnée ajoutée.';
     END IF;
 
-    -- 1 administrateur, 2 managers et 7 employés.
-    FOR v_user_index IN 1..10 LOOP
+    -- 1 administrateur, 2 managers et 9 employés.
+    FOR v_user_index IN 1..array_length(v_emails, 1) LOOP
         INSERT INTO public.users (
             first_name,
             last_name,
@@ -126,7 +129,7 @@ BEGIN
 
     -- Les managers sont également membres de leur équipe.
     -- L'administrateur reste hors équipe.
-    FOR v_user_index IN 2..10 LOOP
+    FOR v_user_index IN 2..array_length(v_emails, 1) LOOP
         INSERT INTO public.team_allocation (
             start_at,
             end_at,
@@ -146,7 +149,7 @@ BEGIN
     END LOOP;
 
     -- Contrats : Chloé en alternance, Sarah en CDD, les autres en CDI.
-    FOR v_user_index IN 1..10 LOOP
+    FOR v_user_index IN 1..array_length(v_emails, 1) LOOP
         INSERT INTO public.contract (
             contract_type,
             start_date,
@@ -171,10 +174,16 @@ BEGIN
 
     -- Sessions du lundi 28 septembre au vendredi 2 octobre 2026.
     -- Journée standard : 09h–12h et 13h–17h, soit 7 heures.
-    -- 10 utilisateurs × 5 jours × 2 sessions = 100 sessions.
-    FOR v_user_index IN 1..10 LOOP
+    -- 12 utilisateurs × 5 jours × 2 sessions = 120 sessions.
+    FOR v_user_index IN 1..array_length(v_emails, 1) LOOP
         FOR v_day_offset IN 0..4 LOOP
             v_work_day := DATE '2026-09-28' + v_day_offset;
+
+            -- Alternate onsite/remote; keep the same mode all day.
+            v_work_mode := CASE
+                WHEN MOD(v_user_index + v_day_offset, 2) = 0 THEN 'onsite'
+                ELSE 'remote'
+            END;
 
             -- Matin.
             v_session_start :=
@@ -192,12 +201,14 @@ BEGIN
             END IF;
 
             INSERT INTO public.work_session (
+                work_mode,
                 start_at,
                 end_at,
                 creat_at,
                 id_user
             )
             VALUES (
+                v_work_mode,
                 v_session_start,
                 v_session_end,
                 v_session_start,
@@ -230,12 +241,14 @@ BEGIN
             END IF;
 
             INSERT INTO public.work_session (
+                work_mode,
                 start_at,
                 end_at,
                 creat_at,
                 id_user
             )
             VALUES (
+                v_work_mode,
                 v_session_start,
                 v_session_end,
                 v_session_start,

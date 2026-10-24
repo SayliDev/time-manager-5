@@ -1,53 +1,35 @@
 import { Card } from '@heroui/react';
-import { useHours } from '@/data/mockQueries';
+import type { DayHours } from '@/features/time/types';
 import type { DashboardPeriod } from '@/features/dashboard/types';
-import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
-import { DemoBadge } from '@/shared/ui/DemoBadge';
-import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 interface HoursOverviewCardProps {
   period: DashboardPeriod;
+  data: DayHours[];
 }
 
-export function HoursOverviewCard({ period }: HoursOverviewCardProps) {
-  const { data, isPending, isPlaceholderData } = useHours(period);
-
+export function HoursOverviewCard({ period, data }: HoursOverviewCardProps) {
   return (
     <Card className='lg:col-span-2'>
       <Card.Header>
-        <div className='flex items-center justify-between gap-2'>
-          <Card.Title>
-            {period === 'week'
-              ? 'Présentiel vs télétravail'
-              : 'Présentiel vs télétravail (mois)'}
-          </Card.Title>
-          <DemoBadge />
-        </div>
+        <Card.Title>
+          {period === 'week'
+            ? 'Présentiel vs télétravail'
+            : 'Présentiel vs télétravail (mois)'}
+        </Card.Title>
         <Card.Description>
           Comparaison des heures moyennes{' '}
           {period === 'week' ? 'par jour' : 'par semaine'} · objectif en
           pointillés
         </Card.Description>
       </Card.Header>
-      <Card.Content aria-busy={isPlaceholderData}>
-        <SkeletonSwap
-          isLoading={isPending}
-          skeleton={<ChartSkeleton grouped bars={period === 'week' ? 7 : 4} />}
-        >
-          <div
-            className={`transition-opacity duration-300 ${
-              isPlaceholderData ? 'opacity-50' : 'opacity-100'
-            }`}
-          >
-            <HoursBarChart
-              compareModes
-              data={data ?? []}
-              target={period === 'week' ? 7 : 35}
-              targetLabel={period === 'week' ? '7 h' : '35 h'}
-            />
-          </div>
-        </SkeletonSwap>
+      <Card.Content>
+        <HoursBarChart
+          compareModes
+          data={data}
+          target={period === 'week' ? 7 : 35}
+          targetLabel={period === 'week' ? '7 h' : '35 h'}
+        />
       </Card.Content>
     </Card>
   );

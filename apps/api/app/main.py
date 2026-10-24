@@ -15,6 +15,7 @@ from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
+from app.routers.manager_router import router as manager_router
 
 # -----------------------------------------------------------------------------
 # Application
@@ -48,19 +49,20 @@ app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
 app.include_router(register_router)
+app.include_router(manager_router)
 # app.include_router(test_work_time_router)
 # -----------------------------------------------------------------------------
 # Constantes
 # -----------------------------------------------------------------------------
 
 TABLES = (
-    "utilisateur",
+    "users",
     "departement",
-    "equipe",
-    "affectation_equipe",
-    "contrat",
-    "session_travail",
-    "correction_pointage",
+    "team",
+    "team_allocation",
+    "contract",
+    "work_session",
+    "timekeeping_correction",
 )
 
 # -----------------------------------------------------------------------------

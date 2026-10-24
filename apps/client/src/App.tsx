@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import MicrosoftCallbackPage from '@/features/auth/pages/MicrosoftCallbackPage';
@@ -31,6 +31,7 @@ export default function App() {
             />
           </Route>
         </Route>
+        <Route path='*' element={<Navigate replace to='/' />} />
       </Routes>
     </BrowserRouter>
   );

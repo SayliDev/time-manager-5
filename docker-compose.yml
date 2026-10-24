@@ -14,6 +14,9 @@ services:
       - ./database/init/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seeds/02-donnees-test.sql:/docker-entrypoint-initdb.d/02-donnees-test.sql:ro
       - ./database/seeds/04-varier-horaires.sql:/docker-entrypoint-initdb.d/04-varier-horaires.sql:ro
+      - ./database/seeds/06-scenarios-presence.sql:/docker-entrypoint-initdb.d/06-scenarios-presence.sql:ro
+      - ./database/seeds/07-octobre-complet.sql:/docker-entrypoint-initdb.d/07-octobre-complet.sql:ro
+      - ./database/seeds/08-separer-sarah-john.sql:/docker-entrypoint-initdb.d/08-separer-sarah-john.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 5s
@@ -25,7 +28,9 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile.dev
     env_file:
-      - ./apps/api/.env
+      - .env
+      - path: ./apps/api/.env
+        required: false
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       POSTGRES_HOST: db
@@ -46,6 +51,7 @@ services:
     env_file:
       - ./apps/client/.env
     environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:${API_PORT:-8001}}
       USE_POLLING: 'true'
     ports:
       - '127.0.0.1:${CLIENT_PORT:-5173}:5173'

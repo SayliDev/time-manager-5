@@ -1,5 +1,5 @@
 export type Role = 'admin' | 'manager' | 'employee';
-export type PresenceStatus = 'present' | 'remote' | 'late' | 'absent' | 'off';
+export type PresenceStatus = 'present' | 'remote' | 'late' | 'absent' | 'off' | 'unknown';
 export type EntryStatus = 'ok' | 'late' | 'overtime' | 'missing' | 'ongoing';
 
 export interface User {
