@@ -1,10 +1,9 @@
 import { ArrowDownToLine, PersonPlus } from '@gravity-ui/icons';
 import { Button, ListBox, Select, Tabs, toast } from '@heroui/react';
+import { useTeams } from '@/data/mockQueries';
 import type { DashboardPeriod } from '@/features/dashboard/types';
 
-
 interface DashboardToolbarProps {
-  teams: { id: string; name: string }[];
   teamId: string;
   period: DashboardPeriod;
   onTeamChange: (teamId: string) => void;
@@ -13,13 +12,13 @@ interface DashboardToolbarProps {
 }
 
 export function DashboardToolbar({
-  teams,
   teamId,
   period,
   onTeamChange,
   onPeriodChange,
   onCreateEmployee,
 }: DashboardToolbarProps) {
+  const { data: teams = [] } = useTeams();
 
   return (
     <div className='flex flex-wrap items-center gap-2'>

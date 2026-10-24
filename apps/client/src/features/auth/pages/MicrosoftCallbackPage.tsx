@@ -1,8 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Spinner } from '@heroui/react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { authQueryKeys } from '@/shared/api/client';
+import { authQueryKeys } from '@/features/auth/api/authApi';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 
 function readTokenFromHash(): string | null {
@@ -12,7 +11,7 @@ function readTokenFromHash(): string | null {
 function MicrosoftCallbackPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [token] = useState(readTokenFromHash);
+  const token = readTokenFromHash();
 
   useEffect(() => {
     if (!token) {
@@ -29,11 +28,7 @@ function MicrosoftCallbackPage() {
     return <Navigate replace to='/' />;
   }
 
-  return (
-    <div className='flex min-h-svh items-center justify-center bg-background'>
-      <Spinner aria-label='Connexion en cours' size='lg' />
-    </div>
-  );
+  return null;
 }
 
 export default MicrosoftCallbackPage;

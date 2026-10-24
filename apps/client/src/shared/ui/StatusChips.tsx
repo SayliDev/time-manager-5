@@ -7,12 +7,11 @@ type ChipColor = 'default' | 'accent' | 'success' | 'warning' | 'danger';
 
 const presenceMap: Record<PresenceStatus, { label: string; color: ChipColor }> =
   {
-    present: { label: 'Présentiel', color: 'success' },
-    remote: { label: 'Distanciel', color: 'accent' },
+    present: { label: 'Présent', color: 'success' },
+    remote: { label: 'Télétravail', color: 'accent' },
     late: { label: 'En retard', color: 'warning' },
     absent: { label: 'Absent', color: 'danger' },
     off: { label: 'Congé', color: 'default' },
-    unknown: { label: 'Non renseigné', color: 'default' },
   };
 
 export function PresenceChip({ status }: { status: PresenceStatus }) {
@@ -43,9 +42,8 @@ export function EntryStatusChip({ status }: { status: EntryStatus }) {
 }
 
 const workModeMap: Record<WorkMode, { label: string; color: ChipColor }> = {
-  unknown: { label: 'Non renseigné', color: 'default' },
   onsite: { label: 'Présentiel', color: 'accent' },
-  remote: { label: 'Distanciel', color: 'success' },
+  remote: { label: 'Télétravail', color: 'success' },
 };
 
 export function WorkModeChip({ mode }: { mode: WorkMode }) {

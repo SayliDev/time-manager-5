@@ -45,11 +45,7 @@ export default function LoginForm() {
       nextFieldErrors.password = 'Veuillez renseigner votre mot de passe.';
     }
 
-    if (
-      typeof email !== 'string' ||
-      typeof password !== 'string' ||
-      Object.keys(nextFieldErrors).length > 0
-    ) {
+    if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
       return;
     }

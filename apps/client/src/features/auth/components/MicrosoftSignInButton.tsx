@@ -1,5 +1,5 @@
 import { Button } from '@heroui/react';
-import { getMicrosoftLoginUrl } from '@/shared/api/client';
+import { API_URL } from '@/shared/api/client';
 
 function MicrosoftLogo() {
   return (
@@ -20,7 +20,7 @@ function MicrosoftSignInButton() {
       size='lg'
       variant='secondary'
       onPress={() => {
-        window.location.href = getMicrosoftLoginUrl();
+        window.location.href = `${API_URL}/api/auth/login/microsoft`;
       }}
     >
       <MicrosoftLogo />

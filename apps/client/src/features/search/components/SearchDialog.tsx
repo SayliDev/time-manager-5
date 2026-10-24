@@ -10,9 +10,7 @@ import {
   type SVGProps,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fullName } from '@/shared/lib/user';
-import { useTeams } from '@/features/teams/hooks/useTeams';
-import { useUsers } from '@/features/users/hooks/useUsers';
+import { fullName, teams, users } from '@/data/mock';
 
 type Scope = 'pages' | 'people';
 
@@ -36,8 +34,6 @@ export function SearchModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const { data: teams = [] } = useTeams();
-  const { data: users = [] } = useUsers();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [scope, setScope] = useState<Scope>('pages');
@@ -66,7 +62,7 @@ export function SearchModal({
         icon: Persons,
       };
     });
-  }, [users, teams]);
+  }, []);
 
   const items = useMemo(() => {
     const source = scope === 'pages' ? pageItems : peopleItems;

@@ -1,8 +1,5 @@
-import { Pulse } from '@gravity-ui/icons';
-import { Button, Card, Chip, toast } from '@heroui/react';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchDashboard } from '@/shared/api/client';
+import { fullName } from '@/data/mock';
+import { useUsers } from '@/data/mockQueries';
 import { DashboardKpis } from '@/features/dashboard/components/DashboardKpis';
 import { DashboardToolbar } from '@/features/dashboard/components/DashboardToolbar';
 import { HoursOverviewCard } from '@/features/dashboard/components/HoursOverviewCard';
@@ -12,17 +9,14 @@ import { TeamOverviewCard } from '@/features/dashboard/components/TeamOverviewCa
 import type { DashboardPeriod } from '@/features/dashboard/types';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
-import type { User } from '@/features/users/types';
+import type { PresenceStatus, User } from '@/features/users/types';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { useProfile } from '@/features/auth/hooks/useProfile';
-import { Link } from 'react-router-dom';
-
-const fullName = (user: User) =>
-  `${user.firstName} ${user.lastName}`;
+import { Pulse } from '@gravity-ui/icons';
+import { Chip, toast } from '@heroui/react';
+import { useMemo, useState } from 'react';
 
 export function ManagerDashboardPage() {
-  const profile = useProfile();
   const [period, setPeriod] = useState<DashboardPeriod>('week');
   const [teamId, setTeamId] = useState<string>('all');
 
@@ -31,13 +25,21 @@ export function ManagerDashboardPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-  const { data: dashboard, error, refetch, isFetching } = useQuery({
-    queryKey: ['dashboard', teamId, period],
-    queryFn: ({ signal }) => fetchDashboard(teamId, period, signal),
-    refetchInterval: 60_000,
-  });
+  const { data: users, isPending: usersLoading } = useUsers();
 
-  const scoped = dashboard?.users ?? [];
+  const scoped = useMemo(() => {
+    const list = users ?? [];
+    return teamId === 'all' ? list : list.filter((u) => u.teamId === teamId);
+  }, [users, teamId]);
+
+  const countBy = (status: PresenceStatus) =>
+    scoped.filter((u) => u.presence === status).length;
+  const clockedIn = scoped.filter((u) =>
+    ['present', 'remote', 'late'].includes(u.presence),
+  ).length;
+  const lateCount = countBy('late');
+  const absentCount = countBy('absent');
+  const alerts = lateCount + absentCount;
 
   const openCreate = () => {
     setEditUser(null);
@@ -48,37 +50,6 @@ export function ManagerDashboardPage() {
     setEditUser(user);
     setFormOpen(true);
   };
-  if (error || profile.error) {
-    return <p role='alert'>{(error || profile.error)?.message}</p>;
-  }
-
-  if (!dashboard || profile.isPending) {
-    return <p role='status'>Chargement…</p>;
-  }
-
-  if (profile.data?.role === 'manager' && dashboard.teams.length === 0) {
-    return (
-      <>
-        <PageHeader title='Tableau de bord' description={`Bonjour ${profile.data.firstName}`} />
-        <Card>
-          <Card.Header>
-            <Card.Title>Aucune équipe à gérer</Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <p role='status'>
-              Votre compte manager n’est encore responsable d’aucune équipe.
-              Un administrateur doit vous rattacher à une équipe pour afficher ses collaborateurs,
-              ses pointages et ses indicateurs.
-            </p>
-          </Card.Content>
-          <Card.Footer className='gap-3'>
-            <Button isDisabled={isFetching} onPress={() => { void refetch(); }}>Actualiser</Button>
-            <Link to={`/dashboard/time?user_id=${encodeURIComponent(profile.data.id)}`}>Voir mes pointages</Link>
-          </Card.Footer>
-        </Card>
-      </>
-    );
-  }
 
   return (
     <>
@@ -90,11 +61,10 @@ export function ManagerDashboardPage() {
             <Chip.Label>Espace manager</Chip.Label>
           </Chip>
         }
-        title={`Bonjour 👋`}
+        title={`Bonjour, John 👋`}
       />
 
       <DashboardToolbar
-        teams={dashboard.teams}
         period={period}
         teamId={teamId}
         onCreateEmployee={openCreate}
@@ -102,39 +72,31 @@ export function ManagerDashboardPage() {
         onTeamChange={setTeamId}
       />
 
-      {/*<AttentionAlert absentCount={absentCount} lateCount={lateCount} />*/}
+      {/* {usersLoading ? null : (
+        <AttentionAlert absentCount={absentCount} lateCount={lateCount} />
+      )} */}
 
       <DashboardKpis
-        indicators={dashboard.kpis}
-        alerts={dashboard.kpis.alerts}
-        clockedIn={dashboard.stats.clockedToday}
-        attendance={dashboard.kpis.attendance_rate.value}
-        averageWeeklyHours={dashboard.kpis.avg_weekly_hours.value}
+        alerts={alerts}
+        clockedIn={clockedIn}
+        isLoading={usersLoading}
         totalEmployees={scoped.length}
-/>
+      />
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
-        <HoursOverviewCard
-          period={period}
-          data={dashboard.hours}
-        />
-
-        <PresenceBreakdownCard
-          users={scoped}
-        />
+        <HoursOverviewCard period={period} />
+        <PresenceBreakdownCard isLoading={usersLoading} users={scoped} />
       </section>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <TeamOverviewCard
+          isLoading={usersLoading}
           users={scoped}
           onDelete={setDeleteUser}
           onEdit={openEdit}
           onView={setViewUser}
         />
-        <RecentActivityCard
-          activity={dashboard.activity}
-          users={scoped}
-        />
+        <RecentActivityCard />
       </section>
 
       <EmployeeDrawer
@@ -160,8 +122,10 @@ export function ManagerDashboardPage() {
         isOpen={deleteUser !== null}
         title='Supprimer cet employé ?'
         onConfirm={() => {
-          toast.danger('suprétion non connecté a l api', {
-            
+          toast.danger('Employé supprimé', {
+            description: `${
+              deleteUser ? fullName(deleteUser) : ''
+            } a été retiré.`,
           });
           setDeleteUser(null);
         }}

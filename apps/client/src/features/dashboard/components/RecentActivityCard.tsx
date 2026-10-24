@@ -1,16 +1,14 @@
-import { Card } from '@heroui/react';
-import { fullName } from '@/shared/lib/user';
-import type { ActivityItem } from '@/features/dashboard/types';
-import type { User } from '@/features/users/types';
+import { Card, Skeleton } from '@heroui/react';
+import { fullName, getUser } from '@/data/mock';
+import { useActivity } from '@/data/mockQueries';
+import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
 
-interface RecentActivityCardProps {
-  activity: ActivityItem[];
-  users: User[];
-}
+const LINE_WIDTHS = ['w-4/5', 'w-3/5', 'w-11/12', 'w-2/3', 'w-3/4', 'w-1/2'];
 
-/** Associe chaque événement à son collaborateur ; ignore ceux absents de la liste fournie. */
-export function RecentActivityCard({ activity, users }: RecentActivityCardProps) {
+export function RecentActivityCard() {
+  const { data: activity, isPending } = useActivity();
+
   return (
     <Card>
       <Card.Header>
@@ -18,32 +16,49 @@ export function RecentActivityCard({ activity, users }: RecentActivityCardProps)
         <Card.Description>Derniers pointages et alertes</Card.Description>
       </Card.Header>
       <Card.Content>
-        <ol className='flex flex-col gap-4'>
-          {activity.map((item) => {
-            const user = users.find((user) => user.id === item.userId);
-            if (!user) return null;
-            const tone =
-              item.type === 'alert'
-                ? 'text-warning'
-                : item.type === 'departure'
-                  ? 'text-muted'
-                  : 'text-success';
-            return (
-              <li className='flex items-start gap-3' key={item.id}>
-                <UserAvatar size='sm' user={user} />
-                <div className='min-w-0 flex-1'>
-                  <p className='text-sm'>
-                    <span className='font-medium'>{fullName(user)}</span>{' '}
-                    <span className='text-muted'>{item.label}</span>
-                  </p>
-                  <p className={`tabular mt-0.5 text-xs ${tone}`}>
-                    {item.time}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        <SkeletonSwap
+          isLoading={isPending}
+          skeleton={
+            <ol className='flex flex-col gap-4'>
+              {LINE_WIDTHS.map((width, i) => (
+                <li className='flex items-start gap-3' key={i}>
+                  <Skeleton className='size-8 shrink-0 rounded-2xl' />
+                  <div className='flex min-w-0 flex-1 flex-col gap-2 pt-1'>
+                    <Skeleton className={`h-3.5 rounded-md ${width}`} />
+                    <Skeleton className='h-3 w-12 rounded-md' />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          }
+        >
+          <ol className='flex flex-col gap-4'>
+            {activity?.map((item) => {
+              const user = getUser(item.userId);
+              if (!user) return null;
+              const tone =
+                item.type === 'alert'
+                  ? 'text-warning'
+                  : item.type === 'departure'
+                    ? 'text-muted'
+                    : 'text-success';
+              return (
+                <li className='flex items-start gap-3' key={item.id}>
+                  <UserAvatar size='sm' user={user} />
+                  <div className='min-w-0 flex-1'>
+                    <p className='text-sm'>
+                      <span className='font-medium'>{fullName(user)}</span>{' '}
+                      <span className='text-muted'>{item.label}</span>
+                    </p>
+                    <p className={`tabular mt-0.5 text-xs ${tone}`}>
+                      {item.time}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </SkeletonSwap>
       </Card.Content>
     </Card>
   );

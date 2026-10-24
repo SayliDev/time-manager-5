@@ -13,11 +13,18 @@ import {
   Label,
   Separator,
   cn,
+  toast,
 } from '@heroui/react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { fullName } from '@/shared/lib/user';
-import { useProfile } from '@/features/auth/hooks/useProfile';
+import {
+  CURRENT_EMPLOYEE_ID,
+  CURRENT_MANAGER_ID,
+  fullName,
+  getUser,
+} from '@/data/mock';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import type { Role } from '@/features/users/types';
 import { RoleChip } from '@/shared/ui/StatusChips';
 import { Brand } from './Brand';
 import { appPath, navSections } from './nav';
@@ -29,14 +36,26 @@ interface SidebarProps {
 export function Sidebar({ onNavigate }: SidebarProps) {
   const navigate = useNavigate();
   const logout = useLogout();
-  const { data: currentUser } = useProfile();
-  const role = currentUser?.role ?? 'employee';
+  const [role, setRole] = useState<Role>('manager');
+  const currentUser = getUser(
+    role === 'manager' ? CURRENT_MANAGER_ID : CURRENT_EMPLOYEE_ID
+  )!;
 
   const handleAction = (key: string | number) => {
     if (key === 'profile') {
       navigate(appPath('/profile'));
       onNavigate?.();
-
+    } else if (key === 'switch-role') {
+      const next = role === 'manager' ? 'employee' : 'manager';
+      setRole(next);
+      navigate(appPath());
+      onNavigate?.();
+      toast.info(
+        `Aperçu en tant que ${next === 'manager' ? 'manager' : 'employé'}`,
+        {
+          description: 'Mode démo : la navigation s’adapte au rôle.',
+        }
+      );
     } else if (key === 'logout') {
       logout();
       onNavigate?.();
@@ -119,7 +138,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </Avatar>
             <span className='min-w-0 flex-1'>
               <span className='block truncate text-sm font-medium text-foreground'>
-                {currentUser ? fullName(currentUser) : 'Chargement?'}
+                {fullName(currentUser)}
               </span>
               <span className='block truncate text-xs font-normal text-muted'>
                 {role === 'manager' ? 'Manager' : 'Employé'}
@@ -129,7 +148,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           </Button>
           <Dropdown.Popover className='min-w-[280px]'>
             <div className='flex items-center justify-between gap-2 px-3 pt-3 pb-2'>
-              <p className='truncate text-xs text-muted'>{currentUser?.email ?? ''}</p>
+              <p className='truncate text-xs text-muted'>{currentUser.email}</p>
               <RoleChip role={role} />
             </div>
             <Dropdown.Menu onAction={handleAction}>
@@ -140,7 +159,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                   <Kbd.Content>G</Kbd.Content>
                 </Kbd>
               </Dropdown.Item>
-              <Dropdown.Item isDisabled id='switch-role' textValue='Changer de rôle'>
+              <Dropdown.Item id='switch-role' textValue='Changer de rôle'>
                 <PersonWorker className='size-4 shrink-0 text-muted' />
                 <Label className='flex-1'>
                   {role === 'manager'

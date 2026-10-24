@@ -1,5 +1,3 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { clockIn, clockOut } from '@/shared/api/client';
 import {
   ArrowDownToLine,
   Calendar,
@@ -19,19 +17,24 @@ import {
   Skeleton,
   Table,
   Tabs,
+  toast,
 } from '@heroui/react';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useTimekeeping } from '@/features/time/hooks/useTimekeeping';
+import { fullName } from '@/data/mock';
+import {
+  useTimeEntries,
+  useUserHours,
+  useUsers,
+  useWeeklySummary,
+} from '@/data/mockQueries';
 import { EntriesTable } from '@/features/time/components/EntriesTable';
+import { WEEKLY_TARGET_HOURS } from '@/features/time/constants/weeklyRows';
 import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
 import { formatDecimal, formatHours } from '@/shared/lib/format';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { StatCard, StatCardSkeleton } from '@/shared/ui/StatCard';
-
-const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`;
 
 const statsGridClassName =
   'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 3xl:gap-5 4xl:gap-6';
@@ -45,66 +48,38 @@ interface WeeklySummaryRow {
 }
 
 export function TimePage() {
-  const queryClient = useQueryClient();
-  const [mode, setMode] = useState<'onsite' | 'remote'>('onsite');
-  const clock = useMutation({
-    mutationFn: (action: 'in' | 'out') => action === 'in' ? clockIn(mode) : clockOut(),
-    onSuccess: () => queryClient.invalidateQueries(),
-  });
   const [tab, setTab] = useState('daily');
-  const [searchParams, setSearchParams] = useSearchParams();
-  const selectedId = searchParams.get('user_id') ?? '';
-  const setSelectedId = (id: string) => setSearchParams({ user_id: id });
-  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
-  const query = useTimekeeping(selectedId, range?.start, range?.end);
-  const users = query.users;
-  const usersLoading = query.isPending;
-  const entriesQuery = query;
-  const hoursQuery = query;
-  const weeklyQuery = query;
-  const entries = query.data?.entries ?? [];
-  const weeklyRows = query.data?.weekly ?? [];
-  const stats = query.data?.stats;
-  const exportCsv = () => {
-    const rows = [['Date', 'Arrivée', 'Départ', 'Heures', 'Lieu', 'Statut'],
-      ...entries.map(e => [e.date, e.arrival ?? '', e.departure ?? '', e.hours === null ? '' : String(e.hours), e.mode, e.status])];
-    const csv = rows.map(row => row.map(value => '"' + value.replaceAll('"', '""') + '"').join(';')).join('\r\n');
-    const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `pointages-${selectedId || query.data?.selectedId || 'employe'}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const [selectedId, setSelectedId] = useState('u2');
+
+  const { data: users = [], isPending: usersLoading } = useUsers();
+  const entriesQuery = useTimeEntries(selectedId);
+  const hoursQuery = useUserHours(selectedId);
+  const weeklyQuery = useWeeklySummary(selectedId);
+
+  const entries = entriesQuery.data ?? [];
+  const weeklyRows = weeklyQuery.data ?? [];
   // Au changement d'employé, on garde l'ancien contenu atténué plutôt que de
   // repasser par le skeleton : le rendu reste stable.
   const dimmed = (isPlaceholderData: boolean) =>
     `transition-opacity duration-300 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`;
 
-  const person = users.find((u) => u.id === (selectedId || query.data?.selectedId));
-  const total = stats?.total ?? 0;
-  const lateCount = stats?.lateCount ?? 0;
-  const missing = stats?.missingCount ?? 0;
+  const person = users.find((u) => u.id === selectedId);
+  const total = entries.reduce((sum, e) => sum + e.hours, 0);
+  const lateCount = entries.filter((e) => e.status === 'late').length;
+  const missing = entries.filter((e) => e.status === 'missing').length;
   const anomalies = lateCount + missing;
-
-  if (query.isError) return <p role='alert'>{query.error?.message}</p>;
-
-  if (!query.isPending && users.length === 0) return <p role='status'>Aucun employé accessible.</p>;
 
   return (
     <>
-      <div className='mb-4 flex items-center gap-3'>
-        <label>Lieu <select aria-label='Lieu de travail' value={mode} onChange={e => setMode(e.target.value as 'onsite' | 'remote')}><option value='onsite'>Présentiel</option><option value='remote'>Télétravail</option></select></label>
-        <Button isDisabled={clock.isPending} onPress={() => clock.mutate('in')}>Pointer mon arrivée</Button>
-        <Button isDisabled={clock.isPending} onPress={() => clock.mutate('out')}>Pointer mon départ</Button>
-        {clock.isError && <p role='alert'>{clock.error.message}</p>}
-      </div>
       <PageHeader
         actions={
           <Button
             variant='secondary'
-            isDisabled={!query.data || query.isPlaceholderData}
-            onPress={exportCsv}
+            onPress={() =>
+              toast.success('Export généré', {
+                description: 'Votre relevé d’heures a été téléchargé.',
+              })
+            }
           >
             <ArrowDownToLine />
             Exporter
@@ -120,7 +95,7 @@ export function TimePage() {
             className='w-full md:w-64'
             fullWidth
             isDisabled={usersLoading}
-            value={query.selectedId}
+            value={selectedId}
             variant='secondary'
             onChange={(key) => setSelectedId(String(key))}
           >
@@ -145,7 +120,6 @@ export function TimePage() {
             className='w-full md:w-80'
             endName='to'
             startName='from'
-            onChange={(value) => setRange(value ? { start: value.start.toString(), end: value.end.toString() } : null)}
           >
             <Label>Période</Label>
             <DateField.Group fullWidth variant='secondary'>
@@ -222,27 +196,28 @@ export function TimePage() {
         >
           <div className={statsGridClassName}>
             <StatCard
-              hint={`sur ${stats?.days ?? 0} jours travaillés`}
+              hint='sur 8 jours'
               icon={Clock}
               label='Total travaillé'
               tone='accent'
               value={formatHours(total)}
             />
             <StatCard
-              delta={stats?.averageWeeklyHoursDelta}
-              hint='vs objectif contractuel'
+              delta={4.1}
+              hint='vs objectif'
               icon={Calendar}
               label='Moyenne / semaine'
               tone='success'
               unit='h'
-              value={formatDecimal(stats?.averageWeeklyHours ?? 0)}
+              value={formatDecimal((total / 8) * 5)}
             />
             <StatCard
+              hint={`objectif ${WEEKLY_TARGET_HOURS} h`}
               icon={Clock}
-              label='Au-delà de 35 h'
+              label='Heures sup.'
               tone='warning'
               unit='h'
-              value={formatDecimal(stats?.aboveTargetHours ?? 0)}
+              value='3,2'
             />
             <StatCard
               hint='retards + oublis'
@@ -291,8 +266,10 @@ export function TimePage() {
                 <div className={dimmed(hoursQuery.isPlaceholderData)}>
                   <HoursBarChart
                     compareModes
-                    data={hoursQuery.data?.hours ?? []}
+                    data={hoursQuery.data ?? []}
                     height={200}
+                    target={7}
+                    targetLabel='7 h'
                   />
                 </div>
               </SkeletonSwap>
@@ -337,6 +314,7 @@ function WeeklySummaryTable({ rows, isLoading }: WeeklySummaryTableProps) {
             <Table.Column isRowHeader>Semaine</Table.Column>
             <Table.Column>Jours travaillés</Table.Column>
             <Table.Column>Total</Table.Column>
+            <Table.Column>Écart vs {WEEKLY_TARGET_HOURS} h</Table.Column>
           </Table.Header>
           <Table.Body>
             {loading
@@ -354,9 +332,13 @@ function WeeklySummaryTable({ rows, isLoading }: WeeklySummaryTableProps) {
                     <Table.Cell>
                       <Skeleton className='h-3.5 w-14 rounded-md' />
                     </Table.Cell>
+                    <Table.Cell>
+                      <Skeleton className='h-5 w-16 rounded-2xl' />
+                    </Table.Cell>
                   </Table.Row>
                 ))
               : rows.map((row) => {
+                  const diff = row.hours - WEEKLY_TARGET_HOURS;
                   return (
                     <Table.Row id={row.id} key={row.id}>
                       <Table.Cell>
@@ -370,6 +352,18 @@ function WeeklySummaryTable({ rows, isLoading }: WeeklySummaryTableProps) {
                         <span className='tabular text-sm font-medium'>
                           {formatHours(row.hours)}
                         </span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Chip
+                          color={diff >= 0 ? 'success' : 'warning'}
+                          size='sm'
+                          variant='soft'
+                        >
+                          <Chip.Label className='tabular'>
+                            {diff >= 0 ? '+' : ''}
+                            {formatDecimal(diff)} h
+                          </Chip.Label>
+                        </Chip>
                       </Table.Cell>
                     </Table.Row>
                   );
