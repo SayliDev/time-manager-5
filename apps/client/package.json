@@ -22,6 +22,7 @@
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
     "recharts": "^3.10.1",
+    "sileo": "^0.1.6",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

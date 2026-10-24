@@ -10,8 +10,8 @@ import {
   Modal,
   Select,
   TextField,
-  toast,
 } from '@heroui/react';
+import { sileo } from 'sileo';
 import { useCreateUser } from '@/features/users/hooks/useUserMutations';
 import { fullName } from '@/features/users/lib/names';
 import type { Role, User } from '@/features/users/types';
@@ -52,13 +52,15 @@ export function UserFormModal({
 
     createUser.mutate(input, {
       onSuccess: (created) => {
-        toast.success('Employé créé', {
+        sileo.success({
+          title: 'Employé créé',
           description: `${fullName(created)} peut se connecter avec son email professionnel.`,
         });
         onOpenChange(false);
       },
       onError: (error) =>
-        toast.danger('Création impossible', {
+        sileo.error({
+          title: 'Création impossible',
           description:
             error instanceof ApiError
               ? error.detail
