@@ -1,8 +1,8 @@
-import { Spinner } from '@heroui/react';
 import { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 import { useSession } from '@/features/auth/hooks/useSession';
+import { AppLoader } from '@/shared/ui/AppLoader';
 
 export function RequireAuth() {
   const token = tokenStorage.get();
@@ -19,11 +19,7 @@ export function RequireAuth() {
   }
 
   if (session.isPending) {
-    return (
-      <div className='flex min-h-svh items-center justify-center bg-background'>
-        <Spinner aria-label='Vérification de la session' size='lg' />
-      </div>
-    );
+    return <AppLoader />;
   }
 
   return <Outlet />;
