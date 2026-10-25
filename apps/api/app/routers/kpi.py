@@ -2,8 +2,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
 from app.dependencies import get_current_user
-from app.repositories.time_api import load_scope
-from app.services.time_api import presence, activity, hours
+from app.repositories.time_repository import load_scope
+from app.services.timekeeping_service import presence, activity, hours
 from app.services.dashboard_service import period_bounds, work_mode, DAY_NAMES
 from app.services.time_service import PARIS
 

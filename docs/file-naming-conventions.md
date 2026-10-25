@@ -30,7 +30,7 @@ Les points d'entrée comme `main.py` et les fichiers de package `__init__.py`
 conservent leur nom standard.
 
 Le dépôt contient aussi des noms historiques, par exemple `time.py`, `kpi.py`,
-`teams.py`, `users_routers.py`, `work_session.py` et `time_api.py`.
+`teams.py`, `users_routers.py` et `work_session.py`.
 Ils restent utilisables ; ne pas créer un second fichier pour le même rôle
 uniquement pour respecter un suffixe. Leur harmonisation nécessite de mettre
 à jour tous leurs consommateurs.

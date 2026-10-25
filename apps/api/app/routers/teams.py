@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from app.dependencies import get_current_user
-from app.repositories.time_api import load_scope
-from app.services.time_api import presence
+from app.repositories.time_repository import load_scope
+from app.services.timekeeping_service import presence
 from app.services.time_service import PARIS
 
 router = APIRouter(prefix="/api", tags=["Teams"])

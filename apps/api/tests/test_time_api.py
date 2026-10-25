@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 from app.routers.time import time_data
-from app.services.time_api import user_time, presence
+from app.services.timekeeping_service import user_time, presence
 
 
 def instant(value):
@@ -126,12 +126,12 @@ def test_clock_requires_authentication(client, path):
 )
 def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active):
     from unittest.mock import MagicMock
-    from app.repositories.time_api import clock
+    from app.repositories.time_repository import clock
 
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = active
-    with patch("app.repositories.time_api.get_connection", return_value=conn):
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
         with pytest.raises(HTTPException) as error:
             clock(3, mode)
     assert error.value.status_code == 409
@@ -141,12 +141,12 @@ def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active
 
 def test_employee_cannot_select_team_owned_by_another_manager():
     from unittest.mock import MagicMock
-    from app.repositories.time_api import load_scope
+    from app.repositories.time_repository import load_scope
 
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = [{"id_team": 1, "id_user": 11}]
-    with patch("app.repositories.time_api.get_connection", return_value=conn):
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
         with pytest.raises(HTTPException) as error:
             load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2), 1)
     assert error.value.status_code == 403
@@ -156,7 +156,7 @@ def test_employee_cannot_select_team_owned_by_another_manager():
 @pytest.mark.parametrize("team_id", [None, 2])
 def test_additional_manager_can_read_assigned_teams(team_id):
     from unittest.mock import MagicMock
-    from app.repositories.time_api import load_scope
+    from app.repositories.time_repository import load_scope
 
     teams = [{"id_team": 1, "id_user": 2}, {"id_team": 2, "id_user": 3}]
     conn = MagicMock()
@@ -169,7 +169,7 @@ def test_additional_manager_can_read_assigned_teams(team_id):
         [],
         [],
     ]
-    with patch("app.repositories.time_api.get_connection", return_value=conn):
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
         data = load_scope(
             {"id_user": 11, "role": "manager"}, date(2026, 10, 23), team_id
         )
@@ -181,7 +181,7 @@ def test_additional_manager_can_read_assigned_teams(team_id):
 
 def test_additional_manager_cannot_read_unassigned_team():
     from unittest.mock import MagicMock
-    from app.repositories.time_api import load_scope
+    from app.repositories.time_repository import load_scope
 
     conn = MagicMock()
     conn.__enter__.return_value = conn
@@ -189,7 +189,7 @@ def test_additional_manager_cannot_read_unassigned_team():
         [{"id_team": 1, "id_user": 2}, {"id_team": 2, "id_user": 3}],
         [{"id_team": 1}],
     ]
-    with patch("app.repositories.time_api.get_connection", return_value=conn):
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
         with pytest.raises(HTTPException) as error:
             load_scope({"id_user": 11, "role": "manager"}, date(2026, 10, 23), 2)
     assert error.value.status_code == 403

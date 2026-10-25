@@ -3,8 +3,8 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from app.dependencies import get_current_user
-from app.repositories.time_api import load_scope, clock
-from app.services.time_api import user_time, session_view
+from app.repositories.time_repository import load_scope, clock
+from app.services.timekeeping_service import user_time, session_view
 from app.services.time_service import PARIS
 
 router = APIRouter(prefix="/api", tags=["Time"])
