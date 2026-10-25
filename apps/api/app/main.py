@@ -2,13 +2,13 @@
 
 import logging
 import os
+from typing import Any
+
 import psycopg
-from fastapi import (Depends,FastAPI,HTTPException,status,)
+from fastapi import (Depends,FastAPI,HTTPException,)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import (OAuth2PasswordBearer,)
-from jose import JWTError
-from core.security import decode_access_token
-from app.routers.users_routers import router as users_router
+from app.dependencies import get_current_user
+from app.routers.users_routers import UserResponse, router as users_router
 from app.routers.register import router as register_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
@@ -70,41 +70,6 @@ TABLES = (
     "timekeeping_correction",
 )
 
-# Route utilisée par Swagger pour récupérer un token
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="api/auth/login"
-)
-
-# -----------------------------------------------------------------------------
-# Base de données
-# -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
-# JWT
-# -----------------------------------------------------------------------------
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token invalide",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-        payload = decode_access_token(token)
-
-        username = payload.get("sub")
-
-        if username is None:
-            raise credentials_exception
-
-        return username
-
-    except JWTError:
-        raise credentials_exception
-
 # -----------------------------------------------------------------------------
 # Routes publiques
 # -----------------------------------------------------------------------------
@@ -123,10 +88,10 @@ def accueil():
 
 @app.get("/me",
     tags=["Authentication"],
+    response_model=UserResponse,
 )
 def me(
-    current_user: str = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(get_current_user),
 ):
-    return {
-        "username": current_user
-    }
+    """Profil de l'utilisateur connecté (sans hash de mot de passe)."""
+    return current_user

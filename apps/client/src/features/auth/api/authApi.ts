@@ -1,16 +1,10 @@
 import { formBody, request } from '@/shared/api/client';
-import type {
-  LoginCredentials,
-  SessionUser,
-  TokenResponse,
-} from '@/features/auth/types';
-
-type MeResponse = {
-  username: string;
-};
+import type { LoginCredentials, TokenResponse } from '@/features/auth/types';
+import { toUser, type UserDto } from '@/features/users/api/usersApi';
+import type { User } from '@/features/users/types';
 
 export async function login(
-  credentials: LoginCredentials
+  credentials: LoginCredentials,
 ): Promise<TokenResponse> {
   return request<TokenResponse>('/api/auth/login', {
     method: 'POST',
@@ -25,9 +19,8 @@ export async function login(
   });
 }
 
-export async function getMe(): Promise<SessionUser> {
-  const me = await request<MeResponse>('/me');
-  return { id: me.username };
+export async function getMe(): Promise<User> {
+  return toUser(await request<UserDto>('/me'));
 }
 
 export const authQueryKeys = {

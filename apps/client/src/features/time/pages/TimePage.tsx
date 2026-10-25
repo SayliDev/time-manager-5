@@ -17,21 +17,23 @@ import {
   Skeleton,
   Table,
   Tabs,
-  toast,
 } from '@heroui/react';
+import { sileo } from 'sileo';
 import { useState } from 'react';
-import { fullName } from '@/data/mock';
 import {
   useTimeEntries,
   useUserHours,
-  useUsers,
   useWeeklySummary,
 } from '@/data/mockQueries';
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
+import { useUsers } from '@/features/users/hooks/useUsers';
+import { fullName, isManagerRole } from '@/features/users/lib/names';
 import { EntriesTable } from '@/features/time/components/EntriesTable';
 import { WEEKLY_TARGET_HOURS } from '@/features/time/constants/weeklyRows';
 import { ChartSkeleton } from '@/shared/charts/ChartSkeleton';
 import { HoursBarChart } from '@/shared/charts/HoursBarChart';
 import { formatDecimal, formatHours } from '@/shared/lib/format';
+import { DemoBadge } from '@/shared/ui/DemoBadge';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 import { StatCard, StatCardSkeleton } from '@/shared/ui/StatCard';
@@ -49,17 +51,19 @@ interface WeeklySummaryRow {
 
 export function TimePage() {
   const [tab, setTab] = useState('daily');
-  const [selectedId, setSelectedId] = useState('u2');
+  const [pickedId, setPickedId] = useState<string | null>(null);
 
+  const { data: currentUser } = useCurrentUser();
   const { data: users = [], isPending: usersLoading } = useUsers();
+  // Un employé ne consulte que ses propres pointages.
+  const canPickEmployee = currentUser ? isManagerRole(currentUser.role) : false;
+  const selectedId = (canPickEmployee ? pickedId : null) ?? currentUser?.id;
   const entriesQuery = useTimeEntries(selectedId);
   const hoursQuery = useUserHours(selectedId);
   const weeklyQuery = useWeeklySummary(selectedId);
 
   const entries = entriesQuery.data ?? [];
   const weeklyRows = weeklyQuery.data ?? [];
-  // Au changement d'employé, on garde l'ancien contenu atténué plutôt que de
-  // repasser par le skeleton : le rendu reste stable.
   const dimmed = (isPlaceholderData: boolean) =>
     `transition-opacity duration-300 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`;
 
@@ -76,7 +80,8 @@ export function TimePage() {
           <Button
             variant='secondary'
             onPress={() =>
-              toast.success('Export généré', {
+              sileo.success({
+                title: 'Export généré',
                 description: 'Votre relevé d’heures a été téléchargé.',
               })
             }
@@ -94,10 +99,10 @@ export function TimePage() {
           <Select
             className='w-full md:w-64'
             fullWidth
-            isDisabled={usersLoading}
-            value={selectedId}
+            isDisabled={usersLoading || !canPickEmployee}
+            value={selectedId ?? null}
             variant='secondary'
-            onChange={(key) => setSelectedId(String(key))}
+            onChange={(key) => setPickedId(String(key))}
           >
             <Label>Employé</Label>
             <Select.Trigger>
@@ -196,6 +201,7 @@ export function TimePage() {
         >
           <div className={statsGridClassName}>
             <StatCard
+              badge={<DemoBadge />}
               hint='sur 8 jours'
               icon={Clock}
               label='Total travaillé'
@@ -203,6 +209,7 @@ export function TimePage() {
               value={formatHours(total)}
             />
             <StatCard
+              badge={<DemoBadge />}
               delta={4.1}
               hint='vs objectif'
               icon={Calendar}
@@ -212,6 +219,7 @@ export function TimePage() {
               value={formatDecimal((total / 8) * 5)}
             />
             <StatCard
+              badge={<DemoBadge />}
               hint={`objectif ${WEEKLY_TARGET_HOURS} h`}
               icon={Clock}
               label='Heures sup.'
@@ -220,6 +228,7 @@ export function TimePage() {
               value='3,2'
             />
             <StatCard
+              badge={<DemoBadge />}
               hint='retards + oublis'
               icon={TriangleExclamation}
               label='Anomalies'
@@ -237,7 +246,10 @@ export function TimePage() {
         >
           <Card.Header className='flex-row flex-wrap items-center justify-between gap-3'>
             <div>
-              <Card.Title>Détail des heures</Card.Title>
+              <div className='flex items-center gap-2'>
+                <Card.Title>Détail des heures</Card.Title>
+                <DemoBadge />
+              </div>
               <Card.Description>
                 Présentiel vs télétravail · vue quotidienne ou hebdomadaire
               </Card.Description>
