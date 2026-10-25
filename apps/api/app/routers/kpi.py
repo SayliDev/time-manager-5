@@ -1,6 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
+from app.db.schemas.dashboard_schema import (
+    ActivityEvent,
+    DashboardHours,
+    DashboardKpis,
+    Presence,
+)
 from app.dependencies import get_current_user
 from app.repositories.time_repository import load_scope
 from app.services.timekeeping_service import presence, activity, hours
@@ -53,7 +59,7 @@ def metrics(data, start, end, now):
     )
 
 
-@router.get("/kpis")
+@router.get("/kpis", response_model=DashboardKpis)
 def kpis(
     period: Literal["week", "month"] = "week",
     team_id: int | None = Query(None, gt=0),
@@ -92,7 +98,7 @@ def kpis(
     }
 
 
-@router.get("/hours")
+@router.get("/hours", response_model=list[DashboardHours])
 def dashboard_hours(
     period: Literal["week", "month"] = "week",
     team_id: int | None = Query(None, gt=0),
@@ -133,7 +139,7 @@ def dashboard_hours(
     return result
 
 
-@router.get("/presence")
+@router.get("/presence", response_model=list[Presence])
 def dashboard_presence(
     team_id: int | None = Query(None, gt=0), user: dict = Depends(get_current_user)
 ):
@@ -142,7 +148,7 @@ def dashboard_presence(
     return presence(data, day, now)
 
 
-@router.get("/activity")
+@router.get("/activity", response_model=list[ActivityEvent])
 def dashboard_activity(
     limit: int = Query(10, ge=1, le=100),
     team_id: int | None = Query(None, gt=0),

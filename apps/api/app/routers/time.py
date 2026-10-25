@@ -1,7 +1,12 @@
 from datetime import date, datetime, timezone
-from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from app.db.schemas.time_schema import (
+    ClockIn,
+    DailyHours,
+    TimeSummary,
+    WeeklyHours,
+    WorkSession,
+)
 from app.dependencies import get_current_user
 from app.repositories.time_repository import load_scope, clock
 from app.services.timekeeping_service import user_time, session_view
@@ -27,7 +32,7 @@ def time_data(user_id, start, end, user):
     return user_time(data, user_id, start, end, now)
 
 
-@router.get("/users/{user_id}/work-sessions")
+@router.get("/users/{user_id}/work-sessions", response_model=list[WorkSession])
 def sessions(
     user_id: int,
     start: date | None = Query(None, alias="from"),
@@ -38,7 +43,7 @@ def sessions(
     return time_data(user_id, start, end, user)["work-sessions"]
 
 
-@router.get("/users/{user_id}/hours/daily")
+@router.get("/users/{user_id}/hours/daily", response_model=list[DailyHours])
 def daily(
     user_id: int,
     start: date | None = Query(None, alias="from"),
@@ -49,7 +54,7 @@ def daily(
     return time_data(user_id, start, end, user)["daily"]
 
 
-@router.get("/users/{user_id}/hours/weekly")
+@router.get("/users/{user_id}/hours/weekly", response_model=list[WeeklyHours])
 def weekly(
     user_id: int,
     start: date | None = Query(None, alias="from"),
@@ -60,7 +65,7 @@ def weekly(
     return time_data(user_id, start, end, user)["weekly"]
 
 
-@router.get("/users/{user_id}/time-summary")
+@router.get("/users/{user_id}/time-summary", response_model=TimeSummary)
 def summary(
     user_id: int,
     start: date | None = Query(None, alias="from"),
@@ -71,10 +76,6 @@ def summary(
     return time_data(user_id, start, end, user)["time-summary"]
 
 
-class ClockIn(BaseModel):
-    mode: Literal["onsite", "remote"]
-
-
 def clock_result(user, mode=None):
     """Applique le pointage au compte connecté et sérialise son résultat en UTC."""
     session = clock(user["id_user"], mode)
@@ -82,13 +83,13 @@ def clock_result(user, mode=None):
     return session_view(session, load_scope(user, now.astimezone(PARIS).date()), now)
 
 
-@router.post("/work-sessions/clock-in", status_code=201)
+@router.post("/work-sessions/clock-in", status_code=201, response_model=WorkSession)
 def clock_in(payload: ClockIn, user: dict = Depends(get_current_user)):
     """Crée une arrivée pour le compte connecté, en présentiel ou à distance."""
     return clock_result(user, payload.mode)
 
 
-@router.post("/work-sessions/clock-out")
+@router.post("/work-sessions/clock-out", response_model=WorkSession)
 def clock_out(user: dict = Depends(get_current_user)):
     """Clôture la session ouverte du compte connecté, sans identifiant fourni."""
     return clock_result(user)
