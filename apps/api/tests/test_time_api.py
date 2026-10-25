@@ -1,8 +1,9 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
+from app.repositories.time_repository import clock, load_scope
 from app.routers.time import time_data
 from app.services.timekeeping_service import user_time, presence
 
@@ -125,9 +126,6 @@ def test_clock_requires_authentication(client, path):
     "mode,active", [("onsite", [{"id_work_session": 1}]), (None, [])]
 )
 def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active):
-    from unittest.mock import MagicMock
-    from app.repositories.time_repository import clock
-
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = active
@@ -140,9 +138,6 @@ def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active
 
 
 def test_employee_cannot_select_team_owned_by_another_manager():
-    from unittest.mock import MagicMock
-    from app.repositories.time_repository import load_scope
-
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = [{"id_team": 1, "id_user": 11}]
@@ -155,9 +150,6 @@ def test_employee_cannot_select_team_owned_by_another_manager():
 
 @pytest.mark.parametrize("team_id", [None, 2])
 def test_additional_manager_can_read_assigned_teams(team_id):
-    from unittest.mock import MagicMock
-    from app.repositories.time_repository import load_scope
-
     teams = [{"id_team": 1, "id_user": 2}, {"id_team": 2, "id_user": 3}]
     conn = MagicMock()
     conn.__enter__.return_value = conn
@@ -180,9 +172,6 @@ def test_additional_manager_can_read_assigned_teams(team_id):
 
 
 def test_additional_manager_cannot_read_unassigned_team():
-    from unittest.mock import MagicMock
-    from app.repositories.time_repository import load_scope
-
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.side_effect = [
