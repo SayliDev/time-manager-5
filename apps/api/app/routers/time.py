@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from app.routers.manager_router import get_current_user
+from app.dependencies import get_current_user
 from app.repositories.time_api import load_scope, clock
 from app.services.time_api import user_time, session_view
 from app.services.time_service import PARIS

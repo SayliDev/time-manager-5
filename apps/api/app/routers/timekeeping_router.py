@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.routers.manager_router import get_current_user
+from app.dependencies import get_current_user
 from app.services.dashboard_service import period_bounds
 from app.services.time_service import PARIS, _midnight
 from app.services.timekeeping_service import build_timekeeping

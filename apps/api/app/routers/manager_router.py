@@ -2,79 +2,14 @@ from datetime import date, datetime, timedelta
 from typing import Literal
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.repositories import users_repository
+from app.dependencies import require_management
 from app.services.dashboard_service import build_dashboard, period_bounds
 from app.services.time_service import PARIS, _midnight
-from core.security import decode_access_token
 
 
 router = APIRouter(tags=["Manager"])
-
-bearer = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login",
-    auto_error=False,
-)
-
-
-def get_current_user(
-    request: Request,
-    token: str | None = Depends(bearer),
-) -> dict:
-    # Preserve bearer authentication, but let a valid Microsoft cookie
-    # replace an expired or invalid token left in the browser's local storage.
-    """Authentifie le compte actif via un JWT Bearer ou un cookie Microsoft.
-
-    Le cookie sert de repli uniquement si le Bearer est absent ou invalide.
-    Un Bearer valide détermine toujours le compte, quel que soit son rôle.
-    Renvoie 401 pour une session ou un compte invalide, 503 si la base échoue.
-    """
-    for candidate in (token, request.cookies.get("access_token")):
-        if not candidate:
-            continue
-        try:
-            payload = decode_access_token(candidate)
-            user_id = int(payload["sub"])
-            break
-        except (JWTError, KeyError, ValueError, TypeError):
-            continue
-    else:
-        raise HTTPException(
-            status_code=401,
-            detail="Connexion requise.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        user = users_repository.get_by_id(user_id)
-    except psycopg.Error as error:
-        raise HTTPException(
-            status_code=503,
-            detail="Base de données indisponible.",
-        ) from error
-
-    if not user or user["desactive_at"] is not None:
-        raise HTTPException(
-            status_code=401,
-            detail="Compte indisponible.",
-        )
-
-    return user
-
-
-def require_manager(request: Request, token: str | None = Depends(bearer)) -> dict:
-    """Exige un compte actif manager ou admin ; refuse un employé avec 403."""
-    user = get_current_user(request, token)
-    if user["role"] not in {"manager", "admin"}:
-        raise HTTPException(
-            status_code=403,
-            detail="Accès réservé aux managers.",
-        )
-
-    return user
 
 
 @router.get("/dashboard")
@@ -82,7 +17,7 @@ def get_dashboard(
     period: Literal["week", "month"] = "week",
     team_id: int | None = Query(None, gt=0),
     reference_date: date | None = None,
-    manager: dict = Depends(require_manager),
+    manager: dict = Depends(require_management),
 ):
     """Conserve la réponse agrégée historique du dashboard pour les managers.
 
