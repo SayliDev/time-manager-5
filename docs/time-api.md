@@ -21,8 +21,7 @@ rattachement, avec un bouton d'actualisation et un lien vers ses pointages.
 
 Le tableau de bord appelle directement `/api/dashboard/kpis`, `/hours`,
 `/presence` et `/activity`. Le filtre `team_id` est envoyé aux quatre routes,
-avec `period=week|month`. Les noms et coordonnées viennent de `/api/directory`
-et les équipes de `/api/teams`.
+avec `period=week|month`. Les équipes viennent de `/api/teams`.
 
 La page Pointages appelle `/api/users/{id}/work-sessions`, `/hours/daily`,
 `/hours/weekly` et `/time-summary` en parallèle, avec les mêmes bornes `from`
@@ -34,8 +33,7 @@ Les appels passent par `shared/api/client.ts`, qui transmet le token, les
 cookies de session et le signal d'annulation. Les erreurs API sont affichées
 dans les pages. Les lectures sont actualisées toutes les 60 secondes ; les
 horaires UTC sont affichés en heure de Paris et une durée ouverte reste vide.
-Les pages n'utilisent plus les anciennes routes `/dashboard` et `/timekeeping`,
-ni les imports de données fictives. `mockQueries.ts` ne conserve que des
+Les pages n'utilisent plus les imports de données fictives. `mockQueries.ts` ne conserve que des
 réexports de compatibilité vers les hooks des fonctionnalités.
 
 `shared/api/client.ts` est également le point d'entrée unique pour les fonctions
@@ -53,14 +51,12 @@ indépendantes de ce branchement pointages/dashboard.
 Les nouvelles routes `/api/users/{id}/work-sessions`, `/hours/daily`,
 `/hours/weekly`, `/time-summary`, `/api/work-sessions/clock-in`,
 `/clock-out`, `/api/dashboard/{kpis,hours,presence,activity}` exigent une
-session authentifi?e. Les routes `/api/teams`, `/api/directory` et
-`/api/session` fournissent les donn?es des ?crans existants.
+session authentifiée. La route `/api/teams` fournit les équipes du périmètre.
 
 Un employ? acc?de ? ses donn?es, un manager aux collaborateurs actuellement
 rattach?s aux ?quipes dont `team.id_user` le d?signe responsable (et ? ses
 propres donn?es), un administrateur ? tous les comptes actifs. Une ?quipe
-explicitement demand?e hors p?rim?tre renvoie 403. Les anciennes routes
-`/dashboard` et `/timekeeping` appliquent le m?me filtrage.
+explicitement demand?e hors p?rim?tre renvoie 403.
 
 Les instants sont en UTC avec suffixe Z. Les journ?es et semaines suivent le
 calendrier Europe/Paris, comme les calculs existants. Les bornes `from` et
