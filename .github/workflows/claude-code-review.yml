@@ -12,11 +12,9 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Automatic review only on the repo owner's PRs (it runs on their subscription).
+    # Dependabot PRs are excluded: they have no access to repository secrets.
+    if: github.event.pull_request.user.login == 'SayliDev'
 
     runs-on: ubuntu-latest
     permissions:
