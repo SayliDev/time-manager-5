@@ -2,7 +2,7 @@
 import logging
 import traceback
 
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -16,6 +16,7 @@ from app.services.users_service import (
     update_user,
 )
 from app.services.email_service import send_account_created_email
+from app.repositories import team_allocations
 from core.password_generator import generate_temporary_password
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class UserCreate(BaseModel):
     password: str | None = None
     role: str = "employe"
     phone: str | None = None
+    team_name: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -62,6 +64,15 @@ def create_user_endpoint(
 ):
     try:
         temporary_password = payload.password or generate_temporary_password()
+        selected_team = None
+        if payload.team_name:
+            selected_team = team_allocations.get_team_by_name(payload.team_name)
+            if selected_team is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Équipe inconnue.",
+                )
+
         user = create_user(
             first_name=payload.first_name,
             last_name=payload.last_name,
@@ -70,6 +81,13 @@ def create_user_endpoint(
             role=payload.role,
             phone=payload.phone,
         )
+
+        if selected_team is not None:
+            team_allocations.create(
+                id_user=user["id_user"],
+            id_team=selected_team["id_team"],
+                start_at=date.today(),
+            )
 
         email_sent = send_account_created_email(
             to_email=user["email"],
@@ -165,11 +183,11 @@ def update_user_endpoint(user_id: int, payload: UserCreate):
 
 @router.get("/me", tags=["Authentication"])
 def me_endpoint(
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     return {
-        "username": current_user,
-        "role": current_user["role"]  # Remplacez "user" par la valeur réelle du rôle si disponible
+        "username": current_user["id"],
+        "role": current_user["role"],
     }
 
 @router.get("/all/details",response_model=list[UserDetailsResponse],status_code=status.HTTP_200_OK,)

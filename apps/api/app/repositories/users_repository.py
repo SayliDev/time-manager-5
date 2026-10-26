@@ -78,10 +78,19 @@ def get_all_with_details() -> list[dict[str, Any]]:
             SELECT
                 t.id_team,
                 t.name AS team_name,
-                d.name AS department_name
+                department.department_name
             FROM team_allocation AS allocation
             JOIN team AS t ON t.id_team = allocation.id_team
-            JOIN departement AS d ON d.id_departement = t.id_departement
+            LEFT JOIN LATERAL (
+                SELECT d.name AS department_name
+                FROM team_department AS assignment
+                JOIN departement AS d ON d.id_departement = assignment.id_departement
+                WHERE assignment.id_team = t.id_team
+                  AND assignment.start_at <= CURRENT_DATE
+                  AND (assignment.end_at IS NULL OR assignment.end_at >= CURRENT_DATE)
+                ORDER BY assignment.start_at DESC
+                LIMIT 1
+            ) AS department ON TRUE
             WHERE allocation.id_user = u.id_user
               AND allocation.start_at <= CURRENT_DATE
               AND (allocation.end_at IS NULL OR allocation.end_at >= CURRENT_DATE)
@@ -194,17 +203,16 @@ def create(
 
             return user
 
+#   Modifie les champs fournis et retourne l'utilisateur sans hash.
+#   Retourne None si l'utilisateur n'existe pas.
+#   Un champ omis reste inchangé.
+#   None écrit SQL NULL si la colonne le permet.
+#   id_user et creat_at ne sont pas modifiables.
 def update(
     record_id: int,
     **changes: Any,
 ) -> dict[str, Any] | None:
-    """Modifie les champs fournis et retourne l'utilisateur sans hash.
 
-    Retourne None si l'utilisateur n'existe pas.
-    Un champ omis reste inchangé.
-    None écrit SQL NULL si la colonne le permet.
-    id_user et creat_at ne sont pas modifiables.
-    """
     if not changes:
         raise ValueError("Fournir au moins un champ à modifier.")
 
@@ -237,13 +245,12 @@ def update(
             )
             return cursor.fetchone()
 
+#    Supprime définitivement l'utilisateur ; True s'il existait.
+#    Une référence depuis une autre table peut bloquer la suppression
+#    et provoquer une erreur PostgreSQL ForeignKeyViolation.
+#    Aucune suppression en cascade ici.
 def delete(record_id: int) -> bool:
-    """Supprime définitivement l'utilisateur ; True s'il existait.
 
-    Une référence depuis une autre table peut bloquer la suppression
-    et provoquer une erreur PostgreSQL ForeignKeyViolation.
-    Aucune suppression en cascade ici.
-    """
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -258,13 +265,12 @@ def delete(record_id: int) -> bool:
             )
             return cursor.fetchone() is not None
 
+#    """Désactive le compte sans supprimer son historique.
+#    Conserve la date existante si le compte est déjà désactivé.
+#    Retourne None si l'utilisateur n'existe pas.
+#    Le service d'authentification doit refuser les comptes désactivés.
 def deactivate(record_id: int) -> dict[str, Any] | None:
-    """Désactive le compte sans supprimer son historique.
 
-    Conserve la date existante si le compte est déjà désactivé.
-    Retourne None si l'utilisateur n'existe pas.
-    Le service d'authentification doit refuser les comptes désactivés.
-    """
     query = sql.SQL(
         """
         UPDATE {}

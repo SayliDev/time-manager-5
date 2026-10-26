@@ -52,6 +52,7 @@ export function UserFormModal({
             email: data.get('email'),
             role: data.get('role') === 'employee' ? 'employe' : data.get('role'),
             phone: data.get('phone') || null,
+            team_name: data.get('teamName') || null,
           }),
         });
         onSaved?.();

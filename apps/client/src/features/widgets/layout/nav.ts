@@ -47,6 +47,12 @@ export const navSections: NavSection[] = [
         icon: Clock,
         roles: ['employee', 'manager'],
       },
+      {
+        to: appPath('/leaves'),
+        label: 'Congés',
+        icon: Clock,
+        roles: ['employee', 'manager', 'admin'],
+      },
     ],
   },
   {
@@ -88,6 +94,7 @@ export const navSections: NavSection[] = [
 export const pageTitles: Record<string, string> = {
   [appPath()]: 'Tableau de bord',
   [appPath('/time')]: 'Pointages',
+  [appPath('/leaves')]: 'Congés',
   [appPath('/users')]: 'Employés',
   [appPath('/teams')]: 'Équipes',
   [appPath('/reports')]: 'Rapports & KPIs',

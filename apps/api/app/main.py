@@ -16,6 +16,7 @@ from app.routers.register import router as register_router
 from app.db.database_conn import DATABASE_URL
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
+from app.routers.leave_requests import router as leave_requests_router
 from app.controller.users import get_current_user as get_authenticated_user
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
@@ -50,6 +51,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
+app.include_router(leave_requests_router)
 # app.include_router(register_router)
 app.include_router(register_router)
 # app.include_router(test_work_time_router)
@@ -61,9 +63,11 @@ TABLES = (
     "users",
     "departement",
     "team",
+    "team_department",
     "team_allocation",
     "contract",
     "work_session",
+    "leave_request",
     "timekeeping_correction",
 )
 

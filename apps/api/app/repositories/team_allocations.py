@@ -51,6 +51,41 @@ def get_by_id(record_id: int) -> dict[str, Any] | None:
             return cursor.fetchone()
 
 
+def get_team_by_name(name: str) -> dict[str, Any] | None:
+    """Retourne une équipe par son nom métier."""
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT id_team, name
+                FROM team
+                WHERE name = %s
+                """,
+                (name,),
+            )
+            return cursor.fetchone()
+
+#  Retourne l'équipe active la plus récente d'un utilisateur.
+def get_active_team_id(user_id: int) -> int | None:
+   
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id_team
+                FROM team_allocation
+                WHERE id_user = %s
+                  AND start_at <= CURRENT_DATE
+                  AND (end_at IS NULL OR end_at >= CURRENT_DATE)
+                ORDER BY start_at DESC, id_team_allocation DESC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            return None if row is None else row['id_team']
+
+
 def create(
     *,
     id_user: int,

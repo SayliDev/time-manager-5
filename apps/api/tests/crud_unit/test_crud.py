@@ -36,7 +36,7 @@ CASES = [
          nullable="end_date", change="contract_type",
          protected="id_contract", wrapped_delete=True),
     dict(module="team", table="team", pk="id_team",
-         create=dict(name="Dev", id_user=2, id_departement=1),
+            create=dict(name="Dev"),
          defaults=dict(description=None),
          nullable="description", change="name",
          protected="id_team", wrapped_delete=True),

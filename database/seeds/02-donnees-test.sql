@@ -97,32 +97,29 @@ BEGIN
     -- Alice dirige le développement.
     INSERT INTO public.team (
         name,
-        description,
-        id_user,
-        id_departement
+        description
     )
     VALUES (
         'Développement - DEMO',
-        'Équipe fictive de développement logiciel',
-        v_user_ids[2],
-        v_it_department_id
+        'Équipe fictive de développement logiciel'
     )
     RETURNING id_team INTO v_dev_team_id;
 
     -- Karim dirige le support.
     INSERT INTO public.team (
         name,
-        description,
-        id_user,
-        id_departement
+        description
     )
     VALUES (
         'Support - DEMO',
-        'Équipe fictive de support technique',
-        v_user_ids[3],
-        v_support_department_id
+        'Équipe fictive de support technique'
     )
     RETURNING id_team INTO v_support_team_id;
+
+    INSERT INTO public.team_department (id_team, id_departement)
+    VALUES
+        (v_dev_team_id, v_it_department_id),
+        (v_support_team_id, v_support_department_id);
 
     -- Les managers sont également membres de leur équipe.
     -- L'administrateur reste hors équipe.

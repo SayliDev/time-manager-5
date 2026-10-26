@@ -5,6 +5,7 @@ import LoginPage from '@/features/auth/pages/LoginPage';
 import MicrosoftCallbackPage from '@/features/auth/pages/MicrosoftCallbackPage';
 import UnauthorizedPage from '@/features/auth/pages/UnauthorizedPage';
 import { ManagerDashboardPage } from '@/features/dashboard/pages/ManagerDashboardPage';
+import { LeavePage } from '@/features/leave/pages/LeavePage';
 import { TimePage } from '@/features/time/pages/TimePage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { AppShell } from '@/features/widgets/layout/AppShell';
@@ -18,10 +19,11 @@ export default function App() {
         <Route path='/auth/callback' element={<MicrosoftCallbackPage />} />
         <Route element={<RequireAuth />}>
           <Route path='/unauthorized' element={<UnauthorizedPage />} />
-          <Route element={<RequireRoles roles={['admin', 'manager']} />}>
-            <Route path='/dashboard' element={<AppShell />}>
+          <Route path='/dashboard' element={<AppShell />}>
+            <Route path='time' element={<TimePage />} />
+            <Route path='leaves' element={<LeavePage />} />
+            <Route element={<RequireRoles roles={['admin', 'manager']} />}>
               <Route index element={<ManagerDashboardPage />} />
-              <Route path='time' element={<TimePage />} />
               <Route path='users' element={<UsersPage />} />
               <Route
                 path='teams'
