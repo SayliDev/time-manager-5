@@ -137,6 +137,42 @@ def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active
     assert conn.execute.call_count == 2
 
 
+@pytest.mark.parametrize("mode", [None, "onsite"])
+@pytest.mark.parametrize(
+    "now_value,midnight_value",
+    [
+        ("2026-10-30T23:30:00Z", "2026-10-30T23:00:00Z"),
+        ("2026-07-01T22:30:00Z", "2026-07-01T22:00:00Z"),
+        ("2026-10-25T02:30:00Z", "2026-10-24T22:00:00Z"),
+    ],
+)
+def test_clock_only_considers_sessions_started_today_in_paris(
+    mode, now_value, midnight_value
+):
+    now = instant(now_value)
+    midnight = instant(midnight_value)
+    conn = MagicMock()
+    conn.__enter__.return_value = conn
+    conn.execute.return_value.fetchall.return_value = []
+    with (
+        patch("app.repositories.time_repository.get_connection", return_value=conn),
+        patch("app.repositories.time_repository.datetime") as clock_datetime,
+    ):
+        clock_datetime.now.return_value = now
+        clock_datetime.combine.side_effect = datetime.combine
+        if mode is None:
+            with pytest.raises(HTTPException) as error:
+                clock(3)
+            assert error.value.status_code == 409
+            assert conn.execute.call_count == 2
+        else:
+            clock(3, mode)
+            assert conn.execute.call_args.args[1] == (3, mode, now)
+    query, parameters = conn.execute.call_args_list[1].args
+    assert "start_at >= %s AND start_at <= %s" in query
+    assert parameters == (3, midnight, now)
+
+
 def test_employee_cannot_select_team_owned_by_another_manager():
     conn = MagicMock()
     conn.__enter__.return_value = conn

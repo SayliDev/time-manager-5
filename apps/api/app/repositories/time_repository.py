@@ -1,6 +1,7 @@
 """Scoped reads and atomic clock operations."""
 
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
+from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from app.db.database_conn import get_connection
 
@@ -109,26 +110,37 @@ def clock(user_id, mode=None):
     Le verrou sur l’utilisateur sérialise aussi deux arrivées simultanées, même
     si aucune session n’existe encore. Une arrivée en double ou un départ sans
     session ouverte renvoie 409 ; le contexte annule alors la transaction.
+    Seules les sessions commencées aujourd’hui en heure de Paris sont retenues.
+    Une session oubliée la veille reste ouverte pour correction.
     """
     with get_connection() as conn:
         # Serialize operations for this employee, including concurrent arrivals.
         conn.execute(
             "SELECT id_user FROM users WHERE id_user=%s FOR UPDATE", (user_id,)
         )
+        now = datetime.now(timezone.utc)
+        day_start = datetime.combine(
+            now.astimezone(ZoneInfo("Europe/Paris")).date(),
+            time.min,
+            tzinfo=ZoneInfo("Europe/Paris"),
+        ).astimezone(timezone.utc)
         active = conn.execute(
-            "SELECT * FROM work_session WHERE id_user=%s AND end_at IS NULL AND cancel_at IS NULL FOR UPDATE",
-            (user_id,),
+            """SELECT * FROM work_session
+            WHERE id_user=%s AND end_at IS NULL AND cancel_at IS NULL
+                AND start_at >= %s AND start_at <= %s
+            ORDER BY start_at, id_work_session FOR UPDATE""",
+            (user_id, day_start, now),
         ).fetchall()
         if mode is not None:
             if active:
                 raise HTTPException(409, "Une session est déjà en cours.")
             return conn.execute(
                 "INSERT INTO work_session(id_user, work_mode, start_at) VALUES (%s,%s,%s) RETURNING *",
-                (user_id, mode, datetime.now(timezone.utc)),
+                (user_id, mode, now),
             ).fetchone()
         if not active:
             raise HTTPException(409, "Aucune session en cours.")
         return conn.execute(
             "UPDATE work_session SET end_at=%s WHERE id_work_session=%s RETURNING *",
-            (datetime.now(timezone.utc), active[-1]["id_work_session"]),
+            (now, active[-1]["id_work_session"]),
         ).fetchone()
