@@ -1,4 +1,4 @@
-BEGIN;
+﻿BEGIN;
 
 SET LOCAL TIME ZONE 'Europe/Paris';
 
@@ -6,7 +6,7 @@ DO $$
 DECLARE
     v_first_names TEXT[] := ARRAY[
         'Alexandre', 'Alice', 'Karim', 'Emma', 'Lucas',
-        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah', 'John'
+        'Chloé', 'Hugo', 'Léa', 'Nathan', 'Sarah', 'John'
     ];
 
     v_last_names TEXT[] := ARRAY[

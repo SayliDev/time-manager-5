@@ -183,3 +183,35 @@ def test_additional_manager_cannot_read_unassigned_team():
             load_scope({"id_user": 11, "role": "manager"}, date(2026, 10, 23), 2)
     assert error.value.status_code == 403
     assert conn.execute.call_count == 2
+
+
+def test_empty_scope_skips_timekeeping_queries():
+    conn = MagicMock()
+    conn.__enter__.return_value = conn
+    conn.execute.return_value.fetchall.side_effect = [[], []]
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
+        data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
+    assert data == {
+        "users": [], "teams": [], "sessions": [], "contracts": [], "leaves": []
+    }
+    assert conn.execute.call_count == 2
+
+
+def test_scope_loads_timekeeping_only_for_accessible_users():
+    conn = MagicMock()
+    conn.__enter__.return_value = conn
+    users = [{"id_user": 3}]
+    sessions = [{"id_work_session": 7, "id_user": 3}]
+    contracts = [{"id_contract": 2, "id_user": 3}]
+    leaves = [{"id_user": 3}]
+    conn.execute.return_value.fetchall.side_effect = [
+        [], users, sessions, contracts, leaves
+    ]
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
+        data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
+    assert data == {
+        "users": users, "teams": [], "sessions": sessions,
+        "contracts": contracts, "leaves": leaves,
+    }
+    for call in conn.execute.call_args_list[2:]:
+        assert call.args[1] == ([3],)

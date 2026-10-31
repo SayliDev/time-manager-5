@@ -25,10 +25,10 @@ def time_data(user_id, start, end, user):
     end = end or now.astimezone(PARIS).date()
     start = start or end.replace(day=1)
     if end < start or (end - start).days > 366:
-        raise HTTPException(422, "P?riode invalide (367 jours maximum).")
+        raise HTTPException(422, "Période invalide (367 jours maximum).")
     data = load_scope(user, end)
     if user_id not in [u["id_user"] for u in data["users"]]:
-        raise HTTPException(403, "Employ? non autoris?.")
+        raise HTTPException(403, "Employé non autorisé.")
     return user_time(data, user_id, start, end, now)
 
 

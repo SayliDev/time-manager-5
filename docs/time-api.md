@@ -53,56 +53,56 @@ Les nouvelles routes `/api/users/{id}/work-sessions`, `/hours/daily`,
 `/clock-out`, `/api/dashboard/{kpis,hours,presence,activity}` exigent une
 session authentifiée. La route `/api/teams` fournit les équipes du périmètre.
 
-Un employ? acc?de ? ses donn?es, un manager aux collaborateurs actuellement
-rattach?s aux ?quipes dont `team.id_user` le d?signe responsable (et ? ses
-propres donn?es), un administrateur ? tous les comptes actifs. Une ?quipe
-explicitement demand?e hors p?rim?tre renvoie 403.
+Un employé accède à ses données, un manager aux collaborateurs actuellement
+rattachés aux équipes dont `team.id_user` le désigne responsable (et à ses
+propres données), un administrateur à tous les comptes actifs. Une équipe
+explicitement demandée hors périmètre renvoie 403.
 
-Les instants sont en UTC avec suffixe Z. Les journ?es et semaines suivent le
+Les instants sont en UTC avec suffixe Z. Les journées et semaines suivent le
 calendrier Europe/Paris, comme les calculs existants. Les bornes `from` et
-`to` sont inclusives, au format YYYY-MM-DD, limit?es ? 367 jours. La p?riode
-par d?faut des historiques va du premier jour du mois ? aujourd?hui.
-Les sessions annul?es sont exclues, les sessions ouvertes ne contribuent
-pas aux heures. Les heures sont d?cimales et arrondies ? deux chiffres.
-Les historiques incluent les jours sans travail avec z?ro heure.
+`to` sont inclusives, au format YYYY-MM-DD, limitées à 367 jours. La période
+par défaut des historiques va du premier jour du mois à aujourd'hui.
+Les sessions annulées sont exclues, les sessions ouvertes ne contribuent
+pas aux heures. Les heures sont décimales et arrondies à deux chiffres.
+Les historiques incluent les jours sans travail avec zéro heure.
 
-## R?gles configurables
+## Règles configurables
 
-Ces choix sont des valeurs initiales en attente de validation m?tier :
+Ces choix sont des valeurs initiales en attente de validation métier :
 
-- Objectif : `contract.weekly_hours`, 35 heures par d?faut.
-- Arriv?e pr?vue : `contract.expected_start`, 09:00 heure de Paris.
-- Tol?rance : `contract.late_tolerance_minutes`, 5 minutes. Une arriv?e ?
-  09:05 n?est pas en retard ; seule la premi?re arriv?e du jour compte.
-- Suppl?ment : `contract.overtime_threshold_hours`, 0 par d?faut. Le total
-  hebdomadaire doit d?passer objectif + suppl?ment. Le retard est prioritaire
-  sur le statut overtime d?une session ; le r?sum? cumule les heures sup.
-- Une session ouverte d?une journ?e pass?e devient missing ? minuit ? Paris.
-- `leave_absence` contient les p?riodes de cong? inclusives. Les weekends
-  sont ?galement off, sans calendrier de jours f?ri?s.
-- L?objectif du r?sum? est un objectif entier pour chaque semaine intersect?e,
+- Objectif : `contract.weekly_hours`, 35 heures par défaut.
+- Arrivée prévue : `contract.expected_start`, 09:00 heure de Paris.
+- Tolérance : `contract.late_tolerance_minutes`, 5 minutes. Une arrivée à
+  09:05 n'est pas en retard ; seule la première arrivée du jour compte.
+- Supplément : `contract.overtime_threshold_hours`, 0 par défaut. Le total
+  hebdomadaire doit dépasser objectif + supplément. Le retard est prioritaire
+  sur le statut overtime d'une session ; le résumé cumule les heures sup.
+- Une session ouverte d'une journée passée devient missing à minuit à Paris.
+- `leave_absence` contient les périodes de congé inclusives. Les weekends
+  sont également off, sans calendrier de jours fériés.
+- L'objectif du résumé est un objectif entier pour chaque semaine intersectée,
   sans proratisation des semaines partielles.
-- Les tendances portent sur six p?riodes, compar?es sur le m?me nombre de
-  jours ?coul?s, plafonn? ? la longueur de chaque p?riode. Une base pr?c?dente
-  nulle donne une variation de 0 (convention, pour ?viter une division par z?ro).
-- La pr?sence mesure les journ?es avec arriv?e / journ?es ouvr?es attendues,
-  cong?s exclus. Les heures moyennes excluent les sessions ouvertes.
+- Les tendances portent sur six périodes, comparées sur le même nombre de
+  jours écoulés, plafonné à la longueur de chaque période. Une base précédente
+  nulle donne une variation de 0 (convention, pour éviter une division par zéro).
+- La présence mesure les journées avec arrivée / journées ouvrées attendues,
+  congés exclus. Les heures moyennes excluent les sessions ouvertes.
 
 ## Migration
 
-Pour une base existante, ex?cuter `database/migrations/001-time-api.sql` une
-fois avant de d?marrer le nouveau code. Elle est r?ex?cutable et ne supprime
-pas les donn?es. `database/init/10-time-api.sql` applique le m?me sch?ma aux
+Pour une base existante, exécuter `database/migrations/001-time-api.sql` une
+fois avant de démarrer le nouveau code. Elle est réexécutable et ne supprime
+pas les données. `database/init/10-time-api.sql` applique le même schéma aux
 nouvelles installations Docker. Le champ existant `work_session.work_mode`
-est conserv? et expos? sous le nom `mode` dans les r?ponses.
+est conservé et exposé sous le nom `mode` dans les réponses.
 
-La migration a ?t? appliqu?e ? la base Docker locale pendant ce refactoring.
-Les contrats sont aliment?s avec les valeurs par d?faut ; les cong?s sont
-vides tant qu?ils ne sont pas renseign?s.
+La migration a été appliquée à la base Docker locale pendant ce refactoring.
+Les contrats sont alimentés avec les valeurs par défaut ; les congés sont
+vides tant qu'ils ne sont pas renseignés.
 
-Les lectures historiques utilisent les rattachements actuels ? la date de fin
-demand?e, et non une reconstruction des droits pour chaque jour. Aucun
-endpoint de gestion des cong?s n?est ajout? dans ce p?rim?tre. Les formulaires
-de gestion des ?quipes et utilisateurs pr?existants ont seulement leurs
-options branch?es sur les donn?es r?elles ; leurs mutations restent ? traiter
-s?par?ment.
+Les lectures historiques utilisent les rattachements actuels à la date de fin
+demandée, et non une reconstruction des droits pour chaque jour. Aucun
+endpoint de gestion des congés n'est ajouté dans ce périmètre. Les formulaires
+de gestion des équipes et utilisateurs préexistants ont seulement leurs
+options branchées sur les données réelles ; leurs mutations restent à traiter
+séparément.

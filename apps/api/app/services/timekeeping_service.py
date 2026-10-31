@@ -235,8 +235,8 @@ def activity(data, now, limit):
         if s["start_at"] > now:
             continue
         for index, kind, key, label in (
-            (0, "arrival", "start_at", "a point? son arriv?e"),
-            (1, "departure", "end_at", "a point? son d?part"),
+            (0, "arrival", "start_at", "a pointé son arrivée"),
+            (1, "departure", "end_at", "a pointé son départ"),
         ):
             if s[key] and s[key] <= now:
                 events.append(
