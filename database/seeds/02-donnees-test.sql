@@ -1,4 +1,4 @@
-BEGIN;
+﻿BEGIN;
 
 SET LOCAL TIME ZONE 'Europe/Paris';
 
@@ -6,12 +6,12 @@ DO $$
 DECLARE
     v_first_names TEXT[] := ARRAY[
         'Alexandre', 'Alice', 'Karim', 'Emma', 'Lucas',
-        'Chloe', 'Hugo', 'Lea', 'Nathan', 'Sarah'
+        'Chloé', 'Hugo', 'Léa', 'Nathan', 'Sarah', 'John'
     ];
 
     v_last_names TEXT[] := ARRAY[
         'Martin', 'Bernard', 'Dubois', 'Petit', 'Robert',
-        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent'
+        'Richard', 'Durand', 'Moreau', 'Simon', 'Laurent', 'Doe'
     ];
 
     v_emails TEXT[] := ARRAY[
@@ -24,7 +24,8 @@ DECLARE
         'hugo.durand.demo@example.com',
         'lea.moreau.demo@example.com',
         'nathan.simon.demo@example.com',
-        'sarah.laurent.demo@example.com'
+        'sarah.laurent.demo@example.com',
+        'john.doe.demo@example.com'
     ];
 
     v_user_ids INTEGER[] := ARRAY[]::INTEGER[];
@@ -44,6 +45,7 @@ DECLARE
     v_day_offset INTEGER;
 
     v_work_day DATE;
+    v_work_mode TEXT;
     v_session_start TIMESTAMPTZ;
     v_session_end TIMESTAMPTZ;
 
@@ -176,6 +178,12 @@ BEGIN
         FOR v_day_offset IN 0..4 LOOP
             v_work_day := DATE '2026-09-28' + v_day_offset;
 
+            -- Alternate onsite/remote; keep the same mode all day.
+            v_work_mode := CASE
+                WHEN MOD(v_user_index + v_day_offset, 2) = 0 THEN 'onsite'
+                ELSE 'remote'
+            END;
+
             -- Matin.
             v_session_start :=
                 (v_work_day + TIME '09:00')
@@ -192,12 +200,14 @@ BEGIN
             END IF;
 
             INSERT INTO public.work_session (
+                work_mode,
                 start_at,
                 end_at,
                 creat_at,
                 id_user
             )
             VALUES (
+                v_work_mode,
                 v_session_start,
                 v_session_end,
                 v_session_start,
@@ -230,12 +240,14 @@ BEGIN
             END IF;
 
             INSERT INTO public.work_session (
+                work_mode,
                 start_at,
                 end_at,
                 creat_at,
                 id_user
             )
             VALUES (
+                v_work_mode,
                 v_session_start,
                 v_session_end,
                 v_session_start,
