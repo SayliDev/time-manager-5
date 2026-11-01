@@ -20,3 +20,18 @@ export function useTodaySession(id: string | undefined) {
     select: findOpenSession,
   });
 }
+
+function sumCompletedHours(sessions: WorkSessionDto[]): number {
+  return sessions.reduce((total, s) => total + (s.hours ?? 0), 0);
+}
+
+export function useTodayHours(id: string | undefined) {
+  const today = toIsoDate(new Date());
+
+  return useQuery({
+    queryKey: timeQueryKeys.sessions(id ?? '', today, today),
+    queryFn: () => fetchWorkSessions(id!, today, today),
+    enabled: Boolean(id),
+    select: sumCompletedHours,
+  });
+}

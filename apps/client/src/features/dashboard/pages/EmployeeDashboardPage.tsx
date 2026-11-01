@@ -12,7 +12,7 @@ import { ClockDialog } from '@/features/time/components/ClockDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { useClockIn, useClockOut } from '../hooks/useClock';
 import { ApiError } from '@/shared/api/client';
-import { useTodaySession } from '../hooks/useTodaySession';
+import { useTodayHours, useTodaySession } from '../hooks/useTodaySession';
 import { useWeekly } from '../hooks/useWeekly';
 import { percentChange } from '../lib/stats';
 import { getWorkWeek } from '../lib/week';
@@ -22,6 +22,8 @@ export function EmployeeDashboardPage() {
   const { data: openSession, isPending: sessionLoading } = useTodaySession(
     currentUser?.id,
   );
+
+  const { data: completedToday } = useTodayHours(currentUser?.id);
 
   const thisWeek = getWorkWeek(new Date());
 
@@ -44,6 +46,11 @@ export function EmployeeDashboardPage() {
   const since = openSession ? toHHMM(new Date(openSession.start_at)) : '';
 
   const now = useNow();
+
+  const elapsedHours = openSession
+    ? (now.getTime() - new Date(openSession.start_at).getTime()) / 3_600_000
+    : 0;
+  const todayHours = (completedToday ?? 0) + elapsedHours;
 
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
@@ -116,6 +123,7 @@ export function EmployeeDashboardPage() {
         />
         <EmployeeStats
           since={since}
+          today={todayHours}
           weekly={weekly}
           delta={weeklyDelta}
           isLoading={weeklyLoading}
