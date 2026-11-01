@@ -42,3 +42,13 @@ export async function fetchDailyHours(
 
   return dailyHours.map(toDayHours);
 }
+
+export const timeQueryKeys = {
+  user: (userId: string) => ['time', userId] as const,
+
+  daily: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'daily', from, to] as const,
+
+  weekly: (userId: string) =>
+    [...timeQueryKeys.user(userId), 'weekly'] as const,
+};
