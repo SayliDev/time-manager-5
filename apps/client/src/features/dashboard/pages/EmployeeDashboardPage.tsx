@@ -31,6 +31,8 @@ export function EmployeeDashboardPage() {
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
 
+  const isClocking = clockInMutation.isPending || clockOutMutation.isPending;
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const weekly = currentUser?.weeklyHours ?? DEMO_WEEKLY_HOURS;
@@ -94,6 +96,7 @@ export function EmployeeDashboardPage() {
           now={now}
           since={since}
           isLoading={sessionLoading}
+          isSubmitting={isClocking}
           onClock={() => setDialogOpen(true)}
         />
         <EmployeeStats since={since} weekly={weekly} />
@@ -109,6 +112,7 @@ export function EmployeeDashboardPage() {
         mode={clockedIn ? 'out' : 'in'}
         time={toHHMM(now)}
         onConfirm={confirmClock}
+        isSubmitting={isClocking}
         onOpenChange={setDialogOpen}
       />
     </>

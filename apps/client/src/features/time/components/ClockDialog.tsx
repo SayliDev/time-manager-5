@@ -6,6 +6,7 @@ interface ClockDialogProps {
   onOpenChange: (open: boolean) => void;
   mode: 'in' | 'out';
   time: string;
+  isSubmitting: boolean;
   onConfirm: () => void;
 }
 
@@ -14,6 +15,7 @@ export function ClockDialog({
   onOpenChange,
   mode,
   time,
+  isSubmitting,
   onConfirm,
 }: ClockDialogProps) {
   const isIn = mode === 'in';
@@ -75,6 +77,7 @@ export function ClockDialog({
               slot='close'
               variant={isIn ? 'primary' : 'danger'}
               onPress={onConfirm}
+              isDisabled={isSubmitting}
             >
               {isIn ? 'Confirmer l’arrivée' : 'Confirmer le départ'}
             </Button>

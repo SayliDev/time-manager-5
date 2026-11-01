@@ -7,6 +7,7 @@ interface ClockCardProps {
   clockedIn: boolean;
   since: string;
   isLoading: boolean;
+  isSubmitting: boolean;
   onClock: () => void;
 }
 
@@ -15,10 +16,12 @@ export function ClockCard({
   clockedIn,
   since,
   isLoading,
+  isSubmitting,
   onClock,
 }: ClockCardProps) {
   let label = 'Pointer mon arrivée';
   if (isLoading) label = 'Chargement…';
+  else if (isSubmitting) label = 'Enregistrement…';
   else if (clockedIn) label = 'Pointer mon départ';
 
   return (
@@ -77,7 +80,7 @@ export function ClockCard({
           fullWidth
           size='lg'
           variant={clockedIn ? 'danger' : 'primary'}
-          isDisabled={isLoading}
+          isDisabled={isLoading || isSubmitting}
           onPress={onClock}
         >
           {clockedIn ? <Stop /> : <Play />}
