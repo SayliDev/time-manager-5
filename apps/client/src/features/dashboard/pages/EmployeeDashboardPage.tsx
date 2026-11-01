@@ -10,43 +10,65 @@ import { useNow } from '@/features/dashboard/hooks/useNow';
 import { toHHMM } from '@/features/dashboard/lib/clock';
 import { ClockDialog } from '@/features/time/components/ClockDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { useWeekly } from '../hooks/useWeekly';
+import { useClockIn, useClockOut } from '../hooks/useClock';
+import { ApiError } from '@/shared/api/client';
+import { useTodaySession } from '../hooks/useTodaySession';
 
 // Valeur de démo tant que l'API ne fournit pas les heures de la semaine.
 const DEMO_WEEKLY_HOURS = 28.6;
 
 export function EmployeeDashboardPage() {
   const { data: currentUser } = useCurrentUser();
+  useTodaySession(currentUser?.id);
   const now = useNow();
+
+  const clockInMutation = useClockIn();
+  const clockOutMutation = useClockOut();
 
   const [clockedIn, setClockedIn] = useState(true);
   const [since, setSince] = useState('08:57');
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const weekly = currentUser?.weeklyHours ?? DEMO_WEEKLY_HOURS;
-  const { data: weekly2 = [], isPending: weeklyLoading } = useWeekly(
-    currentUser?.id,
-  );
 
-  if (!weeklyLoading) {
-    console.log('Data', weekly2);
-  }
-
-  // Pointage simulé côté client : aucun appel API pour l'instant.
   const confirmClock = () => {
-    const time = toHHMM(now);
     if (clockedIn) {
-      setClockedIn(false);
-      sileo.success({
-        title: 'Départ enregistré',
-        description: `À ${time}, bonne soirée !`,
+      clockOutMutation.mutate(undefined, {
+        onSuccess: () => {
+          setClockedIn(false);
+          sileo.success({
+            title: 'Départ enregistré',
+            description: 'Bonne soirée !',
+          });
+        },
+        onError: (error) =>
+          sileo.error({
+            title: 'Pointage impossible',
+            description:
+              error instanceof ApiError
+                ? error.detail
+                : 'Une erreur est survenue.',
+          }),
       });
     } else {
-      setClockedIn(true);
-      setSince(time);
-      sileo.success({
-        title: 'Arrivée enregistrée',
-        description: `À ${time}, bonne journée !`,
+      clockInMutation.mutate('onsite', {
+        onSuccess: (session) => {
+          const time = toHHMM(new Date(session.start_at));
+          setClockedIn(true);
+          setSince(time);
+          sileo.success({
+            title: 'Arrivée enregistrée',
+            description: `À ${time}, bonne journée !`,
+          });
+        },
+        onError: (error) =>
+          sileo.error({
+            title: 'Pointage impossible',
+            description:
+              error instanceof ApiError
+                ? error.detail
+                : 'Une erreur est survenue.',
+          }),
       });
     }
   };

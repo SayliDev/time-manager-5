@@ -57,11 +57,25 @@ export async function fetchDailyHours(
   return dailyHours.map(toDayHours);
 }
 
+export async function fetchWorkSessions(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<WorkSessionDto[]> {
+  const params = new URLSearchParams({ from, to });
+  return await request<WorkSessionDto[]>(
+    `/api/users/${userId}/work-sessions?${params}`,
+  );
+}
+
 export const timeQueryKeys = {
   user: (userId: string) => ['time', userId] as const,
 
   daily: (userId: string, from: string, to: string) =>
     [...timeQueryKeys.user(userId), 'daily', from, to] as const,
+
+  sessions: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'sessions', from, to] as const,
 
   weekly: (userId: string) =>
     [...timeQueryKeys.user(userId), 'weekly'] as const,
