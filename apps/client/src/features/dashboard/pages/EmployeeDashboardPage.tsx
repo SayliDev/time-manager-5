@@ -14,6 +14,7 @@ import { useClockIn, useClockOut } from '../hooks/useClock';
 import { ApiError } from '@/shared/api/client';
 import { useTodaySession } from '../hooks/useTodaySession';
 import { useWeekly } from '../hooks/useWeekly';
+import { percentChange } from '../lib/stats';
 import { getWorkWeek } from '../lib/week';
 
 export function EmployeeDashboardPage() {
@@ -22,13 +23,22 @@ export function EmployeeDashboardPage() {
     currentUser?.id,
   );
 
-  const { from, to } = getWorkWeek(new Date());
+  const thisWeek = getWorkWeek(new Date());
+
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const lastWeek = getWorkWeek(weekAgo);
+
+  // Du lundi de la semaine dernière au vendredi de cette semaine :
+  // weeks[0] = semaine dernière, weeks[1] = cette semaine.
   const { data: weeks, isPending: weeklyLoading } = useWeekly(
     currentUser?.id,
-    from,
-    to,
+    lastWeek.from,
+    thisWeek.to,
   );
-  const weekly = weeks?.[0]?.hours ?? 0;
+  const weekly = weeks?.[1]?.hours ?? 0;
+  const lastWeekly = weeks?.[0]?.hours ?? 0;
+  const weeklyDelta = percentChange(weekly, lastWeekly);
 
   const clockedIn = openSession != null;
   const since = openSession ? toHHMM(new Date(openSession.start_at)) : '';
@@ -107,6 +117,7 @@ export function EmployeeDashboardPage() {
         <EmployeeStats
           since={since}
           weekly={weekly}
+          delta={weeklyDelta}
           isLoading={weeklyLoading}
         />
       </section>

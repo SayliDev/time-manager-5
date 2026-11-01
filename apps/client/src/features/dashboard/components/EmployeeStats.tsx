@@ -8,12 +8,14 @@ import { StatCard, StatCardSkeleton } from '@/shared/ui/StatCard';
 interface EmployeeStatsProps {
   since: string;
   weekly: number;
+  delta: number | undefined;
   isLoading: boolean;
 }
 
 export function EmployeeStats({
   since,
   weekly,
+  delta,
   isLoading,
 }: EmployeeStatsProps) {
   return (
@@ -31,9 +33,8 @@ export function EmployeeStats({
         skeleton={<StatCardSkeleton withDelta />}
       >
         <StatCard
-          badge={<DemoBadge />}
-          delta={2.4}
-          hint='vs semaine dernière'
+          delta={delta}
+          hint={delta !== undefined ? 'vs semaine dernière' : undefined}
           icon={Calendar}
           label='Cette semaine'
           tone='success'
