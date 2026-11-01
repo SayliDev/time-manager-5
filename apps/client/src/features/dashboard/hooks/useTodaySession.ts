@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
   fetchWorkSessions,
   timeQueryKeys,
@@ -10,13 +10,19 @@ function findOpenSession(sessions: WorkSessionDto[]): WorkSessionDto | null {
   return sessions.find((s) => s.end_at === null) ?? null;
 }
 
-export function useTodaySession(id: string | undefined) {
+function todaySessionsOptions(id: string | undefined) {
   const today = toIsoDate(new Date());
 
-  return useQuery({
+  return queryOptions({
     queryKey: timeQueryKeys.sessions(id ?? '', today, today),
     queryFn: () => fetchWorkSessions(id!, today, today),
     enabled: Boolean(id),
+  });
+}
+
+export function useTodaySession(id: string | undefined) {
+  return useQuery({
+    ...todaySessionsOptions(id),
     select: findOpenSession,
   });
 }
@@ -26,12 +32,8 @@ function sumCompletedHours(sessions: WorkSessionDto[]): number {
 }
 
 export function useTodayHours(id: string | undefined) {
-  const today = toIsoDate(new Date());
-
   return useQuery({
-    queryKey: timeQueryKeys.sessions(id ?? '', today, today),
-    queryFn: () => fetchWorkSessions(id!, today, today),
-    enabled: Boolean(id),
+    ...todaySessionsOptions(id),
     select: sumCompletedHours,
   });
 }
