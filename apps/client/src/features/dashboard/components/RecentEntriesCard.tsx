@@ -1,25 +1,21 @@
 import { Card, Link } from '@heroui/react';
-import { useTimeEntries } from '@/data/mockQueries';
 import { EntriesTable } from '@/features/time/components/EntriesTable';
 import { appPath } from '@/features/widgets/layout/nav';
-import { DemoBadge } from '@/shared/ui/DemoBadge';
+import { useRecentEntries } from '../hooks/useRecentEntries';
 
 interface RecentEntriesCardProps {
   userId: string | undefined;
 }
 
 export function RecentEntriesCard({ userId }: RecentEntriesCardProps) {
-  const { data, isPending } = useTimeEntries(userId);
+  const { data, isPending } = useRecentEntries(userId);
 
   return (
     <Card className='lg:col-span-2'>
       <Card.Header className='flex-row items-start justify-between gap-3'>
         <div>
-          <div className='flex items-center gap-2'>
-            <Card.Title>Derniers pointages</Card.Title>
-            <DemoBadge />
-          </div>
-          <Card.Description>Vos 5 dernières journées</Card.Description>
+          <Card.Title>Derniers pointages</Card.Title>
+          <Card.Description>Vos 5 derniers pointages</Card.Description>
         </div>
         <Link href={appPath('/time')}>
           Tout voir
@@ -28,7 +24,7 @@ export function RecentEntriesCard({ userId }: RecentEntriesCardProps) {
       </Card.Header>
       <Card.Content>
         <EntriesTable
-          entries={(data ?? []).slice(0, 5)}
+          entries={data ?? []}
           isLoading={isPending}
           skeletonRows={5}
         />

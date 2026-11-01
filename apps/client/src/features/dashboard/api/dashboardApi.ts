@@ -1,5 +1,6 @@
 import { request } from '@/shared/api/client';
-import type { DayHours } from '@/features/time/types';
+import type { DayHours, TimeEntry } from '@/features/time/types';
+import { toHHMM } from '../lib/clock';
 
 export interface WeeklyDto {
   week: number;
@@ -37,6 +38,18 @@ function toDayHours(dto: DailyHoursDto): DayHours {
     hours: dto.hours,
     onsite: dto.onsite,
     remote: dto.remote,
+  };
+}
+
+export function toTimeEntry(dto: WorkSessionDto): TimeEntry {
+  return {
+    id: String(dto.id_work_session),
+    date: dto.date,
+    arrival: toHHMM(new Date(dto.start_at)),
+    departure: dto.end_at ? toHHMM(new Date(dto.end_at)) : null,
+    hours: dto.hours ?? 0,
+    status: dto.status,
+    mode: dto.mode,
   };
 }
 
