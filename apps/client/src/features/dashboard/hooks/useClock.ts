@@ -1,11 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
-import {
-  clockIn,
-  clockOut,
-  timeQueryKeys,
-  type WorkMode,
-} from '../api/dashboardApi';
+import type { WorkMode } from '@/features/time/types';
+import { clockIn, clockOut, timeQueryKeys } from '../api/dashboardApi';
 
 export function useClockIn() {
   const queryClient = useQueryClient();

@@ -1,5 +1,10 @@
 import { request } from '@/shared/api/client';
-import type { DayHours, TimeEntry } from '@/features/time/types';
+import type {
+  DayHours,
+  EntryStatus,
+  TimeEntry,
+  WorkMode,
+} from '@/features/time/types';
 import { toHHMM } from '../lib/clock';
 
 export interface WeeklyDto {
@@ -18,10 +23,6 @@ export interface DailyHoursDto {
   remote: number;
 }
 
-export type WorkMode = 'onsite' | 'remote';
-
-export type SessionStatus = 'ok' | 'late' | 'overtime' | 'missing' | 'ongoing';
-
 export interface WorkSessionDto {
   id_work_session: number;
   date: string;
@@ -29,7 +30,7 @@ export interface WorkSessionDto {
   end_at: string | null;
   hours: number | null;
   mode: WorkMode;
-  status: SessionStatus;
+  status: EntryStatus;
 }
 
 function toDayHours(dto: DailyHoursDto): DayHours {
