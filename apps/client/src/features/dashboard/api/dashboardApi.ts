@@ -40,8 +40,15 @@ function toDayHours(dto: DailyHoursDto): DayHours {
   };
 }
 
-export async function fetchWeekly(userId: string): Promise<WeeklyDto[]> {
-  return await request<WeeklyDto[]>(`/api/users/${userId}/hours/weekly`);
+export async function fetchWeekly(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<WeeklyDto[]> {
+  const params = new URLSearchParams({ from, to });
+  return await request<WeeklyDto[]>(
+    `/api/users/${userId}/hours/weekly?${params}`,
+  );
 }
 
 export async function fetchDailyHours(
@@ -77,8 +84,8 @@ export const timeQueryKeys = {
   sessions: (userId: string, from: string, to: string) =>
     [...timeQueryKeys.user(userId), 'sessions', from, to] as const,
 
-  weekly: (userId: string) =>
-    [...timeQueryKeys.user(userId), 'weekly'] as const,
+  weekly: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'weekly', from, to] as const,
 };
 
 export async function clockIn(mode: WorkMode): Promise<WorkSessionDto> {

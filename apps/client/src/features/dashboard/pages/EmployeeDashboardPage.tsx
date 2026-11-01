@@ -13,15 +13,22 @@ import { PageHeader } from '@/shared/ui/PageHeader';
 import { useClockIn, useClockOut } from '../hooks/useClock';
 import { ApiError } from '@/shared/api/client';
 import { useTodaySession } from '../hooks/useTodaySession';
-
-// Valeur de démo tant que l'API ne fournit pas les heures de la semaine.
-const DEMO_WEEKLY_HOURS = 28.6;
+import { useWeekly } from '../hooks/useWeekly';
+import { getWorkWeek } from '../lib/week';
 
 export function EmployeeDashboardPage() {
   const { data: currentUser } = useCurrentUser();
   const { data: openSession, isPending: sessionLoading } = useTodaySession(
     currentUser?.id,
   );
+
+  const { from, to } = getWorkWeek(new Date());
+  const { data: weeks, isPending: weeklyLoading } = useWeekly(
+    currentUser?.id,
+    from,
+    to,
+  );
+  const weekly = weeks?.[0]?.hours ?? 0;
 
   const clockedIn = openSession != null;
   const since = openSession ? toHHMM(new Date(openSession.start_at)) : '';
@@ -34,8 +41,6 @@ export function EmployeeDashboardPage() {
   const isClocking = clockInMutation.isPending || clockOutMutation.isPending;
 
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const weekly = currentUser?.weeklyHours ?? DEMO_WEEKLY_HOURS;
 
   const confirmClock = () => {
     if (clockedIn) {
@@ -99,7 +104,11 @@ export function EmployeeDashboardPage() {
           isSubmitting={isClocking}
           onClock={() => setDialogOpen(true)}
         />
-        <EmployeeStats since={since} weekly={weekly} />
+        <EmployeeStats
+          since={since}
+          weekly={weekly}
+          isLoading={weeklyLoading}
+        />
       </section>
 
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
