@@ -19,14 +19,18 @@ const DEMO_WEEKLY_HOURS = 28.6;
 
 export function EmployeeDashboardPage() {
   const { data: currentUser } = useCurrentUser();
-  useTodaySession(currentUser?.id);
+  const { data: openSession, isPending: sessionLoading } = useTodaySession(
+    currentUser?.id,
+  );
+
+  const clockedIn = openSession != null;
+  const since = openSession ? toHHMM(new Date(openSession.start_at)) : '';
+
   const now = useNow();
 
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
 
-  const [clockedIn, setClockedIn] = useState(true);
-  const [since, setSince] = useState('08:57');
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const weekly = currentUser?.weeklyHours ?? DEMO_WEEKLY_HOURS;
@@ -35,7 +39,6 @@ export function EmployeeDashboardPage() {
     if (clockedIn) {
       clockOutMutation.mutate(undefined, {
         onSuccess: () => {
-          setClockedIn(false);
           sileo.success({
             title: 'Départ enregistré',
             description: 'Bonne soirée !',
@@ -54,8 +57,6 @@ export function EmployeeDashboardPage() {
       clockInMutation.mutate('onsite', {
         onSuccess: (session) => {
           const time = toHHMM(new Date(session.start_at));
-          setClockedIn(true);
-          setSince(time);
           sileo.success({
             title: 'Arrivée enregistrée',
             description: `À ${time}, bonne journée !`,
@@ -92,6 +93,7 @@ export function EmployeeDashboardPage() {
           clockedIn={clockedIn}
           now={now}
           since={since}
+          isLoading={sessionLoading}
           onClock={() => setDialogOpen(true)}
         />
         <EmployeeStats since={since} weekly={weekly} />

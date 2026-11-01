@@ -6,10 +6,21 @@ interface ClockCardProps {
   now: Date;
   clockedIn: boolean;
   since: string;
+  isLoading: boolean;
   onClock: () => void;
 }
 
-export function ClockCard({ now, clockedIn, since, onClock }: ClockCardProps) {
+export function ClockCard({
+  now,
+  clockedIn,
+  since,
+  isLoading,
+  onClock,
+}: ClockCardProps) {
+  let label = 'Pointer mon arrivée';
+  if (isLoading) label = 'Chargement…';
+  else if (clockedIn) label = 'Pointer mon départ';
+
   return (
     <Card className='relative overflow-hidden'>
       <div
@@ -66,10 +77,11 @@ export function ClockCard({ now, clockedIn, since, onClock }: ClockCardProps) {
           fullWidth
           size='lg'
           variant={clockedIn ? 'danger' : 'primary'}
+          isDisabled={isLoading}
           onPress={onClock}
         >
           {clockedIn ? <Stop /> : <Play />}
-          {clockedIn ? 'Pointer mon départ' : 'Pointer mon arrivée'}
+          {label}
         </Button>
       </Card.Footer>
     </Card>
