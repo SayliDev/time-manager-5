@@ -31,6 +31,7 @@ interface EmployeesTableProps {
   onEdit?: (user: User) => void;
   onDelete?: (user: User) => void;
   showRole?: boolean;
+  showPresence?: boolean;
   compact?: boolean;
   ariaLabel?: string;
   isLoading?: boolean;
@@ -43,6 +44,7 @@ export function EmployeesTable({
   onEdit,
   onDelete,
   showRole = false,
+  showPresence = true,
   compact = false,
   ariaLabel = 'Liste des employés',
   isLoading = false,
@@ -55,7 +57,7 @@ export function EmployeesTable({
 
   const show = {
     team: !compact && users.some((u) => u.teamId !== null),
-    presence: users.some((u) => u.presence !== null),
+    presence: showPresence && users.some((u) => u.presence !== null),
     hours: users.some((u) => u.weeklyHours !== null),
     lastClock: !compact && users.some((u) => u.lastClock !== null),
     contact: !compact,

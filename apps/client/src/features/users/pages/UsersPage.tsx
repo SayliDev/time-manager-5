@@ -235,6 +235,7 @@ export function UsersPage() {
         <Card.Content>
           <EmployeesTable
             showRole
+            showPresence={false}
             isLoading={usersLoading}
             skeletonRows={8}
             users={filtered}
