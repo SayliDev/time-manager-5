@@ -69,9 +69,9 @@ def get_all_with_details() -> list[dict[str, Any]]:
             latest_session.start_at AS last_clock_start,
             latest_session.end_at AS last_clock_end,
             CASE
-                WHEN latest_session.id_work_session IS NULL THEN 'off'
+                WHEN latest_session.id_work_session IS NULL THEN 'absent'
                 WHEN latest_session.end_at IS NULL THEN 'present'
-                ELSE 'off'
+                ELSE 'absent'
             END AS presence
         FROM users AS u
         LEFT JOIN LATERAL (
