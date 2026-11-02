@@ -155,6 +155,18 @@ def get_all_users_endpoint():
             detail=str(error),
         )
 
+
+@router.get("/teams", status_code=status.HTTP_200_OK)
+def get_teams_endpoint():
+    try:
+        return team_allocations.get_teams()
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        )
+
+
 @router.delete("/deactivateUser/{user_id}",status_code=status.HTTP_204_NO_CONTENT,)
 def deactivate_user_endpoint(
     user_id: int,

@@ -18,6 +18,11 @@ export interface UserDto {
   desactive_at: string | null;
 }
 
+export interface TeamOptionDto {
+  id_team: number;
+  name: string;
+}
+
 interface CreateUserDto {
   first_name: string;
   last_name: string;
@@ -81,6 +86,10 @@ export const usersQueryKeys = {
 export async function fetchUsers(): Promise<User[]> {
   const users = await request<UserDto[]>('/api/getAllUsers');
   return users.map(toUser);
+}
+
+export async function fetchTeams(): Promise<TeamOptionDto[]> {
+  return request<TeamOptionDto[]>('/api/teams');
 }
 
 export async function fetchUser(id: string): Promise<User> {

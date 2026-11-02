@@ -65,6 +65,21 @@ def get_team_by_name(name: str) -> dict[str, Any] | None:
             )
             return cursor.fetchone()
 
+
+def get_teams() -> list[dict[str, Any]]:
+    """Retourne les équipes disponibles, triées par nom."""
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT id_team, name
+                FROM team
+                ORDER BY name
+                """
+            )
+            return cursor.fetchall()
+
+
 #  Retourne l'équipe active la plus récente d'un utilisateur.
 def get_active_team_id(user_id: int) -> int | None:
    

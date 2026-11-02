@@ -12,11 +12,11 @@ import {
   Select,
   TextField,
 } from '@heroui/react';
-import { fullName, teamNameOptions } from '@/data/mock';
 import type { User } from '@/features/users/types';
 import { request, ApiError } from '@/shared/api/client';
 import { sileo } from 'sileo';
 import { useCreateUser } from '@/features/users/hooks/useUserMutations';
+import { useTeams } from '@/features/users/hooks/useUsers';
 import { fullName } from '@/features/users/lib/names';
 import type { Role, User } from '@/features/users/types';
 import { ApiError } from '@/shared/api/client';
@@ -40,6 +40,7 @@ export function UserFormModal({
   const isEdit = Boolean(user);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createUser = useCreateUser();
+  const { data: teams = [] } = useTeams();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -230,7 +231,7 @@ export function UserFormModal({
                 </Select.Trigger>
                 <Select.Popover>
                   <ListBox>
-                    {teamNameOptions.map((name) => (
+                    {teams.map(({ name }) => (
                       <ListBox.Item
                         id={name}
                         key={name}
