@@ -48,7 +48,7 @@ function mapEmployee(row: EmployeeApiRow): User {
     lastName: row.last_name,
     email: row.email,
     phone: row.phone ?? '',
-    role: row.role,
+    role: row.role === 'employe' ? 'employee' : row.role,
     teamId: row.id_team === null ? null : String(row.id_team),
     teamName: row.team_name,
     presence: row.presence,
