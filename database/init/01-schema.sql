@@ -14,7 +14,7 @@ CREATE TABLE public.users (
     desactive_at TIMESTAMPTZ
 );
 
-COMMENT ON COLUMN public.users.password_set_at IS
+COMMENT ON COLUMN public.users.passeword_last_changed IS
     'NULL = mot de passe pas encore choisi';
 
 CREATE TABLE public.password_reset_token (
