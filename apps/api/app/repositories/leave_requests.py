@@ -32,6 +32,10 @@ def create_request(
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
+                "SELECT id_user FROM users WHERE id_user = %s FOR UPDATE",
+                (user_id,),
+            )
+            cursor.execute(
                 query,
                 (
                     user_id,
