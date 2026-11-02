@@ -142,7 +142,8 @@ def get_all(
 def decide_request(
     *,
     request_id: int,
-    manager_id: int | None,
+    actor_id: int,
+    bypass_team_scope: bool = False,
     status: str,
     decision_comment: str | None,
 ) -> dict[str, Any] | None:
@@ -154,9 +155,9 @@ def decide_request(
             decision_comment = %s
         WHERE id_leave_request = %s
           AND status = 'pending'
-          AND (%s::integer IS NULL OR id_user <> %s::integer)
+          AND id_user <> %s::integer
           AND (
-              %s::integer IS NULL OR EXISTS (
+              %s::boolean OR EXISTS (
                   SELECT 1
                   FROM team_allocation AS allocation
                   JOIN team AS t ON t.id_team = allocation.id_team
@@ -182,13 +183,12 @@ def decide_request(
                 query,
                 (
                     status,
-                    manager_id,
+                    actor_id,
                     decision_comment,
                     request_id,
-                    manager_id,
-                    manager_id,
-                    manager_id,
-                    manager_id,
+                    actor_id,
+                    bypass_team_scope,
+                    actor_id,
                 ),
             )
             return cursor.fetchone()

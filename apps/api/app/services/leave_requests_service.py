@@ -32,7 +32,8 @@ def create_leave_request(
 def decide_leave_request(
     *,
     request_id: int,
-    manager_id: int | None,
+    actor_id: int,
+    bypass_team_scope: bool = False,
     status: str,
     decision_comment: str | None,
 ) -> dict[str, Any]:
@@ -41,7 +42,8 @@ def decide_leave_request(
 
     request = leave_requests.decide_request(
         request_id=request_id,
-        manager_id=manager_id,
+        actor_id=actor_id,
+        bypass_team_scope=bypass_team_scope,
         status=status,
         decision_comment=decision_comment,
     )

@@ -74,11 +74,8 @@ def decide_leave(
     try:
         return decide_leave_request(
             request_id=request_id,
-            manager_id=(
-                None
-                if current_user.get('role') == 'admin'
-                else int(current_user['id'])
-            ),
+            actor_id=int(current_user['id']),
+            bypass_team_scope=current_user.get('role') == 'admin',
             status=payload.status,
             decision_comment=payload.decision_comment,
         )

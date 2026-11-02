@@ -93,37 +93,67 @@ def test_get_all_visibility(leave_data, filters, expected_ids):
 
 
 @pytest.mark.parametrize("decision", ["approved", "rejected"])
-@pytest.mark.parametrize("manager_id", [3, None])
-def test_decide_request_persists_decision(leave_data, decision, manager_id):
+@pytest.mark.parametrize("bypass_team_scope", [False, True])
+def test_decide_request_persists_decision(
+    leave_data, decision, bypass_team_scope
+):
     result = leave_requests.decide_request(
         request_id=2,
-        manager_id=manager_id,
+        actor_id=3,
+        bypass_team_scope=bypass_team_scope,
         status=decision,
         decision_comment="Decision test",
     )
 
     assert result["status"] == decision
-    assert result["processed_by"] == manager_id
+    assert result["processed_by"] == 3
     assert result["processed_at"] is not None
     assert result["decision_comment"] == "Decision test"
     stored = leave_requests.get_for_user(2)[0]
     assert stored["status"] == decision
     assert leave_requests.decide_request(
         request_id=2,
-        manager_id=manager_id,
+        actor_id=3,
+        bypass_team_scope=bypass_team_scope,
         status="approved",
         decision_comment=None,
     ) is None
+
+
+def test_admin_cannot_decide_own_request(client, leave_data):
+    from core.security import create_access_token
+
+    token = create_access_token({"id": "3", "sub": "3", "role": "admin"})
+    response = client.patch(
+        "/api/leave-requests/3",
+        headers={"Authorization": f"******"},
+        json={"status": "approved"},
+    )
+
+    assert response.status_code == 409
+    assert leave_requests.get_for_user(3)[0]["status"] == "pending"
 
 
 @pytest.mark.parametrize("request_id", [1, 3, 4, 5, 999])
 def test_manager_cannot_decide_own_or_outside_team_request(leave_data, request_id):
     assert leave_requests.decide_request(
         request_id=request_id,
-        manager_id=3,
+        actor_id=3,
         status="approved",
         decision_comment=None,
     ) is None
+
+
+def test_admin_can_decide_outside_team_request(leave_data):
+    result = leave_requests.decide_request(
+        request_id=4,
+        actor_id=3,
+        bypass_team_scope=True,
+        status="approved",
+        decision_comment=None,
+    )
+
+    assert result["processed_by"] == 3
 
 
 @pytest.mark.parametrize("role", ["manager", "admin"])
@@ -140,7 +170,9 @@ def test_decision_endpoint(client, leave_data, role, decision):
 
     assert response.status_code == 200
     assert response.json()["status"] == decision
-    assert leave_requests.get_for_user(2)[0]["status"] == decision
+    stored = leave_requests.get_for_user(2)[0]
+    assert stored["status"] == decision
+    assert stored["processed_by"] == 3
 
 
 @pytest.mark.parametrize(
