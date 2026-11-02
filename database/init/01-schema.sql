@@ -10,6 +10,7 @@ CREATE TABLE public.users (
     role VARCHAR(50),
     phone VARCHAR(50),
     creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMPTZ,
     desactive_at TIMESTAMPTZ
 );
 

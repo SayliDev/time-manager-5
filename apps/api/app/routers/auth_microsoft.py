@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 import msal
 import requests
@@ -116,7 +117,7 @@ def callback(request: Request):
     # Set the access token as a cookie in the response
     # update last login for the user if needed
     try:
-        update_user(user_id=user["id_user"], last_login="now()")
+        update_user(user_id=user["id_user"], last_login=datetime.now(timezone.utc))
     except Exception as e:
         logger.error("Failed to update last login for username=%s: %s", email, str(e))
 

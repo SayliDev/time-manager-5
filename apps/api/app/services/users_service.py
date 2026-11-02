@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from psycopg.errors import UniqueViolation
 import traceback
 from app.repositories.users_repository import (
@@ -68,19 +70,22 @@ def update_user(
     password: str | None = None,
     role: str | None = None,
     phone: str | None = None,
-    last_login: str | None = None,
+    last_login: datetime | None = None,
 ):
-    
+
     try:
+        changes = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "password_hash": hash_password(password) if password else None,
+            "role": role,
+            "phone": phone,
+            "last_login": last_login,
+        }
         return repository_update(
             record_id=user_id,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password_hash=hash_password(password) if password else None,
-            role=role,
-            phone=phone,
-            last_login=last_login,
+            **{field: value for field, value in changes.items() if value is not None},
         )
     except UniqueViolation:
         raise ValueError(

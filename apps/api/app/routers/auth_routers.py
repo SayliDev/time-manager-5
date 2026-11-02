@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -71,7 +73,7 @@ def login(
 
     # update last login timestamp for the user if needed
     try:
-        update_user(user_id=user["id_user"],last_login="now()")
+        update_user(user_id=user["id_user"], last_login=datetime.now(timezone.utc))
     except Exception as e:
         logger.error("Failed to update last login for username=%s: %s", form_data.username, str(e))
 

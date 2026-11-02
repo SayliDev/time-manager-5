@@ -34,6 +34,7 @@ MODIFIABLE_FIELDS = frozenset({
     "password_hash",
     "role",
     "phone",
+    "last_login",
     "desactive_at",
 })
 
