@@ -19,7 +19,7 @@ CREATE TABLE public.users (
 COMMENT ON COLUMN public.users.creat_at IS
     'Date de création du compte. Les jeux de démo utilisent un jour ouvré (lun–ven) entre 2020 et 2026.';
 
-COMMENT ON COLUMN public.users.password_set_at IS
+COMMENT ON COLUMN public.users.passeword_last_changed IS
     'NULL = mot de passe pas encore choisi';
 
 CREATE TABLE public.password_reset_token (
