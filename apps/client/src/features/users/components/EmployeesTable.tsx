@@ -11,8 +11,6 @@ import {
   type SortDescriptor,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
-import { fullName } from '@/data/mock';
-import { getTeam } from '@/data/mock';
 import { fullName } from '@/features/users/lib/names';
 import type { User } from '@/features/users/types';
 import { PresenceChip, RoleChip } from '@/shared/ui/StatusChips';
@@ -75,8 +73,8 @@ export function EmployeesTable({
         case 'createdAt':
           return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
         case 'team':
-          return (getTeam(a.teamId)?.name ?? '').localeCompare(
-            getTeam(b.teamId)?.name ?? '',
+          return (a.teamName ?? '').localeCompare(
+            b.teamName ?? '',
           );
         default:
           return fullName(a).localeCompare(fullName(b));
@@ -146,40 +144,9 @@ export function EmployeesTable({
           </Table.Header>
 
           <Table.Body renderEmptyState={() => <EmptyRows />}>
-            {sorted.map((user) => {
-              const pct = Math.min(
-                100,
-                (user.weeklyHours / WEEKLY_TARGET) * 100
-              );
-              const over = user.weeklyHours > WEEKLY_TARGET + 3;
-              return (
-                <Table.Row id={user.id} key={user.id}>
-                  <Table.Cell>
-                    <button
-                      aria-label={`Ouvrir la fiche de ${fullName(user)}`}
-                      className='flex min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-focus'
-                      type='button'
-                      onClick={() => onView(user)}
-                    >
-                      <UserAvatar size='sm' user={user} />
-                      <span className='min-w-0'>
-                        <span className='block truncate text-sm font-medium text-foreground'>
-                          {fullName(user)}
-                        </span>
-                        <span className='block truncate text-xs text-muted'>
-                          {user.email}
-                        </span>
-                      </span>
-                    </button>
-                  </Table.Cell>
-                  {compact ? null : (
-                    <Table.Cell>
-                      <span className='text-sm'>
-                        {user.teamName ?? '—'}
-                      </span>
-                    </Table.Cell>
-                  )}
-                  {showRole ? (
+            {loading
+              ? Array.from({ length: skeletonRows }, (_, i) => (
+                  <Table.Row id={`skeleton-${i}`} key={`skeleton-${i}`}>
                     <Table.Cell>
                       <div className='flex items-center gap-3'>
                         <Skeleton className='size-8 shrink-0 rounded-2xl' />
@@ -263,7 +230,7 @@ export function EmployeesTable({
                       {show.team ? (
                         <Table.Cell>
                           <span className='text-sm'>
-                            {getTeam(user.teamId)?.name ?? '—'}
+                            {user.teamName ?? '—'}
                           </span>
                         </Table.Cell>
                       ) : null}

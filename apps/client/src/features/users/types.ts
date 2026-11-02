@@ -14,7 +14,16 @@ export interface User {
   // renseignés uniquement dans les données de démo.
   teamId: string | null;
   teamName?: string | null;
-  presence: PresenceStatus;
-  weeklyHours: number;
-  lastClock: string;
+  presence: PresenceStatus | null;
+  weeklyHours: number | null;
+  lastClock: string | null;
+}
+
+export interface CreateUserInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: Role;
+  phone: string | null;
 }

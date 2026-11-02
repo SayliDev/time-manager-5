@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Button,
   Card,
@@ -91,8 +92,6 @@ export function LeavePage() {
   const session = useSession();
   const isManager = session.data?.role === 'admin' || session.data?.role === 'manager';
   const currentUserId = session.data?.id ? Number(session.data.id) : null;
-  const [requests, setRequests] = useState<LeaveRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leaveType, setLeaveType] = useState<LeaveType>('conge');
   const [teamId, setTeamId] = useState('all');
@@ -101,6 +100,23 @@ export function LeavePage() {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [rejectingRequest, setRejectingRequest] = useState<LeaveRequest | null>(null);
   const [isDecisionSubmitting, setIsDecisionSubmitting] = useState(false);
+  const {
+    data: requests = [],
+    isFetching: isLoading,
+    error: requestsError,
+    refetch: loadRequests,
+  } = useQuery({
+    queryKey: ['leave-requests', session.data?.id, teamId, userId],
+    enabled: Boolean(session.data),
+    retry: false,
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (teamId !== 'all') params.set('team_id', teamId);
+      if (userId !== 'all') params.set('user_id', userId);
+      const query = params.toString();
+      return request<LeaveRequest[]>(`/api/leave-requests${query ? `?${query}` : ''}`);
+    },
+  });
 
   const teamOptions = useMemo(
     () =>
@@ -128,34 +144,12 @@ export function LeavePage() {
   const days = useMemo(() => calendarDays(currentMonth), [currentMonth]);
 
   useEffect(() => {
-    if (session.data) {
-      setView('calendar');
-    }
-  }, [isManager, session.data]);
-
-  async function loadRequests() {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (teamId !== 'all') params.set('team_id', teamId);
-      if (userId !== 'all') params.set('user_id', userId);
-      const query = params.toString();
-      const path = `/api/leave-requests${query ? `?${query}` : ''}`;
-      setRequests(await request<LeaveRequest[]>(path));
-    } catch (error) {
+    if (requestsError) {
       toast.danger('Chargement impossible', {
-        description: error instanceof ApiError ? error.detail : 'Erreur serveur.',
+        description: requestsError instanceof ApiError ? requestsError.detail : 'Erreur serveur.',
       });
-    } finally {
-      setIsLoading(false);
     }
-  }
-
-  useEffect(() => {
-    if (session.data) {
-      void loadRequests();
-    }
-  }, [session.data, teamId, userId]);
+  }, [requestsError]);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -4,9 +4,11 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.routers.users_routers import ensure_can_manage_admin
 from core.security import create_access_token
 
 client = TestClient(app)
@@ -60,6 +62,24 @@ NEW_USER = {
     "password": "Secret123",
     "role": "employe",
 }
+
+
+@pytest.mark.parametrize(
+    ("actor_role", "target_role", "allowed"),
+    [
+        ("admin", "admin", True),
+        ("admin", "employe", True),
+        ("manager", "employe", True),
+        ("manager", "admin", False),
+    ],
+)
+def test_admin_management_guard(actor_role, target_role, allowed):
+    if allowed:
+        ensure_can_manage_admin({"role": actor_role}, target_role)
+    else:
+        with pytest.raises(HTTPException) as error:
+            ensure_can_manage_admin({"role": actor_role}, target_role)
+        assert error.value.status_code == 403
 
 
 # --- Authentification -------------------------------------------------------

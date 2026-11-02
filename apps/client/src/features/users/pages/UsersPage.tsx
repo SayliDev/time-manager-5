@@ -8,12 +8,10 @@ import {
   SearchField,
   Select,
   Skeleton,
+  toast,
 } from '@heroui/react';
 import { useEffect, useMemo, useState } from 'react';
-import { fullName } from '@/data/mock';
-import { useMemo, useState } from 'react';
 import { DeleteUserDialog } from '@/features/users/components/DeleteUserDialog';
-import { useUsers } from '@/features/users/hooks/useUsers';
 import { fullName } from '@/features/users/lib/names';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
@@ -48,7 +46,9 @@ function mapEmployee(row: EmployeeApiRow): User {
     lastName: row.last_name,
     email: row.email,
     phone: row.phone ?? '',
-    role: row.role === 'employe' ? 'employee' : row.role,
+    role: row.role === 'admin' || row.role === 'manager' ? row.role : 'employee',
+    createdAt: null,
+    deactivatedAt: null,
     teamId: row.id_team === null ? null : String(row.id_team),
     teamName: row.team_name,
     presence: row.presence,
@@ -63,6 +63,7 @@ function mapEmployee(row: EmployeeApiRow): User {
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('all');
@@ -93,7 +94,8 @@ export function UsersPage() {
         toast.danger('Chargement impossible', {
           description: error.message,
         });
-      });
+      })
+      .finally(() => setUsersLoading(false));
   }, [refreshKey]);
 
   const filtered = useMemo(() => {
@@ -268,7 +270,10 @@ export function UsersPage() {
         isOpen={formOpen}
         key={editUser?.id ?? 'new'}
         user={editUser}
-        onSaved={() => setRefreshKey((key) => key + 1)}
+        onSaved={() => {
+          setUsersLoading(true);
+          setRefreshKey((key) => key + 1);
+        }}
         onOpenChange={setFormOpen}
       />
       <DeleteUserDialog user={deleteUser} onClose={() => setDeleteUser(null)} />

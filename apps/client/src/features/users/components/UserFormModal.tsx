@@ -11,15 +11,13 @@ import {
   Modal,
   Select,
   TextField,
+  toast,
 } from '@heroui/react';
 import type { User } from '@/features/users/types';
 import { request, ApiError } from '@/shared/api/client';
-import { sileo } from 'sileo';
 import { useCreateUser } from '@/features/users/hooks/useUserMutations';
 import { useTeams } from '@/features/users/hooks/useUsers';
 import { fullName } from '@/features/users/lib/names';
-import type { Role, User } from '@/features/users/types';
-import { ApiError } from '@/shared/api/client';
 
 interface UserFormModalProps {
   isOpen: boolean;

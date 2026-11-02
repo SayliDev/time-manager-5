@@ -2,10 +2,12 @@
 import logging
 
 from datetime import date, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from app.controller.users import get_current_user, require_roles
+from app.dependencies import ADMIN, require_management
 from app.services.users_service import (
     create_user,
     deactivate_user,
@@ -86,7 +88,6 @@ def get_existing_user(user_id: int) -> dict[str, Any]:
 @router.post("/addUsers",response_model=UserResponse,status_code=status.HTTP_201_CREATED,)
 def create_user_endpoint(
     payload: UserCreate,
-    current_user: dict = Depends(require_roles("admin", "manager")),
     current_user: dict[str, Any] = Depends(require_management),
 ):
     ensure_can_manage_admin(current_user, payload.role)
