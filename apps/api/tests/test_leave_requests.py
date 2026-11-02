@@ -126,7 +126,7 @@ def test_admin_cannot_decide_own_request(client, leave_data):
     token = create_access_token({"id": "3", "sub": "3", "role": "admin"})
     response = client.patch(
         "/api/leave-requests/3",
-        headers={"Authorization": f"******"},
+        headers={"Authorization": "Bearer " + token},
         json={"status": "approved"},
     )
 
