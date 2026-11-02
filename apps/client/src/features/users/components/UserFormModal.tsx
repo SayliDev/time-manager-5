@@ -13,7 +13,7 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
-import type { User } from '@/features/users/types';
+import { CONTRACT_HOURS, type User } from '@/features/users/types';
 import { request, ApiError } from '@/shared/api/client';
 import { useCreateUser } from '@/features/users/hooks/useUserMutations';
 import { useTeams } from '@/features/users/hooks/useUsers';
@@ -60,6 +60,7 @@ export function UserFormModal({
             email: data.get('email'),
             role: data.get('role') === 'employee' ? 'employe' : data.get('role'),
             phone: data.get('phone') || null,
+            contract_hours: Number(data.get('contractHours')),
             team_name: data.get('teamName') || null,
           }),
         });
@@ -210,6 +211,31 @@ export function UserFormModal({
                       Manager
                       <ListBox.ItemIndicator />
                     </ListBox.Item>
+                  </ListBox>
+                </Select.Popover>
+              </Select>
+
+              <Select
+                isRequired
+                defaultValue={String(user?.contractHours ?? 35)}
+                fullWidth
+                isDisabled={isEdit}
+                name='contractHours'
+                variant='secondary'
+              >
+                <Label>Contrat (heures / semaine)</Label>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {CONTRACT_HOURS.map((hours) => (
+                      <ListBox.Item id={String(hours)} key={hours} textValue={`${hours} h`}>
+                        {hours} h
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
                   </ListBox>
                 </Select.Popover>
               </Select>

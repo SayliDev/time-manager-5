@@ -2,7 +2,7 @@
 import logging
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -28,6 +28,7 @@ class UserCreate(BaseModel):
     password: str | None = None
     role: str = "employe"
     phone: str | None = None
+    contract_hours: Literal[35, 20, 30, 25] = 35
     team_name: str | None = None
 
 
@@ -38,6 +39,7 @@ class UserResponse(BaseModel):
     email: str
     role: str
     phone: str | None = None
+    contract_hours: Literal[35, 20, 30, 25] = 35
     creat_at: datetime | None = None
     desactive_at: datetime | None = None
 
@@ -109,6 +111,7 @@ def create_user_endpoint(
             password=temporary_password,
             role=payload.role,
             phone=payload.phone,
+            contract_hours=payload.contract_hours,
         )
 
         if selected_team is not None:
@@ -208,6 +211,7 @@ def update_user_endpoint(
             password=payload.password,
             role=payload.role,
             phone=payload.phone,
+            contract_hours=payload.contract_hours,
         )
 
         if user is None:

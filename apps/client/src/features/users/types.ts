@@ -1,3 +1,6 @@
+export type ContractHours = 35 | 20 | 30 | 25;
+export const CONTRACT_HOURS: ContractHours[] = [35, 20, 30, 25];
+
 export type Role = 'admin' | 'manager' | 'employee';
 export type PresenceStatus = 'present' | 'remote' | 'late' | 'absent' | 'off';
 export type EntryStatus = 'ok' | 'late' | 'overtime' | 'missing' | 'ongoing';
@@ -16,6 +19,7 @@ export interface User {
   teamName?: string | null;
   presence: PresenceStatus | null;
   weeklyHours: number | null;
+  contractHours: ContractHours;
   lastClock: string | null;
 }
 
@@ -24,6 +28,7 @@ export interface CreateUserInput {
   lastName: string;
   email: string;
   password: string;
+  contractHours?: ContractHours;
   role: Role;
   phone: string | null;
 }

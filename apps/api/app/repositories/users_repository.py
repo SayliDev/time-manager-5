@@ -22,7 +22,7 @@ from app.services.time_service import calc_work_time
 
 PUBLIC_COLUMNS = sql.SQL(
     "id_user, first_name, last_name, email, "
-    "role, phone, creat_at, desactive_at"
+    "role, phone, contract_hours, creat_at, desactive_at"
 )
 
 TABLE = sql.Identifier("users")
@@ -34,6 +34,7 @@ MODIFIABLE_FIELDS = frozenset({
     "password_hash",
     "role",
     "phone",
+    "contract_hours",
     "last_login",
     "desactive_at",
 })
@@ -62,6 +63,7 @@ def get_all_with_details() -> list[dict[str, Any]]:
             u.email,
             u.role,
             u.phone,
+            u.contract_hours,
             u.creat_at,
             u.desactive_at,
             active_team.id_team,
@@ -164,6 +166,7 @@ def create(
     password_hash: str | None = None,
     role: str = "employe",
     phone: str | None = None,
+    contract_hours: int = 35,
 ) -> dict[str, Any]:
 
     query = sql.SQL(
@@ -174,9 +177,10 @@ def create(
             email,
             password_hash,
             role,
-            phone
+            phone,
+            contract_hours
         )
-        VALUES (%s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         RETURNING {}
         """
     ).format(TABLE, PUBLIC_COLUMNS)
@@ -192,6 +196,7 @@ def create(
                     password_hash,
                     role,
                     phone,
+                    contract_hours,
                 ),
             )
 

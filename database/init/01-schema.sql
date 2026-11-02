@@ -9,12 +9,17 @@ CREATE TABLE public.users (
     passeword_last_changed TIMESTAMPTZ,
     role VARCHAR(50),
     phone VARCHAR(50),
+    contract_hours INTEGER NOT NULL DEFAULT 35
+        CONSTRAINT users_contract_hours_check CHECK (contract_hours IN (35, 20, 30, 25)),
     creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMPTZ,
     desactive_at TIMESTAMPTZ
 );
 
-COMMENT ON COLUMN public.users.passeword_last_changed IS
+COMMENT ON COLUMN public.users.creat_at IS
+    'Date de création du compte. Les jeux de démo utilisent un jour ouvré (lun–ven) entre 2020 et 2026.';
+
+COMMENT ON COLUMN public.users.password_set_at IS
     'NULL = mot de passe pas encore choisi';
 
 CREATE TABLE public.password_reset_token (

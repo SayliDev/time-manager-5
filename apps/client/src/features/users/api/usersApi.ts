@@ -14,6 +14,7 @@ export interface UserDto {
   email: string;
   role: string | null;
   phone: string | null;
+  contract_hours: User['contractHours'];
   creat_at: string | null;
   desactive_at: string | null;
 }
@@ -30,6 +31,7 @@ interface CreateUserDto {
   password: string;
   role: ApiRole;
   phone: string | null;
+  contract_hours: User['contractHours'];
 }
 
 /* ------------------------------------------------------------------ */
@@ -58,6 +60,7 @@ export function toUser(dto: UserDto): User {
     teamId: null,
     presence: null,
     weeklyHours: null,
+    contractHours: dto.contract_hours,
     lastClock: null,
   };
 }
@@ -70,6 +73,7 @@ function toCreateUserDto(input: CreateUserInput): CreateUserDto {
     password: input.password,
     role: toApiRole(input.role),
     phone: input.phone,
+    contract_hours: input.contractHours ?? 35,
   };
 }
 

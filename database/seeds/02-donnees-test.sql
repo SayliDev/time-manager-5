@@ -44,8 +44,11 @@ DECLARE
     v_day_offset INTEGER;
 
     v_work_day DATE;
+    v_created_day DATE;
+    v_created_at TIMESTAMPTZ;
     v_session_start TIMESTAMPTZ;
     v_session_end TIMESTAMPTZ;
+    v_created_until DATE := LEAST(CURRENT_DATE, DATE '2026-12-31');
 
 BEGIN
     -- Empêche une deuxième insertion du même jeu de données.
@@ -59,13 +62,27 @@ BEGIN
     END IF;
 
     -- 1 administrateur, 2 managers et 7 employés.
+    -- creat_at : jour ouvré aléatoire (lun–ven) entre 2020 et 2026.
     FOR v_user_index IN 1..10 LOOP
+        LOOP
+            v_created_day := DATE '2020-01-01'
+                + floor(
+                    random() * (v_created_until - DATE '2020-01-01' + 1)
+                )::integer;
+            EXIT WHEN EXTRACT(ISODOW FROM v_created_day) BETWEEN 1 AND 5;
+        END LOOP;
+
+        v_created_at :=
+            (v_created_day + TIME '08:00' + (random() * INTERVAL '8 hours'))
+            AT TIME ZONE 'Europe/Paris';
+
         INSERT INTO public.users (
             first_name,
             last_name,
             email,
             password_hash,
             role,
+            contract_hours,
             creat_at
         )
         VALUES (
@@ -78,7 +95,8 @@ BEGIN
                 WHEN v_user_index IN (2, 3) THEN 'manager'
                 ELSE 'employe'
             END,
-            TIMESTAMPTZ '2026-09-01 08:00:00+02'
+            (ARRAY[35, 20, 30, 25])[1 + (v_user_index - 1) % 4],
+            v_created_at
         )
         RETURNING id_user INTO v_user_id;
 

@@ -32,9 +32,12 @@ type EmployeeApiRow = {
   id_team: number | null;
   team_name: string | null;
   weekly_hours: number;
+  contract_hours: User['contractHours'];
   last_clock_start: string | null;
   last_clock_end: string | null;
   presence: User['presence'];
+  creat_at: string | null;
+  desactive_at: string | null;
 };
 
 function mapEmployee(row: EmployeeApiRow): User {
@@ -47,12 +50,13 @@ function mapEmployee(row: EmployeeApiRow): User {
     email: row.email,
     phone: row.phone ?? '',
     role: row.role === 'admin' || row.role === 'manager' ? row.role : 'employee',
-    createdAt: null,
-    deactivatedAt: null,
+    createdAt: row.creat_at,
+    deactivatedAt: row.desactive_at,
     teamId: row.id_team === null ? null : String(row.id_team),
     teamName: row.team_name,
     presence: row.presence,
     weeklyHours: row.weekly_hours,
+    contractHours: row.contract_hours,
     lastClock: lastClock
       ? `${row.last_clock_end ? 'Départ' : 'Arrivée'} ${new Date(
           lastClock
@@ -235,6 +239,7 @@ export function UsersPage() {
         <Card.Content>
           <EmployeesTable
             showRole
+            showPhone={false}
             showPresence={false}
             isLoading={usersLoading}
             skeletonRows={8}

@@ -24,6 +24,7 @@ def create_user(
     password: str | None = None,
     role: str = "employe",
     phone: str | None = None,
+    contract_hours: int = 35,
 ):
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
@@ -34,6 +35,7 @@ def create_user(
             password_hash=hash_password(password) if password else None,
             role=role,
             phone=phone,
+            contract_hours=contract_hours,
         )
 
     except UniqueViolation:
@@ -71,6 +73,7 @@ def update_user(
     role: str | None = None,
     phone: str | None = None,
     last_login: datetime | None = None,
+    contract_hours: int | None = None,
 ):
 
     try:
@@ -81,6 +84,7 @@ def update_user(
             "password_hash": hash_password(password) if password else None,
             "role": role,
             "phone": phone,
+            "contract_hours": contract_hours,
             "last_login": last_login,
         }
         return repository_update(

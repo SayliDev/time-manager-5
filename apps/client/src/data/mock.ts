@@ -24,6 +24,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't1',
     presence: 'present',
     weeklyHours: 36.5,
+    contractHours: 35,
     lastClock: 'Arrivée 08:52',
   },
   {
@@ -36,6 +37,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't1',
     presence: 'present',
     weeklyHours: 34.2,
+    contractHours: 20,
     lastClock: 'Arrivée 08:57',
   },
   {
@@ -48,6 +50,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't1',
     presence: 'late',
     weeklyHours: 41.2,
+    contractHours: 30,
     lastClock: 'Arrivée 09:41',
   },
   {
@@ -60,6 +63,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't2',
     presence: 'remote',
     weeklyHours: 37.8,
+    contractHours: 25,
     lastClock: 'Arrivée 08:30',
   },
   {
@@ -72,6 +76,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't2',
     presence: 'present',
     weeklyHours: 35.0,
+    contractHours: 35,
     lastClock: 'Arrivée 09:02',
   },
   {
@@ -84,6 +89,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't2',
     presence: 'absent',
     weeklyHours: 22.5,
+    contractHours: 20,
     lastClock: 'Départ hier 17:30',
   },
   {
@@ -96,6 +102,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't3',
     presence: 'present',
     weeklyHours: 38.0,
+    contractHours: 30,
     lastClock: 'Arrivée 08:15',
   },
   {
@@ -108,6 +115,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't3',
     presence: 'present',
     weeklyHours: 39.4,
+    contractHours: 25,
     lastClock: 'Arrivée 08:45',
   },
   {
@@ -120,6 +128,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't3',
     presence: 'remote',
     weeklyHours: 35.6,
+    contractHours: 35,
     lastClock: 'Arrivée 09:10',
   },
   {
@@ -132,6 +141,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't4',
     presence: 'off',
     weeklyHours: 28.0,
+    contractHours: 20,
     lastClock: 'Congé',
   },
   {
@@ -144,6 +154,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't4',
     presence: 'present',
     weeklyHours: 36.1,
+    contractHours: 30,
     lastClock: 'Arrivée 08:58',
   },
   {
@@ -156,6 +167,7 @@ const demoUsers: DemoUser[] = [
     teamId: 't4',
     presence: 'present',
     weeklyHours: 40.2,
+    contractHours: 25,
     lastClock: 'Arrivée 08:20',
   },
 ];
