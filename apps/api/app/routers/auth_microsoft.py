@@ -3,7 +3,7 @@ import os
 import msal
 import requests
 from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
 from app.services.users_service import get_user_by_email, update_user
 from core.security import create_access_token
@@ -127,6 +127,18 @@ def callback(request: Request):
     response.set_cookie(
         key="access_token",
         value=jwt_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+    )
+    return response
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout():
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(
+        key="access_token",
         httponly=True,
         secure=False,
         samesite="lax",

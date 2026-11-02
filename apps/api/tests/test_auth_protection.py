@@ -97,6 +97,16 @@ def test_token_of_deactivated_user_is_rejected():
     assert client.get("/me", headers=auth(4)).status_code == 401
 
 
+def test_logout_expires_the_access_token_cookie():
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 204
+    cookie = response.headers["set-cookie"]
+    assert "access_token=" in cookie
+    assert "Max-Age=0" in cookie
+    assert "httponly" in cookie.lower()
+
+
 # --- /me --------------------------------------------------------------------
 
 
