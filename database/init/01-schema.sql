@@ -86,7 +86,7 @@ CREATE TYPE public.team_name_enum AS ENUM (
 
 CREATE TABLE public.team (
     id_team INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name public.team_name_enum NOT NULL,
+    name VARCHAR(50) NOT NULL,
     description TEXT
 );
 
