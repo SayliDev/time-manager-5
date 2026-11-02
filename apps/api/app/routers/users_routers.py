@@ -6,8 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from app.controller.users import get_current_user, require_roles
-from app.dependencies import ADMIN, require_management
+from app.dependencies import ADMIN, get_current_user, require_management, require_roles
 from app.services.users_service import (
     create_user,
     deactivate_user,
@@ -233,7 +232,7 @@ def me_endpoint(
     current_user: dict = Depends(get_current_user),
 ):
     return {
-        "username": current_user["id"],
+        "username": str(current_user["id_user"]),
         "role": current_user["role"],
     }
 

@@ -7,12 +7,12 @@ import psycopg
 from fastapi import (Depends,FastAPI,HTTPException,)
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg import sql
-from app.routers.users_routers import router as users_router
+from app.routers.users_routers import UserResponse, router as users_router
 from app.routers.register import router as register_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 from app.routers.leave_requests import router as leave_requests_router
-from app.controller.users import get_current_user as get_authenticated_user
+from app.dependencies import get_current_user as get_authenticated_user
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
 
@@ -84,8 +84,8 @@ def me(
     current_user: dict = Depends(get_authenticated_user),
 ):
     return {
-        "username": current_user.get("sub"),
-        "role": current_user.get("role"),
+        **UserResponse(**current_user).model_dump(),
+        "username": str(current_user["id_user"]),
     }
 
 @app.get("/health", tags=["system"])

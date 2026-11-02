@@ -91,7 +91,7 @@ def test_admin_management_guard(actor_role, target_role, allowed):
         ("get", "/me"),
         ("get", "/api/getAllUsers"),
         ("get", "/api/getUsers/1"),
-        ("get", "/api/userByEmail?email=a@b.c"),
+        ("get", "/api/teams"),
         ("post", "/api/addUsers"),
         ("put", "/api/updateUser/3"),
         ("delete", "/api/deactivateUser/3"),
@@ -136,9 +136,27 @@ def test_me_returns_the_profile_without_password():
     assert response.status_code == 200
     body = response.json()
     assert body["id_user"] == 2
+    assert body["username"] == "2"
     assert body["role"] == "manager"
     assert body["email"] == "user2@example.com"
     assert "password_hash" not in body
+
+
+def test_me_accepts_the_access_token_cookie():
+    token = create_access_token({"sub": "2"})
+    with TestClient(app) as cookie_client:
+        cookie_client.cookies.set("access_token", token)
+        response = cookie_client.get("/me")
+
+    assert response.status_code == 200
+    assert response.json()["id_user"] == 2
+
+
+def test_api_me_returns_the_user_id():
+    response = client.get("/api/me", headers=auth(2))
+
+    assert response.status_code == 200
+    assert response.json() == {"username": "2", "role": "manager"}
 
 
 # --- Lecture : tout utilisateur connecté ------------------------------------
