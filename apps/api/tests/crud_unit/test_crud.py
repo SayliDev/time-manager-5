@@ -23,7 +23,8 @@ CASES = [
     dict(module="users_repository", table="users", pk="id_user",
          create=dict(first_name="Alice", last_name="Martin",
                      email="alice@example.com"),
-         defaults=dict(password_hash=None, role="employe", phone=None, contract_hours=35),
+         defaults=dict(password_hash=None, role="employe", phone=None,
+                       contract_hours=35),
          nullable="phone", change="first_name",
          protected="creat_at", wrapped_delete=False),
     dict(module="departement", table="departement", pk="id_departement",
@@ -343,4 +344,3 @@ def test_work_session_cancel_is_update(db, sql_text):
     assert_table(sql_text(db), "update", "work_session")
     assert '"cancel_at" = %s' in sql_text(db)
     assert db.cursor.execute.call_args.args[1] == (END, 42)
-
