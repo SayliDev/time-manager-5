@@ -1,5 +1,6 @@
 import { ArrowDownToLine, PersonPlus } from '@gravity-ui/icons';
-import { Button, Tabs, toast } from '@heroui/react';
+import { Button, Tabs } from '@heroui/react';
+import { sileo } from 'sileo';
 import type { DashboardPeriod } from '@/features/dashboard/types';
 
 interface DashboardToolbarProps {
@@ -40,7 +41,8 @@ export function DashboardToolbar({
         <Button
           variant='secondary'
           onPress={() =>
-            toast.success('Export généré', {
+            sileo.success({
+              title: 'Export généré',
               description: 'Le rapport CSV a été téléchargé.',
             })
           }

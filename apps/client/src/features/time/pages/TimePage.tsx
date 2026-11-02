@@ -17,8 +17,8 @@ import {
   Skeleton,
   Table,
   Tabs,
-  toast,
 } from '@heroui/react';
+import { sileo } from 'sileo';
 import { useState } from 'react';
 import {
   useTimeEntries,
@@ -80,7 +80,8 @@ export function TimePage() {
           <Button
             variant='secondary'
             onPress={() =>
-              toast.success('Export généré', {
+              sileo.success({
+                title: 'Export généré',
                 description: 'Votre relevé d’heures a été téléchargé.',
               })
             }

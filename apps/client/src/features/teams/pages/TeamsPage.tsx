@@ -18,8 +18,8 @@ import {
   Meter,
   Separator,
   Skeleton,
-  toast,
 } from '@heroui/react';
+import { sileo } from 'sileo';
 import { useState } from 'react';
 import { fullName, getUser, initials } from '@/data/mock';
 import { useTeams } from '@/data/mockQueries';
@@ -337,7 +337,8 @@ export function TeamsPage() {
         isOpen={deleteTeam !== null}
         title='Supprimer cette équipe ?'
         onConfirm={() => {
-          toast.danger('Équipe supprimée', {
+          sileo.success({
+            title: 'Équipe supprimée',
             description: `« ${deleteTeam?.name} » a été supprimée.`,
           });
           setDeleteTeam(null);

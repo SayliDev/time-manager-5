@@ -1,4 +1,4 @@
-import { toast } from '@heroui/react';
+import { sileo } from 'sileo';
 import { useDeactivateUser } from '@/features/users/hooks/useUserMutations';
 import { fullName } from '@/features/users/lib/names';
 import type { User } from '@/features/users/types';
@@ -29,11 +29,13 @@ export function DeleteUserDialog({ user, onClose }: DeleteUserDialogProps) {
         if (!user) return;
         deactivate.mutate(user.id, {
           onSuccess: () =>
-            toast.danger('Employé supprimé', {
+            sileo.success({
+              title: 'Employé supprimé',
               description: `${name} a été retiré.`,
             }),
           onError: (error) =>
-            toast.danger('Suppression impossible', {
+            sileo.error({
+              title: 'Suppression impossible',
               description:
                 error instanceof ApiError
                   ? error.detail

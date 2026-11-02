@@ -13,8 +13,8 @@ import {
   Select,
   TextArea,
   TextField,
-  toast,
 } from '@heroui/react';
+import { sileo } from 'sileo';
 import { fullName, users } from '@/data/mock';
 import type { Team } from '@/features/teams/types';
 
@@ -37,7 +37,8 @@ export function TeamFormModal({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const name = new FormData(e.currentTarget).get('name');
-    toast.success(isEdit ? 'Équipe mise à jour' : 'Équipe créée', {
+    sileo.success({
+      title: isEdit ? 'Équipe mise à jour' : 'Équipe créée',
       description: `« ${name} » a été enregistrée.`,
     });
     onOpenChange(false);

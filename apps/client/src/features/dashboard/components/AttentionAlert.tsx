@@ -1,4 +1,5 @@
-import { Alert, Button, toast } from '@heroui/react';
+import { Alert, Button } from '@heroui/react';
+import { sileo } from 'sileo';
 
 interface AttentionAlertProps {
   lateCount: number;
@@ -29,7 +30,9 @@ export function AttentionAlert({
       <Button
         size='sm'
         variant='tertiary'
-        onPress={() => toast.info('Rappel envoyé aux employés concernés')}
+        onPress={() =>
+          sileo.info({ title: 'Rappel envoyé aux employés concernés' })
+        }
       >
         Envoyer un rappel
       </Button>
