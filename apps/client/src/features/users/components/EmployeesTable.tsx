@@ -6,17 +6,25 @@ import {
   Label,
   ProgressBar,
   Separator,
+  Skeleton,
   Table,
   type SortDescriptor,
 } from '@heroui/react';
 import { useMemo, useState } from 'react';
 import { fullName } from '@/data/mock';
+import { getTeam } from '@/data/mock';
+import { fullName } from '@/features/users/lib/names';
 import type { User } from '@/features/users/types';
 import { PresenceChip, RoleChip } from '@/shared/ui/StatusChips';
 import { UserAvatar } from '@/shared/ui/UserAvatar';
-import { formatDecimal } from '@/shared/lib/format';
+import { formatDate, formatDecimal } from '@/shared/lib/format';
+import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 const WEEKLY_TARGET = 35;
+
+/** Largeurs variées d'une ligne à l'autre pour un rendu plus naturel. */
+const NAME_WIDTHS = ['w-28', 'w-36', 'w-24', 'w-32', 'w-40', 'w-28'];
+const EMAIL_WIDTHS = ['w-44', 'w-52', 'w-40', 'w-48', 'w-56', 'w-44'];
 
 interface EmployeesTableProps {
   users: User[];
@@ -26,6 +34,8 @@ interface EmployeesTableProps {
   showRole?: boolean;
   compact?: boolean;
   ariaLabel?: string;
+  isLoading?: boolean;
+  skeletonRows?: number;
 }
 
 export function EmployeesTable({
@@ -36,42 +46,57 @@ export function EmployeesTable({
   showRole = false,
   compact = false,
   ariaLabel = 'Liste des employés',
+  isLoading = false,
+  skeletonRows = 6,
 }: EmployeesTableProps) {
   const [sort, setSort] = useState<SortDescriptor>({
     column: 'name',
     direction: 'ascending',
   });
 
+  const show = {
+    team: !compact && users.some((u) => u.teamId !== null),
+    presence: users.some((u) => u.presence !== null),
+    hours: users.some((u) => u.weeklyHours !== null),
+    lastClock: !compact && users.some((u) => u.lastClock !== null),
+    contact: !compact,
+  };
+
   const sorted = useMemo(() => {
     const list = [...users];
     const compare = (a: User, b: User): number => {
       switch (sort.column) {
         case 'weeklyHours':
-          return a.weeklyHours - b.weeklyHours;
+          return (a.weeklyHours ?? 0) - (b.weeklyHours ?? 0);
         case 'presence':
-          return a.presence.localeCompare(b.presence);
+          return (a.presence ?? '').localeCompare(b.presence ?? '');
+        case 'role':
+          return a.role.localeCompare(b.role);
+        case 'createdAt':
+          return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
         case 'team':
-          return (a.teamName ?? '').localeCompare(b.teamName ?? '');
+          return (getTeam(a.teamId)?.name ?? '').localeCompare(
+            getTeam(b.teamId)?.name ?? '',
+          );
         default:
           return fullName(a).localeCompare(fullName(b));
       }
     };
     list.sort((a, b) =>
-      sort.direction === 'descending' ? -compare(a, b) : compare(a, b)
+      sort.direction === 'descending' ? -compare(a, b) : compare(a, b),
     );
     return list;
   }, [users, sort]);
 
   const header =
     (label: string) =>
-    ({ sortDirection }: { sortDirection?: 'ascending' | 'descending' }) =>
-      (
-        <Table.SortableColumnHeader sortDirection={sortDirection}>
-          {label}
-        </Table.SortableColumnHeader>
-      );
+    ({ sortDirection }: { sortDirection?: 'ascending' | 'descending' }) => (
+      <Table.SortableColumnHeader sortDirection={sortDirection}>
+        {label}
+      </Table.SortableColumnHeader>
+    );
 
-  return (
+  const renderTable = (loading: boolean) => (
     <Table>
       <Table.ScrollContainer>
         <Table.Content
@@ -84,21 +109,37 @@ export function EmployeesTable({
             <Table.Column allowsSorting isRowHeader id='name'>
               {header('Employé')}
             </Table.Column>
-            {compact ? null : (
+            {show.team ? (
               <Table.Column allowsSorting id='team'>
                 {header('Équipe')}
               </Table.Column>
-            )}
-            {showRole ? <Table.Column id='role'>Rôle</Table.Column> : null}
-            <Table.Column allowsSorting id='presence'>
-              {header('Statut')}
-            </Table.Column>
-            <Table.Column allowsSorting id='weeklyHours'>
-              {header('Heures / sem.')}
-            </Table.Column>
-            {compact ? null : (
+            ) : null}
+            {showRole ? (
+              <Table.Column allowsSorting id='role'>
+                {header('Rôle')}
+              </Table.Column>
+            ) : null}
+            {show.contact ? (
+              <Table.Column id='phone'>Téléphone</Table.Column>
+            ) : null}
+            {show.contact ? (
+              <Table.Column allowsSorting id='createdAt'>
+                {header('Créé le')}
+              </Table.Column>
+            ) : null}
+            {show.presence ? (
+              <Table.Column allowsSorting id='presence'>
+                {header('Statut')}
+              </Table.Column>
+            ) : null}
+            {show.hours ? (
+              <Table.Column allowsSorting id='weeklyHours'>
+                {header('Heures / sem.')}
+              </Table.Column>
+            ) : null}
+            {show.lastClock ? (
               <Table.Column id='lastClock'>Dernier pointage</Table.Column>
-            )}
+            ) : null}
             <Table.Column id='actions'>
               <span className='sr-only'>Actions</span>
             </Table.Column>
@@ -140,94 +181,213 @@ export function EmployeesTable({
                   )}
                   {showRole ? (
                     <Table.Cell>
-                      <RoleChip role={user.role} />
+                      <div className='flex items-center gap-3'>
+                        <Skeleton className='size-8 shrink-0 rounded-2xl' />
+                        <div className='flex flex-col gap-1.5'>
+                          <Skeleton
+                            className={`h-3.5 rounded-md ${NAME_WIDTHS[i % NAME_WIDTHS.length]}`}
+                          />
+                          <Skeleton
+                            className={`h-3 rounded-md ${EMAIL_WIDTHS[i % EMAIL_WIDTHS.length]}`}
+                          />
+                        </div>
+                      </div>
                     </Table.Cell>
-                  ) : null}
-                  <Table.Cell>
-                    <PresenceChip status={user.presence} />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className='flex items-center gap-3'>
-                      <ProgressBar
-                        aria-label={`Heures de ${fullName(user)}`}
-                        className='w-16'
-                        color={over ? 'warning' : 'accent'}
-                        value={pct}
-                      >
-                        <ProgressBar.Track>
-                          <ProgressBar.Fill />
-                        </ProgressBar.Track>
-                      </ProgressBar>
-                      <span className='tabular text-sm font-medium whitespace-nowrap'>
-                        {formatDecimal(user.weeklyHours)} h
-                      </span>
-                    </div>
-                  </Table.Cell>
-                  {compact ? null : (
+                    {show.team ? (
+                      <Table.Cell>
+                        <Skeleton className='h-3.5 w-24 rounded-md' />
+                      </Table.Cell>
+                    ) : null}
+                    {showRole ? (
+                      <Table.Cell>
+                        <Skeleton className='h-5 w-20 rounded-2xl' />
+                      </Table.Cell>
+                    ) : null}
+                    {show.contact ? (
+                      <Table.Cell>
+                        <Skeleton className='h-3.5 w-28 rounded-md' />
+                      </Table.Cell>
+                    ) : null}
+                    {show.contact ? (
+                      <Table.Cell>
+                        <Skeleton className='h-3.5 w-20 rounded-md' />
+                      </Table.Cell>
+                    ) : null}
+                    {show.presence ? (
+                      <Table.Cell>
+                        <Skeleton className='h-5 w-24 rounded-2xl' />
+                      </Table.Cell>
+                    ) : null}
+                    {show.hours ? (
+                      <Table.Cell>
+                        <div className='flex items-center gap-3'>
+                          <Skeleton className='h-1.5 w-16 rounded-full' />
+                          <Skeleton className='h-3.5 w-10 rounded-md' />
+                        </div>
+                      </Table.Cell>
+                    ) : null}
+                    {show.lastClock ? (
+                      <Table.Cell>
+                        <Skeleton className='h-3.5 w-24 rounded-md' />
+                      </Table.Cell>
+                    ) : null}
                     <Table.Cell>
-                      <span className='text-sm whitespace-nowrap text-muted'>
-                        {user.lastClock}
-                      </span>
+                      <Skeleton className='size-6 rounded-md' />
                     </Table.Cell>
-                  )}
-                  <Table.Cell>
-                    <Dropdown>
-                      <Button
-                        isIconOnly
-                        aria-label={`Actions pour ${fullName(user)}`}
-                        size='sm'
-                        variant='ghost'
-                      >
-                        <EllipsisVertical />
-                      </Button>
-                      <Dropdown.Popover className='min-w-[220px]'>
-                        <Dropdown.Menu
-                          onAction={(key) => {
-                            if (key === 'view') onView(user);
-                            if (key === 'edit') onEdit?.(user);
-                            if (key === 'delete') onDelete?.(user);
-                          }}
+                  </Table.Row>
+                ))
+              : sorted.map((user) => {
+                  const hours = user.weeklyHours ?? 0;
+                  const pct = Math.min(100, (hours / WEEKLY_TARGET) * 100);
+                  const over = hours > WEEKLY_TARGET + 3;
+                  return (
+                    <Table.Row id={user.id} key={user.id}>
+                      <Table.Cell>
+                        <button
+                          aria-label={`Ouvrir la fiche de ${fullName(user)}`}
+                          className='flex min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-focus'
+                          type='button'
+                          onClick={() => onView(user)}
                         >
-                          <Dropdown.Item id='view' textValue='Voir la fiche'>
-                            <Eye className='size-4 shrink-0 text-muted' />
-                            <Label className='flex-1'>Voir la fiche</Label>
-                            <Kbd variant='light'>
-                              <Kbd.Content>V</Kbd.Content>
-                            </Kbd>
-                          </Dropdown.Item>
-                          {onEdit ? (
-                            <Dropdown.Item id='edit' textValue='Modifier'>
-                              <Pencil className='size-4 shrink-0 text-muted' />
-                              <Label className='flex-1'>Modifier</Label>
-                              <Kbd variant='light'>
-                                <Kbd.Content>E</Kbd.Content>
-                              </Kbd>
-                            </Dropdown.Item>
-                          ) : null}
-                          {onDelete ? (
-                            <Dropdown.Item
-                              id='delete'
-                              textValue='Supprimer'
-                              variant='danger'
+                          <UserAvatar size='sm' user={user} />
+                          <span className='min-w-0'>
+                            <span className='block truncate text-sm font-medium text-foreground'>
+                              {fullName(user)}
+                            </span>
+                            <span className='block truncate text-xs text-muted'>
+                              {user.email}
+                            </span>
+                          </span>
+                        </button>
+                      </Table.Cell>
+                      {show.team ? (
+                        <Table.Cell>
+                          <span className='text-sm'>
+                            {getTeam(user.teamId)?.name ?? '—'}
+                          </span>
+                        </Table.Cell>
+                      ) : null}
+                      {showRole ? (
+                        <Table.Cell>
+                          <RoleChip role={user.role} />
+                        </Table.Cell>
+                      ) : null}
+                      {show.contact ? (
+                        <Table.Cell>
+                          <span className='tabular text-sm whitespace-nowrap'>
+                            {user.phone ?? '—'}
+                          </span>
+                        </Table.Cell>
+                      ) : null}
+                      {show.contact ? (
+                        <Table.Cell>
+                          <span className='text-sm whitespace-nowrap text-muted'>
+                            {user.createdAt ? formatDate(user.createdAt) : '—'}
+                          </span>
+                        </Table.Cell>
+                      ) : null}
+                      {show.presence ? (
+                        <Table.Cell>
+                          {user.presence ? (
+                            <PresenceChip status={user.presence} />
+                          ) : (
+                            <span className='text-sm text-muted'>—</span>
+                          )}
+                        </Table.Cell>
+                      ) : null}
+                      {show.hours ? (
+                        <Table.Cell>
+                          <div className='flex items-center gap-3'>
+                            <ProgressBar
+                              aria-label={`Heures de ${fullName(user)}`}
+                              className='w-16'
+                              color={over ? 'warning' : 'accent'}
+                              value={pct}
                             >
-                              <TrashBin className='size-4 shrink-0 text-danger' />
-                              <Label className='flex-1'>Supprimer</Label>
-                              <Kbd variant='light'>
-                                <Kbd.Abbr keyValue='delete' />
-                              </Kbd>
-                            </Dropdown.Item>
-                          ) : null}
-                        </Dropdown.Menu>
-                      </Dropdown.Popover>
-                    </Dropdown>
-                  </Table.Cell>
-                </Table.Row>
-              );
-            })}
+                              <ProgressBar.Track>
+                                <ProgressBar.Fill />
+                              </ProgressBar.Track>
+                            </ProgressBar>
+                            <span className='tabular text-sm font-medium whitespace-nowrap'>
+                              {formatDecimal(hours)} h
+                            </span>
+                          </div>
+                        </Table.Cell>
+                      ) : null}
+                      {show.lastClock ? (
+                        <Table.Cell>
+                          <span className='text-sm whitespace-nowrap text-muted'>
+                            {user.lastClock ?? '—'}
+                          </span>
+                        </Table.Cell>
+                      ) : null}
+                      <Table.Cell>
+                        <Dropdown>
+                          <Button
+                            isIconOnly
+                            aria-label={`Actions pour ${fullName(user)}`}
+                            size='sm'
+                            variant='ghost'
+                          >
+                            <EllipsisVertical />
+                          </Button>
+                          <Dropdown.Popover className='min-w-[220px]'>
+                            <Dropdown.Menu
+                              onAction={(key) => {
+                                if (key === 'view') onView(user);
+                                if (key === 'edit') onEdit?.(user);
+                                if (key === 'delete') onDelete?.(user);
+                              }}
+                            >
+                              <Dropdown.Item
+                                id='view'
+                                textValue='Voir la fiche'
+                              >
+                                <Eye className='size-4 shrink-0 text-muted' />
+                                <Label className='flex-1'>Voir la fiche</Label>
+                                <Kbd variant='light'>
+                                  <Kbd.Content>V</Kbd.Content>
+                                </Kbd>
+                              </Dropdown.Item>
+                              {onEdit ? (
+                                <Dropdown.Item id='edit' textValue='Modifier'>
+                                  <Pencil className='size-4 shrink-0 text-muted' />
+                                  <Label className='flex-1'>Modifier</Label>
+                                  <Kbd variant='light'>
+                                    <Kbd.Content>E</Kbd.Content>
+                                  </Kbd>
+                                </Dropdown.Item>
+                              ) : null}
+                              {onDelete ? (
+                                <Dropdown.Item
+                                  id='delete'
+                                  textValue='Supprimer'
+                                  variant='danger'
+                                >
+                                  <TrashBin className='size-4 shrink-0 text-danger' />
+                                  <Label className='flex-1'>Supprimer</Label>
+                                  <Kbd variant='light'>
+                                    <Kbd.Abbr keyValue='delete' />
+                                  </Kbd>
+                                </Dropdown.Item>
+                              ) : null}
+                            </Dropdown.Menu>
+                          </Dropdown.Popover>
+                        </Dropdown>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
           </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
     </Table>
+  );
+
+  return (
+    <SkeletonSwap isLoading={isLoading} skeleton={renderTable(true)}>
+      {renderTable(false)}
+    </SkeletonSwap>
   );
 }
 

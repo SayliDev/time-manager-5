@@ -13,6 +13,23 @@ CREATE TABLE public.users (
     desactive_at TIMESTAMPTZ
 );
 
+COMMENT ON COLUMN public.users.password_set_at IS
+    'NULL = mot de passe pas encore choisi';
+
+CREATE TABLE public.password_reset_token (
+    id_password_reset_token INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_user INTEGER NOT NULL REFERENCES public.users(id_user) ON DELETE CASCADE,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (expires_at > creat_at)
+);
+
+CREATE INDEX idx_password_reset_token_id_user
+    ON public.password_reset_token(id_user);
+
 CREATE TABLE public.work_session (
     id_work_session INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     start_at TIMESTAMPTZ NOT NULL,

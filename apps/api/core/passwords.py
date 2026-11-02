@@ -1,8 +1,19 @@
-"""Hachage et vérification des mots de passe (bcrypt).
+"""
+Gestion des mots de passe.
 
 Utilisé par l'inscription et par le login : on ne stocke jamais un mot de
 passe en clair, uniquement son hash (colonne password_hash).
+
+Responsabilités :
+- Hashage des mots de passe
+- Vérification des mots de passe
+
+Algorithme :
+- Argon2 via Passlib
 """
+from passlib.context import CryptContext
+from core.logging import logger
+
 # ---------------------------------------------------
 # bcrypt (anciennement utilisé, remplacé par argon2)
 # ---------------------------------------------------
@@ -34,20 +45,6 @@ passe en clair, uniquement son hash (colonne password_hash).
 #     except ValueError:
 #         return False
 
-"""
-Gestion des mots de passe.
-
-Responsabilités :
-- Hashage des mots de passe
-- Vérification des mots de passe
-
-Algorithme :
-- Argon2 via Passlib
-"""
-import re #machting
-from zxcvbn import zxcvbn #check common passwords
-from passlib.context import CryptContext
-from core.logging import logger
 
 MAX_PASSWORD_BYTES = 72
 

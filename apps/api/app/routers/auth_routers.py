@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-import traceback
 
 from core.passwords import verify_password
 from core.security import create_access_token

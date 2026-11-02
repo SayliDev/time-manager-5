@@ -11,7 +11,6 @@ permissions:
   contents: read
 
 jobs:
-
   api:
     name: API
     runs-on: ubuntu-latest
@@ -21,7 +20,7 @@ jobs:
         working-directory: apps/api
 
     env:
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret' }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
       MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID }}
@@ -33,13 +32,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('apps/api/requirements-dev.txt') }}
+          key: pip-${{ runner.os }}-${{ hashFiles('apps/api/requirements*.txt') }}
           restore-keys: |
             pip-${{ runner.os }}-
 
@@ -55,7 +54,6 @@ jobs:
       - name: Pytest
         run: |
           pytest
-          
 
   client:
     name: Client
@@ -86,15 +84,7 @@ jobs:
 
       - name: Build
         run: |
-          docker compose \
-            -f docker-compose.yml \
-            npm run build --if-present
-
-      - name: Start stack
-        run: |
-          docker compose \
-            -f docker-compose.yml \
-            up -d
+          npm run build
 
   compose:
     name: Docker Compose Validation
@@ -104,28 +94,35 @@ jobs:
       - api
       - client
 
-    env:
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      
-      MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
-      MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
-      MICROSOFT_TENANT_ID: ${{ secrets.MICROSOFT_TENANT_ID }}
-
-      POSTGRES_DB: test_db
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-
-      API_PORT: 8000
-      CLIENT_PORT: 5173
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Create .env files from examples
+        run: |
+          cp .env.example .env
+          cp apps/api/.env.example apps/api/.env
+          cp apps/client/.env.example apps/client/.env
 
       - name: Validate Docker Compose
         run: |
           docker compose config --quiet
 
-      - name: Copy .env.example to .env
+      - name: Build images
         run: |
-          cp .env.example .env
+          docker compose build
+
+      - name: Start stack
+        run: |
+          docker compose up -d --wait
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs
+
+      - name: Stop stack
+        if: always()
+        run: |
+          docker compose down -v

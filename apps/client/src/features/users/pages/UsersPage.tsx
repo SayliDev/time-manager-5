@@ -7,16 +7,20 @@ import {
   ListBox,
   SearchField,
   Select,
-  toast,
+  Skeleton,
 } from '@heroui/react';
 import { useEffect, useMemo, useState } from 'react';
 import { fullName } from '@/data/mock';
+import { useMemo, useState } from 'react';
+import { DeleteUserDialog } from '@/features/users/components/DeleteUserDialog';
+import { useUsers } from '@/features/users/hooks/useUsers';
+import { fullName } from '@/features/users/lib/names';
 import { EmployeeDrawer } from '@/features/users/EmployeeDrawer';
 import { EmployeesTable } from '@/features/users/components/EmployeesTable';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
 import type { User } from '@/features/users/types';
-import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
+import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8001';
 
@@ -229,6 +233,8 @@ export function UsersPage() {
         <Card.Content>
           <EmployeesTable
             showRole
+            isLoading={usersLoading}
+            skeletonRows={8}
             users={filtered}
             onDelete={setDeleteUser}
             onEdit={openEdit}
@@ -237,10 +243,19 @@ export function UsersPage() {
         </Card.Content>
 
         <Card.Footer className='justify-between text-sm text-muted'>
-          <span>
-            {filtered.length} employé{filtered.length > 1 ? 's' : ''} sur{' '}
-            {users.length}
-          </span>
+          <SkeletonSwap
+            isLoading={usersLoading}
+            skeleton={
+              <span className='flex h-5 items-center'>
+                <Skeleton className='h-3.5 w-36 rounded-md' />
+              </span>
+            }
+          >
+            <span>
+              {filtered.length} employé{filtered.length > 1 ? 's' : ''} sur{' '}
+              {users.length}
+            </span>
+          </SkeletonSwap>
         </Card.Footer>
       </Card>
 
@@ -256,27 +271,7 @@ export function UsersPage() {
         onSaved={() => setRefreshKey((key) => key + 1)}
         onOpenChange={setFormOpen}
       />
-      <ConfirmDialog
-        confirmLabel='Supprimer'
-        description={
-          <>
-            Vous allez supprimer{' '}
-            <strong>{deleteUser ? fullName(deleteUser) : ''}</strong>. Cette
-            action est irréversible.
-          </>
-        }
-        isOpen={deleteUser !== null}
-        title='Supprimer cet employé ?'
-        onConfirm={() => {
-          toast.danger('Employé supprimé', {
-            description: `${
-              deleteUser ? fullName(deleteUser) : ''
-            } a été retiré.`,
-          });
-          setDeleteUser(null);
-        }}
-        onOpenChange={(open) => !open && setDeleteUser(null)}
-      />
+      <DeleteUserDialog user={deleteUser} onClose={() => setDeleteUser(null)} />
     </>
   );
 }

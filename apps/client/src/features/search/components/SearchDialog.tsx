@@ -10,7 +10,9 @@ import {
   type SVGProps,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fullName, teams, users } from '@/data/mock';
+import { useUsers } from '@/features/users/hooks/useUsers';
+import { fullName } from '@/features/users/lib/names';
+import { appPath } from '@/features/widgets/layout/nav';
 
 type Scope = 'pages' | 'people';
 
@@ -39,6 +41,7 @@ export function SearchModal({
   const [scope, setScope] = useState<Scope>('pages');
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const { data: users = [] } = useUsers();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -52,17 +55,14 @@ export function SearchModal({
   }, []);
 
   const peopleItems = useMemo<SearchItem[]>(() => {
-    return users.map((user) => {
-      const team = teams.find((t) => t.id === user.teamId);
-      return {
-        id: `user-${user.id}`,
-        label: fullName(user),
-        description: team?.name ?? user.email,
-        to: '/users',
-        icon: Persons,
-      };
-    });
-  }, []);
+    return users.map((user) => ({
+      id: `user-${user.id}`,
+      label: fullName(user),
+      description: user.email,
+      to: appPath('/users'),
+      icon: Persons,
+    }));
+  }, [users]);
 
   const items = useMemo(() => {
     const source = scope === 'pages' ? pageItems : peopleItems;
@@ -71,7 +71,7 @@ export function SearchModal({
     return source.filter(
       (item) =>
         matchesQuery(item.label, q) ||
-        (item.description ? matchesQuery(item.description, q) : false)
+        (item.description ? matchesQuery(item.description, q) : false),
     );
   }, [scope, pageItems, peopleItems, query]);
 
@@ -87,7 +87,7 @@ export function SearchModal({
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActiveIndex((i) =>
-        items.length === 0 ? 0 : (i - 1 + items.length) % items.length
+        items.length === 0 ? 0 : (i - 1 + items.length) % items.length,
       );
     } else if (event.key === 'Enter') {
       event.preventDefault();
@@ -180,7 +180,7 @@ export function SearchModal({
                         'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
                         selected
                           ? 'bg-default text-foreground'
-                          : 'text-foreground hover:bg-default/70'
+                          : 'text-foreground hover:bg-default/70',
                       )}
                       type='button'
                       onClick={() => selectItem(item)}

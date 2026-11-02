@@ -11,11 +11,15 @@ import {
   Modal,
   Select,
   TextField,
-  toast,
 } from '@heroui/react';
 import { fullName, teamNameOptions } from '@/data/mock';
 import type { User } from '@/features/users/types';
 import { request, ApiError } from '@/shared/api/client';
+import { sileo } from 'sileo';
+import { useCreateUser } from '@/features/users/hooks/useUserMutations';
+import { fullName } from '@/features/users/lib/names';
+import type { Role, User } from '@/features/users/types';
+import { ApiError } from '@/shared/api/client';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -25,6 +29,7 @@ interface UserFormModalProps {
 }
 
 const FORM_ID = 'user-form';
+const MIN_PASSWORD_LENGTH = 8;
 
 export function UserFormModal({
   isOpen,
@@ -34,9 +39,13 @@ export function UserFormModal({
 }: UserFormModalProps) {
   const isEdit = Boolean(user);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const createUser = useCreateUser();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // TODO
+    if (isEdit) return;
+
     const data = new FormData(e.currentTarget);
     const name = `${data.get('firstName')} ${data.get('lastName')}`;
 
@@ -74,7 +83,6 @@ export function UserFormModal({
         ? `Les informations de ${name} ont été enregistrées.`
         : `${name} pourra se connecter avec son email professionnel.`,
     });
-    onOpenChange(false);
   };
 
   return (
@@ -102,7 +110,7 @@ export function UserFormModal({
             </p>
           </Modal.Header>
 
-          <Modal.Body>
+          <Modal.Body className='flex flex-col gap-4'>
             <Form
               className='grid grid-cols-1 gap-4 sm:grid-cols-2'
               id={FORM_ID}
@@ -111,6 +119,7 @@ export function UserFormModal({
               <TextField
                 isRequired
                 defaultValue={user?.firstName}
+                isDisabled={isEdit}
                 name='firstName'
                 variant='secondary'
               >
@@ -121,6 +130,7 @@ export function UserFormModal({
               <TextField
                 isRequired
                 defaultValue={user?.lastName}
+                isDisabled={isEdit}
                 name='lastName'
                 variant='secondary'
               >
@@ -133,6 +143,7 @@ export function UserFormModal({
                 isRequired
                 className='sm:col-span-2'
                 defaultValue={user?.email}
+                isDisabled={isEdit}
                 name='email'
                 type='email'
                 variant='secondary'
@@ -145,9 +156,28 @@ export function UserFormModal({
                 <FieldError />
               </TextField>
 
+              {isEdit ? null : (
+                <TextField
+                  isRequired
+                  className='sm:col-span-2'
+                  minLength={MIN_PASSWORD_LENGTH}
+                  name='password'
+                  type='password'
+                  variant='secondary'
+                >
+                  <Label>Mot de passe provisoire</Label>
+                  <Input autoComplete='new-password' />
+                  <Description>
+                    {MIN_PASSWORD_LENGTH} caractères minimum, à transmettre au
+                    collaborateur.
+                  </Description>
+                  <FieldError />
+                </TextField>
+              )}
+
               <TextField
-                className='sm:col-span-2'
-                defaultValue={user?.phone}
+                defaultValue={user?.phone ?? undefined}
+                isDisabled={isEdit}
                 name='phone'
                 type='tel'
                 variant='secondary'
@@ -161,6 +191,7 @@ export function UserFormModal({
                 isRequired
                 defaultValue={user?.role ?? 'employee'}
                 fullWidth
+                isDisabled={isEdit}
                 name='role'
                 placeholder='Choisir un rôle'
                 variant='secondary'
@@ -222,6 +253,15 @@ export function UserFormModal({
             <Button form={FORM_ID} isDisabled={isSubmitting} type='submit'>
               {isEdit ? 'Enregistrer' : 'Créer l’employé'}
             </Button>
+            {isEdit ? null : (
+              <Button
+                form={FORM_ID}
+                isPending={createUser.isPending}
+                type='submit'
+              >
+                Créer l’employé
+              </Button>
+            )}
           </Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>

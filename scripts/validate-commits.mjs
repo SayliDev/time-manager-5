@@ -7,6 +7,8 @@ const ACCENT_RE =
 const EMOJI_RE =
   /\p{Extended_Pictographic}|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
 const MERGE_RE = /^Merge /;
+// Commits authored by Dependabot use GitHub's own message format.
+const BOT_EMAIL_RE = /^\d+\+dependabot\[bot\]@users\.noreply\.github\.com$/;
 
 const base = process.env.BASE_SHA;
 const head = process.env.HEAD_SHA || 'HEAD';
@@ -16,7 +18,7 @@ if (!base) {
   process.exit(1);
 }
 
-const log = execSync(`git log --format=%s ${base}..${head}`, {
+const log = execSync(`git log --format=%ae%x09%s ${base}..${head}`, {
   encoding: 'utf8',
 }).trim();
 
@@ -28,6 +30,12 @@ if (!log) {
 const subjects = log
   .split('\n')
   .filter(Boolean)
+  .map((line) => {
+    const tab = line.indexOf('\t');
+    return [line.slice(0, tab), line.slice(tab + 1)];
+  })
+  .filter(([email]) => !BOT_EMAIL_RE.test(email))
+  .map(([, subject]) => subject)
   .filter((s) => !MERGE_RE.test(s));
 
 const invalid = subjects.filter((s) => {

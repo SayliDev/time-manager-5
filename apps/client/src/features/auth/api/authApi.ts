@@ -9,9 +9,12 @@ type MeResponse = {
   username: string;
   role: string;
 };
+import type { LoginCredentials, TokenResponse } from '@/features/auth/types';
+import { toUser, type UserDto } from '@/features/users/api/usersApi';
+import type { User } from '@/features/users/types';
 
 export async function login(
-  credentials: LoginCredentials
+  credentials: LoginCredentials,
 ): Promise<TokenResponse> {
   return request<TokenResponse>('/api/auth/login', {
     method: 'POST',
@@ -29,6 +32,8 @@ export async function login(
 export async function getMe(): Promise<SessionUser> {
   const me = await request<MeResponse>('/me');
   return { id: me.username, role: me.role };
+export async function getMe(): Promise<User> {
+  return toUser(await request<UserDto>('/me'));
 }
 
 export const authQueryKeys = {

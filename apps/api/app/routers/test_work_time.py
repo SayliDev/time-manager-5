@@ -5,7 +5,6 @@ from fastapi.responses import HTMLResponse
 
 from app.repositories import work_session
 from app.services.time_service import (
-    PARIS,
     calc_work_time,
     calc_ongoing_week,
     calc_past_time_week,
