@@ -1,4 +1,5 @@
 import { PersonPlus, Pencil } from '@gravity-ui/icons';
+import { useState } from 'react';
 import {
   Button,
   Description,
@@ -10,16 +11,18 @@ import {
   Modal,
   Select,
   TextField,
+  toast,
 } from '@heroui/react';
-import { sileo } from 'sileo';
+import { CONTRACT_HOURS, type User } from '@/features/users/types';
+import { request, ApiError } from '@/shared/api/client';
 import { useCreateUser } from '@/features/users/hooks/useUserMutations';
+import { useTeams } from '@/features/users/hooks/useUsers';
 import { fullName } from '@/features/users/lib/names';
-import type { Role, User } from '@/features/users/types';
-import { ApiError } from '@/shared/api/client';
 
 interface UserFormModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
   user?: User | null;
 }
 
@@ -29,43 +32,56 @@ const MIN_PASSWORD_LENGTH = 8;
 export function UserFormModal({
   isOpen,
   onOpenChange,
+  onSaved,
   user,
 }: UserFormModalProps) {
   const isEdit = Boolean(user);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const createUser = useCreateUser();
+  const { data: teams = [] } = useTeams();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // TODO
     if (isEdit) return;
 
     const data = new FormData(e.currentTarget);
-    const field = (name: string) => String(data.get(name) ?? '').trim();
-    const input = {
-      firstName: field('firstName'),
-      lastName: field('lastName'),
-      email: field('email'),
-      password: String(data.get('password') ?? ''),
-      role: field('role') as Role,
-      phone: field('phone') || null,
-    };
+    const name = `${data.get('firstName')} ${data.get('lastName')}`;
 
-    createUser.mutate(input, {
-      onSuccess: (created) => {
-        sileo.success({
-          title: 'Employé créé',
-          description: `${fullName(created)} peut se connecter avec son email professionnel.`,
+    if (!isEdit) {
+      setIsSubmitting(true);
+      try {
+        await request('/api/addUsers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: data.get('firstName'),
+            last_name: data.get('lastName'),
+            email: data.get('email'),
+            role: data.get('role') === 'employee' ? 'employe' : data.get('role'),
+            phone: data.get('phone') || null,
+            contract_hours: Number(data.get('contractHours')),
+            team_name: data.get('teamName') || null,
+          }),
         });
-        onOpenChange(false);
-      },
-      onError: (error) =>
-        sileo.error({
-          title: 'Création impossible',
+        onSaved?.();
+      } catch (error) {
+        toast.danger('Création impossible', {
           description:
             error instanceof ApiError
               ? error.detail
-              : 'Une erreur est survenue.',
-        }),
+              : 'Impossible de contacter le serveur.',
+        });
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
+    toast.success(isEdit ? 'Employé mis à jour' : 'Employé créé', {
+      description: isEdit
+        ? `Les informations de ${name} ont été enregistrées.`
+        : `${name} pourra se connecter avec son email professionnel.`,
     });
   };
 
@@ -198,12 +214,69 @@ export function UserFormModal({
                   </ListBox>
                 </Select.Popover>
               </Select>
+
+              <Select
+                isRequired
+                defaultValue={String(user?.contractHours ?? 35)}
+                fullWidth
+                isDisabled={isEdit}
+                name='contractHours'
+                variant='secondary'
+              >
+                <Label>Contrat (heures / semaine)</Label>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {CONTRACT_HOURS.map((hours) => (
+                      <ListBox.Item id={String(hours)} key={hours} textValue={`${hours} h`}>
+                        {hours} h
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
+              </Select>
+
+              <Select
+                isRequired
+                defaultValue={user?.teamName ?? undefined}
+                fullWidth
+                name='teamName'
+                placeholder='Choisir une équipe'
+                variant='secondary'
+              >
+                <Label>Équipe</Label>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {teams.map(({ name }) => (
+                      <ListBox.Item
+                        id={name}
+                        key={name}
+                        textValue={name}
+                      >
+                        {name}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
+              </Select>
             </Form>
           </Modal.Body>
 
           <Modal.Footer>
             <Button slot='close' variant='tertiary'>
-              {isEdit ? 'Fermer' : 'Annuler'}
+              Annuler
+            </Button>
+            <Button form={FORM_ID} isDisabled={isSubmitting} type='submit'>
+              {isEdit ? 'Enregistrer' : 'Créer l’employé'}
             </Button>
             {isEdit ? null : (
               <Button

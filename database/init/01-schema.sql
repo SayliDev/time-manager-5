@@ -6,14 +6,20 @@ CREATE TABLE public.users (
     last_name VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash TEXT,
-    password_set_at TIMESTAMPTZ,
+    passeword_last_changed TIMESTAMPTZ,
     role VARCHAR(50),
     phone VARCHAR(50),
+    contract_hours INTEGER NOT NULL DEFAULT 35
+        CONSTRAINT users_contract_hours_check CHECK (contract_hours IN (35, 20, 30, 25)),
     creat_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMPTZ,
     desactive_at TIMESTAMPTZ
 );
 
-COMMENT ON COLUMN public.users.password_set_at IS
+COMMENT ON COLUMN public.users.creat_at IS
+    'Date de création du compte. Les jeux de démo utilisent un jour ouvré (lun–ven) entre 2020 et 2026.';
+
+COMMENT ON COLUMN public.users.passeword_last_changed IS
     'NULL = mot de passe pas encore choisi';
 
 CREATE TABLE public.password_reset_token (
@@ -41,6 +47,31 @@ CREATE TABLE public.work_session (
     CHECK (end_at IS NULL OR end_at >= start_at)
 );
 
+CREATE TABLE public.leave_request (
+    id_leave_request INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_user INTEGER NOT NULL REFERENCES public.users(id_user),
+    start_at TIMESTAMPTZ NOT NULL,
+    return_at TIMESTAMPTZ NOT NULL,
+    leave_type VARCHAR(20) NOT NULL DEFAULT 'conge',
+    reason TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    processed_by INTEGER REFERENCES public.users(id_user),
+    processed_at TIMESTAMPTZ,
+    decision_comment TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (return_at > start_at),
+    CHECK (leave_type IN ('conge', 'maladie', 'rtt')),
+    CHECK (status IN ('pending', 'approved', 'rejected')),
+    CHECK (
+        (status = 'pending' AND processed_by IS NULL AND processed_at IS NULL)
+        OR status IN ('approved', 'rejected')
+    )
+);
+
+CREATE INDEX leave_request_user_dates_idx
+    ON public.leave_request (id_user, start_at, return_at);
+
 CREATE TABLE public.microft_log(
     token_microsoft TEXT PRIMARY KEY,
     mail_microsoft VARCHAR(50) NOT NULL,
@@ -52,13 +83,26 @@ CREATE TABLE public.departement (
     name VARCHAR(50)
 );
 
+CREATE TYPE public.team_name_enum AS ENUM (
+    'Ressources humaines',
+    'Finance',
+    'IT & Produit',
+    'Opérations'
+);
+
 CREATE TABLE public.team (
     id_team INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    description TEXT,
-    id_user INTEGER NOT NULL REFERENCES public.users(id_user),
-    id_departement INTEGER NOT NULL
-        REFERENCES public.departement(id_departement)
+    description TEXT
+);
+
+CREATE TABLE public.team_department (
+    id_team INTEGER NOT NULL REFERENCES public.team(id_team),
+    id_departement INTEGER NOT NULL REFERENCES public.departement(id_departement),
+    start_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_at DATE,
+    PRIMARY KEY (id_team, id_departement, start_at),
+    CHECK (end_at IS NULL OR end_at >= start_at)
 );
 
 CREATE TABLE public.team_allocation (

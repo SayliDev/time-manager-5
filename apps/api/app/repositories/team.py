@@ -16,8 +16,6 @@ from app.db.database_conn import get_connection
 MODIFIABLE_FIELDS = frozenset({
     "name",
     "description",
-    "id_user",
-    "id_departement",
 })
 
 
@@ -53,29 +51,21 @@ def get_by_id(team_id: int) -> dict[str, Any] | None:
 def create(
     *,
     name: str,
-    id_user: int,
-    id_departement: int,
     description: str | None = None,
 ) -> dict[str, Any]:
-    """Crée une équipe et retourne la ligne créée.
-
-    id_user désigne le responsable de l'équipe.
-    L'utilisateur et le département doivent déjà exister.
-    """
+    """Crée une équipe indépendante de ses relations métier."""
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 INSERT INTO public.team (
                     name,
-                    description,
-                    id_user,
-                    id_departement
+                    description
                 )
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s)
                 RETURNING *
                 """,
-                (name, description, id_user, id_departement),
+                (name, description),
             )
 
             team = cursor.fetchone()

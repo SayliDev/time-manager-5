@@ -7,7 +7,8 @@ import os
 
 app = FastAPI(title="Time Manager - verification locale")
 TABLES = (
-    "users", "departement", "team", "team_allocation",
+    "users", "departement", "team", "team_department",
+    "team_allocation",
     "contrat", "work_session", "timekeeping_correction",
 )
 

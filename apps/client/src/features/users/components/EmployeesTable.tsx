@@ -19,8 +19,6 @@ import { UserAvatar } from '@/shared/ui/UserAvatar';
 import { formatDate, formatDecimal } from '@/shared/lib/format';
 import { SkeletonSwap } from '@/shared/ui/SkeletonSwap';
 
-const WEEKLY_TARGET = 35;
-
 /** Largeurs variées d'une ligne à l'autre pour un rendu plus naturel. */
 const NAME_WIDTHS = ['w-28', 'w-36', 'w-24', 'w-32', 'w-40', 'w-28'];
 const EMAIL_WIDTHS = ['w-44', 'w-52', 'w-40', 'w-48', 'w-56', 'w-44'];
@@ -31,6 +29,8 @@ interface EmployeesTableProps {
   onEdit?: (user: User) => void;
   onDelete?: (user: User) => void;
   showRole?: boolean;
+  showPresence?: boolean;
+  showPhone?: boolean;
   compact?: boolean;
   ariaLabel?: string;
   isLoading?: boolean;
@@ -43,6 +43,8 @@ export function EmployeesTable({
   onEdit,
   onDelete,
   showRole = false,
+  showPresence = true,
+  showPhone = true,
   compact = false,
   ariaLabel = 'Liste des employés',
   isLoading = false,
@@ -55,16 +57,19 @@ export function EmployeesTable({
 
   const show = {
     team: !compact && users.some((u) => u.teamId !== null),
-    presence: users.some((u) => u.presence !== null),
+    presence: showPresence && users.some((u) => u.presence !== null),
     hours: users.some((u) => u.weeklyHours !== null),
     lastClock: !compact && users.some((u) => u.lastClock !== null),
-    contact: !compact,
+    phone: !compact && showPhone,
+    createdAt: !compact,
   };
 
   const sorted = useMemo(() => {
     const list = [...users];
     const compare = (a: User, b: User): number => {
       switch (sort.column) {
+        case 'contractHours':
+          return a.contractHours - b.contractHours;
         case 'weeklyHours':
           return (a.weeklyHours ?? 0) - (b.weeklyHours ?? 0);
         case 'presence':
@@ -74,8 +79,8 @@ export function EmployeesTable({
         case 'createdAt':
           return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
         case 'team':
-          return (getTeam(a.teamId)?.name ?? '').localeCompare(
-            getTeam(b.teamId)?.name ?? '',
+          return (a.teamName ?? getTeam(a.teamId)?.name ?? '').localeCompare(
+            b.teamName ?? getTeam(b.teamId)?.name ?? '',
           );
         default:
           return fullName(a).localeCompare(fullName(b));
@@ -118,10 +123,10 @@ export function EmployeesTable({
                 {header('Rôle')}
               </Table.Column>
             ) : null}
-            {show.contact ? (
+            {show.phone ? (
               <Table.Column id='phone'>Téléphone</Table.Column>
             ) : null}
-            {show.contact ? (
+            {show.createdAt ? (
               <Table.Column allowsSorting id='createdAt'>
                 {header('Créé le')}
               </Table.Column>
@@ -131,6 +136,9 @@ export function EmployeesTable({
                 {header('Statut')}
               </Table.Column>
             ) : null}
+            <Table.Column allowsSorting id='contractHours'>
+              {header('Contrat')}
+            </Table.Column>
             {show.hours ? (
               <Table.Column allowsSorting id='weeklyHours'>
                 {header('Heures / sem.')}
@@ -171,12 +179,12 @@ export function EmployeesTable({
                         <Skeleton className='h-5 w-20 rounded-2xl' />
                       </Table.Cell>
                     ) : null}
-                    {show.contact ? (
+                    {show.phone ? (
                       <Table.Cell>
                         <Skeleton className='h-3.5 w-28 rounded-md' />
                       </Table.Cell>
                     ) : null}
-                    {show.contact ? (
+                    {show.createdAt ? (
                       <Table.Cell>
                         <Skeleton className='h-3.5 w-20 rounded-md' />
                       </Table.Cell>
@@ -186,6 +194,9 @@ export function EmployeesTable({
                         <Skeleton className='h-5 w-24 rounded-2xl' />
                       </Table.Cell>
                     ) : null}
+                    <Table.Cell>
+                      <Skeleton className='h-3.5 w-20 rounded-md' />
+                    </Table.Cell>
                     {show.hours ? (
                       <Table.Cell>
                         <div className='flex items-center gap-3'>
@@ -206,17 +217,17 @@ export function EmployeesTable({
                 ))
               : sorted.map((user) => {
                   const hours = user.weeklyHours ?? 0;
-                  const pct = Math.min(100, (hours / WEEKLY_TARGET) * 100);
-                  const over = hours > WEEKLY_TARGET + 3;
+                  const pct = Math.min(100, (hours / user.contractHours) * 100);
+                  const over = hours > user.contractHours + 3;
                   return (
-                    <Table.Row id={user.id} key={user.id}>
+                    <Table.Row
+                      className='cursor-pointer hover:bg-default/50'
+                      id={user.id}
+                      key={user.id}
+                      onAction={() => onView(user)}
+                    >
                       <Table.Cell>
-                        <button
-                          aria-label={`Ouvrir la fiche de ${fullName(user)}`}
-                          className='flex min-w-0 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-focus'
-                          type='button'
-                          onClick={() => onView(user)}
-                        >
+                        <div className='flex min-w-0 items-center gap-3 text-left'>
                           <UserAvatar size='sm' user={user} />
                           <span className='min-w-0'>
                             <span className='block truncate text-sm font-medium text-foreground'>
@@ -226,12 +237,12 @@ export function EmployeesTable({
                               {user.email}
                             </span>
                           </span>
-                        </button>
+                        </div>
                       </Table.Cell>
                       {show.team ? (
                         <Table.Cell>
                           <span className='text-sm'>
-                            {getTeam(user.teamId)?.name ?? '—'}
+                            {user.teamName ?? getTeam(user.teamId)?.name ?? '—'}
                           </span>
                         </Table.Cell>
                       ) : null}
@@ -240,14 +251,14 @@ export function EmployeesTable({
                           <RoleChip role={user.role} />
                         </Table.Cell>
                       ) : null}
-                      {show.contact ? (
+                      {show.phone ? (
                         <Table.Cell>
                           <span className='tabular text-sm whitespace-nowrap'>
                             {user.phone ?? '—'}
                           </span>
                         </Table.Cell>
                       ) : null}
-                      {show.contact ? (
+                      {show.createdAt ? (
                         <Table.Cell>
                           <span className='text-sm whitespace-nowrap text-muted'>
                             {user.createdAt ? formatDate(user.createdAt) : '—'}
@@ -263,6 +274,11 @@ export function EmployeesTable({
                           )}
                         </Table.Cell>
                       ) : null}
+                      <Table.Cell>
+                        <span className='tabular text-sm whitespace-nowrap'>
+                          {user.contractHours} h / sem.
+                        </span>
+                      </Table.Cell>
                       {show.hours ? (
                         <Table.Cell>
                           <div className='flex items-center gap-3'>

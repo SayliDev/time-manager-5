@@ -44,8 +44,11 @@ DECLARE
     v_day_offset INTEGER;
 
     v_work_day DATE;
+    v_created_day DATE;
+    v_created_at TIMESTAMPTZ;
     v_session_start TIMESTAMPTZ;
     v_session_end TIMESTAMPTZ;
+    v_created_until DATE := LEAST(CURRENT_DATE, DATE '2026-12-31');
 
 BEGIN
     -- Empêche une deuxième insertion du même jeu de données.
@@ -59,13 +62,27 @@ BEGIN
     END IF;
 
     -- 1 administrateur, 2 managers et 7 employés.
+    -- creat_at : jour ouvré aléatoire (lun–ven) entre 2020 et 2026.
     FOR v_user_index IN 1..10 LOOP
+        LOOP
+            v_created_day := DATE '2020-01-01'
+                + floor(
+                    random() * (v_created_until - DATE '2020-01-01' + 1)
+                )::integer;
+            EXIT WHEN EXTRACT(ISODOW FROM v_created_day) BETWEEN 1 AND 5;
+        END LOOP;
+
+        v_created_at :=
+            (v_created_day + TIME '08:00' + (random() * INTERVAL '8 hours'))
+            AT TIME ZONE 'Europe/Paris';
+
         INSERT INTO public.users (
             first_name,
             last_name,
             email,
             password_hash,
             role,
+            contract_hours,
             creat_at
         )
         VALUES (
@@ -78,7 +95,8 @@ BEGIN
                 WHEN v_user_index IN (2, 3) THEN 'manager'
                 ELSE 'employe'
             END,
-            TIMESTAMPTZ '2026-09-01 08:00:00+02'
+            (ARRAY[35, 20, 30, 25])[1 + (v_user_index - 1) % 4],
+            v_created_at
         )
         RETURNING id_user INTO v_user_id;
 
@@ -97,32 +115,29 @@ BEGIN
     -- Alice dirige le développement.
     INSERT INTO public.team (
         name,
-        description,
-        id_user,
-        id_departement
+        description
     )
     VALUES (
         'Développement - DEMO',
-        'Équipe fictive de développement logiciel',
-        v_user_ids[2],
-        v_it_department_id
+        'Équipe fictive de développement logiciel'
     )
     RETURNING id_team INTO v_dev_team_id;
 
     -- Karim dirige le support.
     INSERT INTO public.team (
         name,
-        description,
-        id_user,
-        id_departement
+        description
     )
     VALUES (
         'Support - DEMO',
-        'Équipe fictive de support technique',
-        v_user_ids[3],
-        v_support_department_id
+        'Équipe fictive de support technique'
     )
     RETURNING id_team INTO v_support_team_id;
+
+    INSERT INTO public.team_department (id_team, id_departement)
+    VALUES
+        (v_dev_team_id, v_it_department_id),
+        (v_support_team_id, v_support_department_id);
 
     -- Les managers sont également membres de leur équipe.
     -- L'administrateur reste hors équipe.
@@ -169,12 +184,12 @@ BEGIN
         );
     END LOOP;
 
-    -- Sessions du lundi 28 septembre au vendredi 2 octobre 2026.
+    -- Sessions du lundi de la semaine courante au vendredi.
     -- Journée standard : 09h–12h et 13h–17h, soit 7 heures.
     -- 10 utilisateurs × 5 jours × 2 sessions = 100 sessions.
     FOR v_user_index IN 1..10 LOOP
         FOR v_day_offset IN 0..4 LOOP
-            v_work_day := DATE '2026-09-28' + v_day_offset;
+            v_work_day := date_trunc('week', CURRENT_DATE)::date + v_day_offset;
 
             -- Matin.
             v_session_start :=

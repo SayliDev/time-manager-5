@@ -21,21 +21,41 @@ def build_reset_url(token: str) -> str:
 
 
 def send_account_created_email(
-        *, to_email: str, first_name: str, reset_url: str
+    *,
+    to_email: str,
+    first_name: str,
+    reset_url: str | None = None,
+    temporary_password: str | None = None,
+    cc_email: str | None = None,
 ) -> bool:
     """Envoie le mail de création de compte. True si envoyé, False sinon."""
     message = EmailMessage()
     message["Subject"] = "Votre compte Time Manager a été créé"
     message["From"] = os.getenv("MAIL_FROM", "no-reply@timemanager.local")
     message["To"] = to_email
-    message.set_content(
-        f"Bonjour {first_name},\n\n"
-        "Votre compte Time Manager a été créé.\n"
-        f"Identifiant : {to_email}\n\n"
-        "Pour choisir votre mot de passe, cliquez sur ce lien "
-        "(valable 24 heures, utilisable une seule fois) :\n"
-        f"{reset_url}\n"
-    )
+    if cc_email and cc_email != to_email:
+        message["Cc"] = cc_email
+
+    content = [
+        f"Bonjour {first_name},",
+        "",
+        "Votre compte Time Manager a été créé.",
+        f"Identifiant : {to_email}",
+    ]
+    if temporary_password:
+        content.extend([
+            "",
+            f"Mot de passe temporaire : {temporary_password}",
+            "Nous vous recommandons de le modifier après votre première connexion.",
+        ])
+    if reset_url:
+        content.extend([
+            "",
+            "Pour choisir votre mot de passe, cliquez sur ce lien "
+            "(valable 24 heures, utilisable une seule fois) :",
+            reset_url,
+        ])
+    message.set_content("\n".join(content) + "\n")
 
     try:
         host = os.getenv("SMTP_HOST", "mailpit")

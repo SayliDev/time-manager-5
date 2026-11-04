@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Button,
   Checkbox,
@@ -22,10 +23,17 @@ type FieldErrors = {
   password?: string;
 };
 
+type LoginLocationState = {
+  message?: string;
+};
+
 export default function LoginForm() {
+  const location = useLocation();
   const login = useLogin();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(
+    (location.state as LoginLocationState | null)?.message ?? null
+  );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -168,7 +176,11 @@ export default function LoginForm() {
           >
             Se connecter
           </Button>
-          {formError ? <FieldError>{formError}</FieldError> : null}
+          {formError ? (
+            <p className='text-sm text-danger' role='alert'>
+              {formError}
+            </p>
+          ) : null}
         </Form>
 
         <p className='mt-8 text-center text-xs text-muted'>

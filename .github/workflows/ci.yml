@@ -15,11 +15,31 @@ jobs:
     name: API
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: time_manager_test
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: time_manager_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U time_manager_test -d time_manager_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     defaults:
       run:
         working-directory: apps/api
 
     env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: time_manager_test
+      POSTGRES_PASSWORD: ci-test-password
+      POSTGRES_DB: time_manager_test
       SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret' }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
       MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}

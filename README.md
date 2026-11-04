@@ -46,6 +46,21 @@ cd apps/client && npm run lint && npm run build
 
 Les contributions doivent conserver les données personnelles hors des logs et des fichiers de configuration versionnés.
 
+## Validation des demandes de congé
+
+Dans les vues calendrier et liste des congés, les managers et administrateurs
+disposent des boutons **Valider** et **Refuser** pour les demandes en attente
+d'un autre utilisateur. Le refus nécessite un motif.
+
+Ces actions appellent `PATCH /api/leave-requests/{request_id}` avec
+`{"status": "approved", "decision_comment": null}` pour valider, ou
+`{"status": "rejected", "decision_comment": "Motif du refus"}` pour refuser.
+Les managers ne peuvent traiter que les demandes de leur équipe active,
+hors leurs propres demandes. La liste est rechargée après chaque décision.
+
+Tests ciblés avec PostgreSQL démarré :
+`docker compose exec -T api python -m pytest tests/test_leave_requests.py -q`.
+
 
 # Time Manager — installation locale complète
 

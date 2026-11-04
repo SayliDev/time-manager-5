@@ -2,17 +2,17 @@
 
 import logging
 import os
-from typing import Any
 
 import psycopg
 from fastapi import (Depends,FastAPI,HTTPException,)
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg import sql
-from app.dependencies import get_current_user
 from app.routers.users_routers import UserResponse, router as users_router
 from app.routers.register import router as register_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
+from app.routers.leave_requests import router as leave_requests_router
+from app.dependencies import get_current_user as get_authenticated_user
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
 
@@ -30,11 +30,11 @@ app = FastAPI(
     },
 )
 
-# autorise les origines CORS, autoorise response from backend to frontend (avoid browzer blocking)
-# because docker backend and frontend different ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[f"http://localhost:{CLIENT_PORT}"],
+    allow_origins=[
+        f"http://localhost:{os.getenv('CLIENT_PORT', '5173')}",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
+app.include_router(leave_requests_router)
 # app.include_router(register_router)
 app.include_router(register_router)
 # app.include_router(test_work_time_router)
@@ -54,13 +55,15 @@ app.include_router(register_router)
 # -----------------------------------------------------------------------------
 
 TABLES = (
-    "utilisateur",
+    "users",
     "departement",
-    "equipe",
-    "affectation_equipe",
-    "contrat",
-    "session_travail",
-    "correction_pointage",
+    "team",
+    "team_department",
+    "team_allocation",
+    "contract",
+    "work_session",
+    "leave_request",
+    "timekeeping_correction",
 )
 
 # -----------------------------------------------------------------------------
@@ -73,6 +76,16 @@ def accueil():
         "message": "Time Manager fonctionne",
         "verification": "/health",
         "documentation": "/docs",
+    }
+
+
+@app.get("/me", tags=["Authentication"])
+def me(
+    current_user: dict = Depends(get_authenticated_user),
+):
+    return {
+        **UserResponse(**current_user).model_dump(),
+        "username": str(current_user["id_user"]),
     }
 
 @app.get("/health", tags=["system"])
@@ -112,17 +125,3 @@ def verification():
             status_code=503,
             detail="Base inaccessible ou schéma incomplet.",
         )
-
-# -----------------------------------------------------------------------------
-# Routes sécurisées
-# -----------------------------------------------------------------------------
-
-@app.get("/me",
-    tags=["Authentication"],
-    response_model=UserResponse,
-)
-def me(
-    current_user: dict[str, Any] = Depends(get_current_user),
-):
-    """Profil de l'utilisateur connecté (sans hash de mot de passe)."""
-    return current_user
