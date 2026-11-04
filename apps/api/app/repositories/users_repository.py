@@ -47,6 +47,10 @@ def get_all() -> list[dict[str, Any]]:
 
 # Retourne un utilisateur sans hash, ou None s'il n'existe pas
 def get_by_id(record_id: int) -> dict[str, Any] | None:
+    """Lit les colonnes publiques d’un utilisateur, ou retourne None.
+
+    Le hash du mot de passe est exclu ; les droits sont vérifiés par l’appelant.
+    """
     query = sql.SQL(
         "SELECT {} FROM {} WHERE id_user = %s"
     ).format(PUBLIC_COLUMNS, TABLE)
@@ -67,6 +71,12 @@ def create(
     phone: str | None = None,
 ) -> dict[str, Any]:
 
+    """Insère un compte et retourne ses colonnes publiques.
+
+    Le hash fourni est stocké tel quel ; le hachage et les contrôles de rôle
+    relèvent de l’appelant, pas de cette fonction SQL.
+    Les erreurs SQL, notamment un email déjà utilisé, sont propagées.
+    """
     query = sql.SQL(
         """
         INSERT INTO {} (
