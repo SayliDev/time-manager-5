@@ -1,20 +1,19 @@
 """FastAPI application entry point."""
 
-import logging
 import os
 from typing import Any
 
-import psycopg
-from fastapi import (Depends,FastAPI,HTTPException,)
+from fastapi import (Depends,FastAPI,)
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg import sql
 from app.dependencies import get_current_user
 from app.routers.users_routers import UserResponse, router as users_router
 from app.routers.register import router as register_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
+from app.routers.time import router as time_router
+from app.routers.kpi import router as kpi_router
+from app.routers.teams import router as teams_router
 # from app.routers.register_routers import router as register_router
-from app.db.database_conn import connexion
 
 # -----------------------------------------------------------------------------
 # Application
@@ -48,19 +47,21 @@ app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
 app.include_router(register_router)
-# app.include_router(test_work_time_router)
+app.include_router(time_router)
+app.include_router(kpi_router)
+app.include_router(teams_router)
 # -----------------------------------------------------------------------------
 # Constantes
 # -----------------------------------------------------------------------------
 
 TABLES = (
-    "utilisateur",
+    "users",
     "departement",
-    "equipe",
-    "affectation_equipe",
-    "contrat",
-    "session_travail",
-    "correction_pointage",
+    "team",
+    "team_allocation",
+    "contract",
+    "work_session",
+    "timekeeping_correction",
 )
 
 # -----------------------------------------------------------------------------
@@ -74,44 +75,6 @@ def accueil():
         "verification": "/health",
         "documentation": "/docs",
     }
-
-@app.get("/health", tags=["system"])
-def verification():
-
-    try:
-        with connexion() as conn:
-
-            counts = {}
-
-            for table in TABLES:
-
-                query = sql.SQL(
-                    "SELECT COUNT(*) AS total FROM public.{}"
-                ).format(
-                    sql.Identifier(table)
-                )
-
-                result = conn.execute(
-                    query
-                ).fetchone()
-
-                counts[table] = result["total"]
-
-        return {
-            "status": "ok",
-            "tables": counts,
-        }
-
-    except psycopg.Error:
-
-        logging.exception(
-            "Verification PostgreSQL impossible"
-        )
-
-        raise HTTPException(
-            status_code=503,
-            detail="Base inaccessible ou schéma incomplet.",
-        )
 
 # -----------------------------------------------------------------------------
 # Routes sécurisées

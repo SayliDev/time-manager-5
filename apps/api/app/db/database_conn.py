@@ -28,6 +28,11 @@ def connexion():
 
 # Connection details are intentionally not logged because they contain credentials.
 def get_connection() -> Connection[DictRow]:
+    """Ouvre une connexion Psycopg avec des lignes dictionnaires.
+
+    Les paramètres proviennent de l’environnement ; le contexte appelant gère
+    la validation ou l’annulation de la transaction et ferme la connexion.
+    """
     return Connection[DictRow].connect(
         host=os.getenv("POSTGRES_HOST", "db"),
         port=os.getenv("POSTGRES_PORT", "5432"),
