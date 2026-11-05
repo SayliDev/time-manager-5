@@ -29,10 +29,11 @@ def create(*, user_id: int, token_hash: str, expires_at: datetime) -> None:
             )
 
 
-def consume(*, token_hash: str, password_hash: str) -> bool:
+def consume(*, token_hash: str, password_hash: str) -> dict | None:
     """Marque le jeton comme utilise et change le mot de passe, en une requete.
 
-    Retourne False si le jeton est inconnu, expire ou deja utilise.
+    Retourne l'utilisateur (id_user, email, role), ou None si le jeton est
+    inconnu, expire, deja utilise ou si le compte est desactive.
     """
     query = """
         WITH used AS (
@@ -48,9 +49,9 @@ def consume(*, token_hash: str, password_hash: str) -> bool:
             password_set_at = CURRENT_TIMESTAMP
         WHERE id_user IN (SELECT id_user FROM used)
           AND desactive_at IS NULL
-        RETURNING id_user
+        RETURNING id_user, email, role
     """
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(query, (token_hash, password_hash))
-            return cursor.fetchone() is not None
+            return cursor.fetchone()

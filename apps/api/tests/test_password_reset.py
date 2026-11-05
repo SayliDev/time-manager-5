@@ -6,11 +6,13 @@ from pydantic import ValidationError
 
 from app.models.users import ResetPasswordRequest
 from app.services import password_reset_service as service
+from core.security import decode_access_token
 
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+USER = {"id_user": 1, "email": "a@b.fr", "role": "employe"}
 ROUTER = "app.routers.password_reset.reset_password"
 URL = "/api/auth/reset-password"
 REPO = "app.services.password_reset_service.password_reset_repository"
@@ -58,8 +60,8 @@ def test_create_reset_token_is_unpredictable():
 
 
 def test_reset_password_hashes_token_and_password():
-    with patch(f"{REPO}.consume", return_value=True) as mocked:
-        assert service.reset_password(token="abc", new_password="Secret123") is True
+    with patch(f"{REPO}.consume", return_value=USER) as mocked:
+        assert service.reset_password(token="abc", new_password="Secret123") == USER
 
     kwargs = mocked.call_args.kwargs
     assert kwargs["token_hash"] == service._hash_token("abc")
@@ -67,28 +69,34 @@ def test_reset_password_hashes_token_and_password():
     assert kwargs["password_hash"].startswith("$argon2")
 
 
-def test_reset_password_returns_false_for_invalid_token():
-    with patch(f"{REPO}.consume", return_value=False):
-        assert service.reset_password(token="x", new_password="Secret123") is False
+def test_reset_password_returns_none_for_invalid_token():
+    with patch(f"{REPO}.consume", return_value=None):
+        assert service.reset_password(token="x", new_password="Secret123") is None
 
 
-def test_reset_endpoint_success():
-    with patch(ROUTER, return_value=True) as mocked:
+def test_reset_endpoint_success_logs_user_in():
+    with patch(ROUTER, return_value=USER) as mocked:
         response = client.post(URL, json={"token": "abc", "new_password": "Secret123"})
 
     assert response.status_code == 200
     body = response.json()
-    assert "access_token" not in body
+    assert body["token_type"] == "bearer"
     assert "token" not in body
+    claims = decode_access_token(body["access_token"])
+    assert claims["sub"] == "1"
+    assert claims["id"] == "1"
+    assert claims["email"] == "a@b.fr"
+    assert claims["role"] == "employe"
     mocked.assert_called_once_with(token="abc", new_password="Secret123")
 
 
 def test_reset_endpoint_invalid_token_returns_400():
-    with patch(ROUTER, return_value=False):
+    with patch(ROUTER, return_value=None):
         response = client.post(URL, json={"token": "bad", "new_password": "Secret123"})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Lien invalide ou expiré"
+    assert "access_token" not in response.json()
 
 
 def test_reset_endpoint_weak_password_returns_422():

@@ -23,7 +23,7 @@ def create_reset_token(*, user_id: int) -> str:
     return token
 
 
-def reset_password(*, token: str, new_password: str) -> bool:
+def reset_password(*, token: str, new_password: str) -> dict | None:
     return password_reset_repository.consume(
         token_hash=_hash_token(token),
         password_hash=hash_password(new_password),
