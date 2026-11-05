@@ -1,0 +1,37 @@
+name: Jira sync
+
+# Moves the TM-<num> ticket of the branch along the Jira board:
+#   branch created -> En cours, PR opened -> En cours de revue, PR merged -> Terminé.
+on:
+  create:
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Move Jira ticket
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'create' && github.event.ref_type == 'branch') ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft &&
+       (github.event.action != 'closed' || github.event.pull_request.merged))
+    steps:
+      # Always run the script from develop, never from the PR's own code.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Move ticket
+        env:
+          JIRA_BASE_URL: https://epitech-team-msc-2028.atlassian.net
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          BRANCH: ${{ github.event_name == 'create' && github.event.ref || github.head_ref }}
+          TARGET_STATUS: ${{ github.event_name == 'create' && 'En cours' || (github.event.action == 'closed' && 'Terminé' || 'En cours de revue') }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: node scripts/jira-sync.mjs
