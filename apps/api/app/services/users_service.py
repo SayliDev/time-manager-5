@@ -1,4 +1,5 @@
 from psycopg.errors import UniqueViolation
+import logging
 import traceback
 from app.repositories.users_repository import (
     create as repository_create,
@@ -10,7 +11,12 @@ from app.repositories.users_repository import (
     get_password_hash_by_id as repository_get_password_hash_by_id,
     get_by_oid as repository_get_by_oid
 )
+from app.services.email_service import build_reset_url, send_account_created_email
+from app.services.password_reset_service import create_reset_token
+from core.password_generator import generate_temporary_password
 from core.passwords import hash_password
+
+logger = logging.getLogger(__name__)
 
 def create_user(
     *,
@@ -37,6 +43,41 @@ def create_user(
         raise ValueError(
             "Un utilisateur avec cet email existe déjà."
         )
+
+def create_employee(
+    *,
+    first_name: str,
+    last_name: str,
+    email: str,
+    role: str = "employe",
+    phone: str | None = None,
+) -> tuple[dict, bool]:
+    """Cree un compte sans mot de passe choisi par le manager.
+
+    Un mot de passe aleatoire est hache puis oublie : l'employe choisit le sien
+    avec le lien envoye par mail. Retourne (utilisateur, mail_envoye).
+    """
+    user = create_user(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password=generate_temporary_password(),
+        role=role,
+        phone=phone,
+    )
+    token = create_reset_token(user_id=user["id_user"])
+    try:
+        email_sent = send_account_created_email(
+            to_email=user["email"],
+            first_name=user["first_name"],
+            reset_url=build_reset_url(token),
+        )
+    except RuntimeError:
+        # FRONTEND_URL / CLIENT_PORT absents. On ne journalise jamais le jeton.
+        logger.exception("Lien d'activation impossible a construire")
+        email_sent = False
+    return user, email_sent
+
 
 def get_user_by_id(*,user_id: int,):
     try:

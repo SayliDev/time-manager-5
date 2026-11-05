@@ -57,7 +57,6 @@ NEW_USER = {
     "first_name": "Marie",
     "last_name": "Dupont",
     "email": "marie.dupont@example.com",
-    "password": "Secret123",
     "role": "employe",
 }
 
@@ -127,7 +126,7 @@ def test_employee_can_list_users():
 
 
 def test_employee_cannot_create_user():
-    with patch("app.routers.users_routers.create_user") as create:
+    with patch("app.routers.users_routers.create_employee") as create:
         response = client.post("/api/addUsers", json=NEW_USER, headers=auth(3))
     assert response.status_code == 403
     create.assert_not_called()
@@ -135,15 +134,15 @@ def test_employee_cannot_create_user():
 
 def test_manager_can_create_employee():
     with patch(
-        "app.routers.users_routers.create_user",
-        side_effect=lambda **kw: make_user(10, kw["role"]),
+        "app.routers.users_routers.create_employee",
+        side_effect=lambda **kw: (make_user(10, kw["role"]), True),
     ):
         response = client.post("/api/addUsers", json=NEW_USER, headers=auth(2))
     assert response.status_code == 201
 
 
 def test_manager_cannot_create_admin():
-    with patch("app.routers.users_routers.create_user") as create:
+    with patch("app.routers.users_routers.create_employee") as create:
         response = client.post(
             "/api/addUsers", json={**NEW_USER, "role": "admin"}, headers=auth(2)
         )
@@ -153,8 +152,8 @@ def test_manager_cannot_create_admin():
 
 def test_admin_can_create_admin():
     with patch(
-        "app.routers.users_routers.create_user",
-        side_effect=lambda **kw: make_user(10, kw["role"]),
+        "app.routers.users_routers.create_employee",
+        side_effect=lambda **kw: (make_user(10, kw["role"]), True),
     ):
         response = client.post(
             "/api/addUsers", json={**NEW_USER, "role": "admin"}, headers=auth(1)
@@ -200,7 +199,8 @@ def test_deactivating_unknown_user_returns_404():
 def test_manager_cannot_promote_to_admin():
     with patch("app.routers.users_routers.update_user") as update:
         response = client.put(
-            "/api/updateUser/3", json={**NEW_USER, "role": "admin"}, headers=auth(2)
+            "/api/updateUser/3", json={**NEW_USER, "password": "Secret123", "role": "admin"},
+            headers=auth(2),
         )
     assert response.status_code == 403
     update.assert_not_called()

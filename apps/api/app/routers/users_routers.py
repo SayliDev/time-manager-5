@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from app.dependencies import ADMIN, get_current_user, require_management
-from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
+from app.services.users_service import create_employee, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,16 @@ class UserCreate(BaseModel):
     last_name: str
     email: str
     password: str
+    role: str = "employe"
+    phone: str | None = None
+
+
+class EmployeeCreate(BaseModel):
+    """Creation par un manager : pas de mot de passe, l'employe le choisit par mail."""
+
+    first_name: str
+    last_name: str
+    email: str
     role: str = "employe"
     phone: str | None = None
 
@@ -29,6 +39,11 @@ class UserResponse(BaseModel):
     phone: str | None = None
     creat_at: datetime | None = None
     desactive_at: datetime | None = None
+
+
+class EmployeeCreateResponse(UserResponse):
+    email_sent: bool
+
 
 router = APIRouter(
     prefix="/api",
@@ -63,24 +78,23 @@ def get_existing_user(user_id: int) -> dict[str, Any]:
     return user
 
 
-@router.post("/addUsers",response_model=UserResponse,status_code=status.HTTP_201_CREATED,)
+@router.post("/addUsers",response_model=EmployeeCreateResponse,status_code=status.HTTP_201_CREATED,)
 def create_user_endpoint(
-    payload: UserCreate,
+    payload: EmployeeCreate,
     current_user: dict[str, Any] = Depends(require_management),
 ):
     ensure_can_manage_admin(current_user, payload.role)
 
     try:
-        user = create_user(
+        user, email_sent = create_employee(
             first_name=payload.first_name,
             last_name=payload.last_name,
             email=payload.email,
-            password=payload.password,
             role=payload.role,
             phone=payload.phone,
         )
 
-        return user
+        return {**user, "email_sent": email_sent}
 
     except ValueError as error:
         raise HTTPException(
