@@ -11,6 +11,8 @@ from psycopg import sql
 from app.dependencies import get_current_user
 from app.routers.users_routers import UserResponse, router as users_router
 from app.routers.register import router as register_router
+from app.routers.account import router as account_router
+from app.routers.password_reset import router as password_reset_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
 # from app.routers.register_routers import router as register_router
@@ -45,6 +47,8 @@ app.add_middleware(
 # ----------------------------------------------------------------------------- 
 app.include_router(users_router)
 app.include_router(auth_router)
+app.include_router(password_reset_router)
+app.include_router(account_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
 app.include_router(register_router)

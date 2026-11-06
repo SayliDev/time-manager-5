@@ -10,6 +10,7 @@ export interface User {
   phone: string | null;
   role: Role;
   createdAt: string | null;
+  passwordSetAt?: string | null;
   deactivatedAt: string | null;
   // renseignés uniquement dans les données de démo.
   teamId: string | null;

@@ -4,6 +4,7 @@ from app.repositories.users_repository import (
     create as repository_create,
     get_by_id,
     get_all,
+    get_current_managers,
     update as repository_update,
     deactivate as repository_deactivate,
     get_by_email as repository_get_by_email,
@@ -102,3 +103,9 @@ def get_user_by_oid(*, oid: str):
         return repository_get_by_oid(oid=oid)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par oid : {e}")
+
+def get_account_managers(*, current_user: dict) -> list[dict]:
+    """L'identité des responsables est réservée au profil de l'employé connecté."""
+    if current_user['role'] != 'employe':
+        return []
+    return get_current_managers(user_id=current_user['id_user'])

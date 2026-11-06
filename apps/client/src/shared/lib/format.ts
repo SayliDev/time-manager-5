@@ -19,3 +19,14 @@ export const formatDate = (iso: string) =>
     month: 'short',
     year: 'numeric',
   });
+
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return 'Non renseignée';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Non renseignée';
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Europe/Paris',
+  }).format(date);
+}

@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     role: str
     phone: str | None = None
     creat_at: datetime | None = None
+    password_set_at: datetime | None = None
     desactive_at: datetime | None = None
 
 router = APIRouter(

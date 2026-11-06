@@ -15,6 +15,7 @@ export interface UserDto {
   role: string | null;
   phone: string | null;
   creat_at: string | null;
+  password_set_at?: string | null;
   desactive_at: string | null;
 }
 
@@ -49,6 +50,7 @@ export function toUser(dto: UserDto): User {
     phone: dto.phone,
     role: toRole(dto.role),
     createdAt: dto.creat_at,
+    passwordSetAt: dto.password_set_at ?? null,
     deactivatedAt: dto.desactive_at,
     teamId: null,
     presence: null,
