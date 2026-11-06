@@ -39,7 +39,7 @@ export function AccountPage() {
             </Card.Header>
             <Card.Content>
               <dl className='grid gap-6 border-t border-separator pt-6 sm:grid-cols-2'>
-                {[[ 'Prénom', capitalizeName(user.firstName) ], [ 'Nom', capitalizeName(user.lastName) ], [ 'Matricule', user.id ], [ 'Compte créé le', formatDateTime(user.createdAt) ]].map(([label, value]) => (
+                {[[ 'Prénom', capitalizeName(user.firstName) ], [ 'Nom', capitalizeName(user.lastName) ], [ 'Matricule', user.id ], [ 'Téléphone', user.phone?.trim() || 'Non renseigné' ], [ 'Compte créé le', formatDateTime(user.createdAt) ]].map(([label, value]) => (
                   <div key={label} className='min-w-0'>
                     <dt className='text-sm text-muted'>{label}</dt>
                     <dd className='mt-1 break-words font-medium'>{value}</dd>
