@@ -5,6 +5,7 @@ import { pad } from '@/features/dashboard/lib/clock';
 
 interface ClockCardProps {
   clockedIn: boolean;
+  hasWorkedToday: boolean;
   since: string;
   isLoading: boolean;
   isSubmitting: boolean;
@@ -13,6 +14,7 @@ interface ClockCardProps {
 
 export function ClockCard({
   clockedIn,
+  hasWorkedToday,
   since,
   isLoading,
   isSubmitting,
@@ -23,6 +25,10 @@ export function ClockCard({
   if (isLoading) label = 'Chargement…';
   else if (isSubmitting) label = 'Enregistrement…';
   else if (clockedIn) label = 'Pointer mon départ';
+
+  let status = 'Vous n’avez pas encore pointé aujourd’hui.';
+  if (isLoading) status = ' '; // garde la hauteur de la ligne
+  else if (hasWorkedToday) status = 'Vous avez terminé votre journée.';
 
   return (
     <Card className='relative overflow-hidden'>
@@ -70,7 +76,7 @@ export function ClockCard({
               <strong className='tabular text-foreground'>{since}</strong>
             </>
           ) : (
-            'Vous avez terminé votre journée.'
+            status
           )}
         </p>
       </Card.Content>

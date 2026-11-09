@@ -107,6 +107,7 @@ export function EmployeeDashboardPage() {
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <ClockCard
           clockedIn={clockedIn}
+          hasWorkedToday={(completedToday ?? 0) > 0}
           since={since}
           isLoading={sessionLoading}
           isSubmitting={isClocking}
