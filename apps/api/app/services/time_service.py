@@ -5,11 +5,21 @@ from zoneinfo import ZoneInfo
 
 PARIS = ZoneInfo("Europe/Paris")
 Session = Mapping[str, Any]
+OVERNIGHT_GRACE = timedelta(hours=12)
 
 
 def _midnight(day: date) -> datetime:
     """Début d'une journée française, converti en UTC."""
     return datetime.combine(day, time.min, tzinfo=PARIS).astimezone(timezone.utc)
+
+
+def open_since(now: datetime) -> datetime:
+    """Instant à partir duquel une session ouverte est encore en cours.
+
+    Une arrivée du jour reste en cours jusqu'à minuit ; une arrivée de la veille
+    le reste encore 12 h, pour le travail de nuit. Au-delà, elle est oubliée.
+    """
+    return min(_midnight(now.astimezone(PARIS).date()), now - OVERNIGHT_GRACE)
 
 
 def calc_work_time(

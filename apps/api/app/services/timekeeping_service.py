@@ -1,7 +1,7 @@
 """Public time API projections. Calendar days use Europe/Paris; instants use UTC."""
 
 from datetime import datetime, time, timedelta, timezone
-from app.services.time_service import PARIS, calc_work_time
+from app.services.time_service import PARIS, calc_work_time, open_since
 from app.services.dashboard_service import DAY_NAMES, work_mode
 
 
@@ -50,7 +50,8 @@ def hours(sessions, start, end):
 def session_view(session, data, now):
     """Produit le format public d’une session et détermine son statut.
 
-    Une session ouverte passée devient missing ; ses heures restent nulles.
+    Une session ouverte qui n’est plus en cours (voir open_since) devient
+    missing ; ses heures restent nulles.
     Le retard utilise la première arrivée, l’horaire contractuel et la tolérance.
     Il est prioritaire sur overtime, évalué au cumul hebdomadaire à la clôture.
     """
@@ -66,7 +67,7 @@ def session_view(session, data, now):
     )
     status = "ok"
     if session["end_at"] is None:
-        status = "ongoing" if day == now.astimezone(PARIS).date() else "missing"
+        status = "ongoing" if session["start_at"] >= open_since(now) else "missing"
     elif day.weekday() < 5 and session["start_at"] == first and first > expected:
         status = "late"
     else:
@@ -181,18 +182,26 @@ def user_time(data, user_id, start, end, now):
 def presence(data, day, now):
     """Calcule le statut quotidien et les heures hebdomadaires par collaborateur.
 
-    Les weekends et congés sont off. La première arrivée détermine le retard ;
-    sans arrivée, un jour ouvré est absent. Le dernier pointage peut être ancien.
+    Les weekends et congés sont off. La première arrivée détermine le retard.
+    Une session commencée la veille et toujours en cours compte pour le jour.
+    Sans arrivée, un jour ouvré est pending jusqu’à l’heure prévue (tolérance
+    incluse), puis absent. Le dernier pointage peut être ancien.
     """
     result = []
     monday = day - timedelta(days=day.weekday())
+    since = open_since(now)
     for u in data["users"]:
         sessions = [
             s
             for s in data["sessions"]
             if s["id_user"] == u["id_user"] and s["start_at"] <= now
         ]
-        today = [s for s in sessions if s["start_at"].astimezone(PARIS).date() == day]
+        today = [
+            s
+            for s in sessions
+            if s["start_at"].astimezone(PARIS).date() == day
+            or (s["end_at"] is None and s["start_at"] >= since)
+        ]
         off = day.weekday() >= 5 or any(
             leave["id_user"] == u["id_user"]
             and leave["start_date"] <= day <= leave["end_date"]
@@ -202,9 +211,10 @@ def presence(data, day, now):
         expected = datetime.combine(
             day, c.get("expected_start", time(9)), PARIS
         ) + timedelta(minutes=c.get("late_tolerance_minutes", 5))
-        status = "off" if off else "absent"
+        status = "off" if off else "absent" if now > expected else "pending"
         if today and not off:
-            status = "remote" if work_mode(today[-1]) == "remote" else "present"
+            latest = max(today, key=lambda s: (s["start_at"], s["id_work_session"]))
+            status = "remote" if work_mode(latest) == "remote" else "present"
             if min(s["start_at"] for s in today) > expected:
                 status = "late"
         events = [

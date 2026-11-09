@@ -1,12 +1,12 @@
 """Scoped reads and atomic clock operations."""
 
-from datetime import datetime, time, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from app.db.database_conn import get_connection
+from app.services.time_service import open_since
 
 
-def load_scope(user, day, team_id=None):
+def load_scope(user, day, team_id=None, *, user_id=None, since=None):
     """Charge uniquement les données accessibles au compte à la date demandée.
 
     Un employé accède à lui-même ; un manager à ses équipes principales ou
@@ -107,8 +107,9 @@ def clock(user_id, mode=None):
     Le verrou sur l’utilisateur sérialise aussi deux arrivées simultanées, même
     si aucune session n’existe encore. Une arrivée en double ou un départ sans
     session ouverte renvoie 409 ; le contexte annule alors la transaction.
-    Seules les sessions commencées aujourd’hui en heure de Paris sont retenues.
-    Une session oubliée la veille reste ouverte pour correction.
+    Seules les sessions encore en cours (voir open_since) sont retenues : une
+    arrivée de la veille au soir peut être clôturée, une session oubliée plus
+    ancienne reste ouverte pour correction.
     """
     with get_connection() as conn:
         # Serialize operations for this employee, including concurrent arrivals.
@@ -116,17 +117,12 @@ def clock(user_id, mode=None):
             "SELECT id_user FROM users WHERE id_user=%s FOR UPDATE", (user_id,)
         )
         now = datetime.now(timezone.utc)
-        day_start = datetime.combine(
-            now.astimezone(ZoneInfo("Europe/Paris")).date(),
-            time.min,
-            tzinfo=ZoneInfo("Europe/Paris"),
-        ).astimezone(timezone.utc)
         active = conn.execute(
             """SELECT * FROM work_session
             WHERE id_user=%s AND end_at IS NULL AND cancel_at IS NULL
                 AND start_at >= %s AND start_at <= %s
             ORDER BY start_at, id_work_session FOR UPDATE""",
-            (user_id, day_start, now),
+            (user_id, open_since(now), now),
         ).fetchall()
         if mode is not None:
             if active:

@@ -82,6 +82,37 @@ def test_leave_overrides_late_presence():
     )
 
 
+@pytest.mark.parametrize(
+    "now,status",
+    [("2026-10-02T06:30:00Z", "pending"), ("2026-10-02T07:10:00Z", "absent")],
+)
+def test_missing_arrival_is_pending_until_expected_start(now, status):
+    data = fixture_data()
+    data["sessions"] = []
+    assert presence(data, date(2026, 10, 2), instant(now))[0]["presence"] == status
+
+
+@pytest.mark.parametrize(
+    "now,status",
+    [("2026-10-02T06:00:00Z", "remote"), ("2026-10-02T09:00:00Z", "absent")],
+)
+def test_overnight_session_counts_while_in_progress(now, status):
+    data = fixture_data()
+    data["sessions"][0]["start_at"] = instant("2026-10-01T20:00:00Z")
+    data["sessions"][0]["end_at"] = None
+    assert presence(data, date(2026, 10, 2), instant(now))[0]["presence"] == status
+
+
+def test_overnight_session_is_ongoing_the_next_morning():
+    data = fixture_data()
+    data["sessions"][0]["start_at"] = instant("2026-10-01T20:00:00Z")
+    data["sessions"][0]["end_at"] = None
+    entry = user_time(
+        data, 3, date(2026, 10, 1), date(2026, 10, 2), instant("2026-10-02T06:00:00Z")
+    )["work-sessions"][0]
+    assert entry["status"] == "ongoing"
+
+
 def test_out_of_scope_user_is_forbidden():
     with patch("app.routers.time.load_scope", return_value={"users": []}):
         with pytest.raises(HTTPException) as error:
@@ -139,18 +170,21 @@ def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active
 
 @pytest.mark.parametrize("mode", [None, "onsite"])
 @pytest.mark.parametrize(
-    "now_value,midnight_value",
+    "now_value,bound_value",
     [
-        ("2026-10-30T23:30:00Z", "2026-10-30T23:00:00Z"),
-        ("2026-07-01T22:30:00Z", "2026-07-01T22:00:00Z"),
-        ("2026-10-25T02:30:00Z", "2026-10-24T22:00:00Z"),
+        # During the day, sessions started since Paris midnight are current.
+        ("2026-10-31T15:00:00Z", "2026-10-30T23:00:00Z"),
+        ("2026-07-01T15:00:00Z", "2026-06-30T22:00:00Z"),
+        ("2026-10-25T20:00:00Z", "2026-10-24T22:00:00Z"),
+        # Shortly after midnight, last evening's arrival is still current.
+        ("2026-10-30T23:30:00Z", "2026-10-30T11:30:00Z"),
+        ("2026-07-01T22:30:00Z", "2026-07-01T10:30:00Z"),
+        ("2026-10-25T02:30:00Z", "2026-10-24T14:30:00Z"),
     ],
 )
-def test_clock_only_considers_sessions_started_today_in_paris(
-    mode, now_value, midnight_value
-):
+def test_clock_only_considers_sessions_still_in_progress(mode, now_value, bound_value):
     now = instant(now_value)
-    midnight = instant(midnight_value)
+    bound = instant(bound_value)
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = []
@@ -170,7 +204,7 @@ def test_clock_only_considers_sessions_started_today_in_paris(
             assert conn.execute.call_args.args[1] == (3, mode, now)
     query, parameters = conn.execute.call_args_list[1].args
     assert "start_at >= %s AND start_at <= %s" in query
-    assert parameters == (3, midnight, now)
+    assert parameters == (3, bound, now)
 
 
 def test_employee_cannot_select_team_owned_by_another_manager():

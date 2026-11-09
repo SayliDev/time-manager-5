@@ -77,7 +77,12 @@ Ces choix sont des valeurs initiales en attente de validation métier :
 - Supplément : `contract.overtime_threshold_hours`, 0 par défaut. Le total
   hebdomadaire doit dépasser objectif + supplément. Le retard est prioritaire
   sur le statut overtime d'une session ; le résumé cumule les heures sup.
-- Une session ouverte d'une journée passée devient missing à minuit à Paris.
+- Une session ouverte reste en cours jusqu'à minuit à Paris, ou 12 h après
+  l'arrivée si celle-ci a eu lieu la veille (travail de nuit). Elle devient
+  ensuite missing et ne peut plus être clôturée par `/clock-out`.
+- Sans arrivée, un collaborateur est `pending` jusqu'à l'heure prévue
+  (tolérance incluse), puis `absent`. Une session de la veille encore en cours
+  le compte présent.
 - `leave_absence` contient les périodes de congé inclusives. Les weekends
   sont également off, sans calendrier de jours fériés.
 - L'objectif du résumé est un objectif entier pour chaque semaine intersectée,
