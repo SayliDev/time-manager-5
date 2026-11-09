@@ -54,7 +54,7 @@ export function ClockDialog({
               <Clock className='size-5 text-muted' />
               <CurrentTime />
               <p className='text-xs text-muted'>
-                Heure enregistrée par le serveur
+                Heure indicative : l’heure retenue est celle du serveur
               </p>
             </div>
             <p className='mt-4 text-sm text-muted'>
@@ -81,11 +81,12 @@ export function ClockDialog({
             <Button slot='close' variant='tertiary'>
               Annuler
             </Button>
+            {/* Focus initial : Entrée confirme, comme indiqué ci-dessus. */}
             <Button
-              slot='close'
+              autoFocus
               variant={isIn ? 'primary' : 'danger'}
               onPress={onConfirm}
-              isDisabled={isSubmitting}
+              isPending={isSubmitting}
             >
               {isIn ? 'Confirmer l’arrivée' : 'Confirmer le départ'}
             </Button>

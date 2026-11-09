@@ -68,6 +68,7 @@ export function EmployeeDashboardPage() {
                 ? error.detail
                 : 'Une erreur est survenue.',
           }),
+        onSettled: () => setDialogOpen(false),
       });
     } else {
       clockInMutation.mutate('onsite', {
@@ -86,6 +87,7 @@ export function EmployeeDashboardPage() {
                 ? error.detail
                 : 'Une erreur est survenue.',
           }),
+        onSettled: () => setDialogOpen(false),
       });
     }
   };
