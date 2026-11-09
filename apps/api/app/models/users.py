@@ -4,14 +4,17 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from core.passwords import MAX_PASSWORD_BYTES
-def check_password_rules(value:str) -> str:
+
+
+def check_password_rules(value: str) -> str:
     if len(value) < 8:
-        raise ValueError("Minimum 8 caratères")
+        raise ValueError("8 caracteres minimum")
     if not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
         raise ValueError("Au moins une lettre et un chiffre")
     if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
         raise ValueError("72 octets maximum")
     return value
+
 
 class RegisterRequest(BaseModel):
     first_name: str = Field(max_length=50)
