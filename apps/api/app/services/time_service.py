@@ -9,9 +9,7 @@ Session = Mapping[str, Any]
 
 def _midnight(day: date) -> datetime:
     """Début d'une journée française, converti en UTC."""
-    return datetime.combine(
-        day, time.min, tzinfo=PARIS
-    ).astimezone(timezone.utc)
+    return datetime.combine(day, time.min, tzinfo=PARIS).astimezone(timezone.utc)
 
 
 def calc_work_time(

@@ -228,7 +228,11 @@ def test_empty_scope_skips_timekeeping_queries():
     with patch("app.repositories.time_repository.get_connection", return_value=conn):
         data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
     assert data == {
-        "users": [], "teams": [], "sessions": [], "contracts": [], "leaves": []
+        "users": [],
+        "teams": [],
+        "sessions": [],
+        "contracts": [],
+        "leaves": [],
     }
     assert conn.execute.call_count == 2
 
@@ -241,13 +245,20 @@ def test_scope_loads_timekeeping_only_for_accessible_users():
     contracts = [{"id_contract": 2, "id_user": 3}]
     leaves = [{"id_user": 3}]
     conn.execute.return_value.fetchall.side_effect = [
-        [], users, sessions, contracts, leaves
+        [],
+        users,
+        sessions,
+        contracts,
+        leaves,
     ]
     with patch("app.repositories.time_repository.get_connection", return_value=conn):
         data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
     assert data == {
-        "users": users, "teams": [], "sessions": sessions,
-        "contracts": contracts, "leaves": leaves,
+        "users": users,
+        "teams": [],
+        "sessions": sessions,
+        "contracts": contracts,
+        "leaves": leaves,
     }
     for call in conn.execute.call_args_list[2:]:
         assert call.args[1] == ([3],)

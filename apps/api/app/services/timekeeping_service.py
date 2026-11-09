@@ -191,7 +191,8 @@ def presence(data, day, now):
         ]
         today = [s for s in sessions if s["start_at"].astimezone(PARIS).date() == day]
         off = day.weekday() >= 5 or any(
-            leave["id_user"] == u["id_user"] and leave["start_date"] <= day <= leave["end_date"]
+            leave["id_user"] == u["id_user"]
+            and leave["start_date"] <= day <= leave["end_date"]
             for leave in data.get("leaves", [])
         )
         c = contract(data, u["id_user"], day)

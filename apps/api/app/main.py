@@ -3,7 +3,7 @@
 import os
 from typing import Any
 
-from fastapi import (Depends,FastAPI,)
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.dependencies import get_current_user
 from app.routers.users_routers import UserResponse, router as users_router
@@ -24,9 +24,7 @@ CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 app = FastAPI(
     title="Time Manager API",
     version="1.0.0",
-    swagger_ui_parameters={
-        "persistAuthorization": True
-    },
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 # autorise les origines CORS, autoorise response from backend to frontend (avoid browzer blocking)
@@ -41,7 +39,7 @@ app.add_middleware(
 
 # -----------------------------------------------------------------------------
 # Include router
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
@@ -68,6 +66,7 @@ TABLES = (
 # Routes publiques
 # -----------------------------------------------------------------------------
 
+
 @app.get("/", tags=["system"])
 def accueil():
     return {
@@ -76,11 +75,14 @@ def accueil():
         "documentation": "/docs",
     }
 
+
 # -----------------------------------------------------------------------------
 # Routes sécurisées
 # -----------------------------------------------------------------------------
 
-@app.get("/me",
+
+@app.get(
+    "/me",
     tags=["Authentication"],
     response_model=UserResponse,
 )

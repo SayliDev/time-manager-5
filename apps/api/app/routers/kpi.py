@@ -42,7 +42,8 @@ def metrics(data, start, end, now):
     for d in days:
         for u in data["users"]:
             if any(
-                leave["id_user"] == u["id_user"] and leave["start_date"] <= d <= leave["end_date"]
+                leave["id_user"] == u["id_user"]
+                and leave["start_date"] <= d <= leave["end_date"]
                 for leave in data["leaves"]
             ):
                 continue

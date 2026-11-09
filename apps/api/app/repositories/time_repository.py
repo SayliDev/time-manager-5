@@ -39,10 +39,7 @@ def _load_allowed_teams(conn, user, team_id):
         if user["role"] == "admin"
         or (
             user["role"] == "manager"
-            and (
-                t["id_user"] == user["id_user"]
-                or t["id_team"] in additional_team_ids
-            )
+            and (t["id_user"] == user["id_user"] or t["id_team"] in additional_team_ids)
         )
     ]
     if team_id is not None and not any(t["id_team"] == team_id for t in allowed):
