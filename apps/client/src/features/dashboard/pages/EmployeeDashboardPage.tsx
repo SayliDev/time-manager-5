@@ -6,7 +6,6 @@ import { ClockCard } from '@/features/dashboard/components/ClockCard';
 import { EmployeeStats } from '@/features/dashboard/components/EmployeeStats';
 import { MyWeekHoursCard } from '@/features/dashboard/components/MyWeekHoursCard';
 import { RecentEntriesCard } from '@/features/dashboard/components/RecentEntriesCard';
-import { useNow } from '@/features/dashboard/hooks/useNow';
 import { toHHMM } from '@/features/dashboard/lib/clock';
 import { ClockDialog } from '@/features/dashboard/components/ClockDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
@@ -44,18 +43,6 @@ export function EmployeeDashboardPage() {
 
   const clockedIn = openSession != null;
   const since = openSession ? toHHMM(new Date(openSession.start_at)) : '';
-
-  const now = useNow();
-
-  // Une session commencée la veille ne compte qu'à partir de minuit.
-  const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0);
-  const elapsedHours = openSession
-    ? (now.getTime() -
-        Math.max(new Date(openSession.start_at).getTime(), midnight.getTime())) /
-      3_600_000
-    : 0;
-  const todayHours = (completedToday ?? 0) + elapsedHours;
 
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
@@ -120,7 +107,6 @@ export function EmployeeDashboardPage() {
       <section className='grid grid-cols-1 gap-4 lg:grid-cols-3 3xl:gap-5 4xl:gap-6'>
         <ClockCard
           clockedIn={clockedIn}
-          now={now}
           since={since}
           isLoading={sessionLoading}
           isSubmitting={isClocking}
@@ -128,7 +114,8 @@ export function EmployeeDashboardPage() {
         />
         <EmployeeStats
           since={since}
-          today={todayHours}
+          completedToday={completedToday ?? 0}
+          openSessionStart={openSession?.start_at ?? null}
           weekly={weekly}
           delta={weeklyDelta}
           isLoading={weeklyLoading}
@@ -143,7 +130,6 @@ export function EmployeeDashboardPage() {
       <ClockDialog
         isOpen={dialogOpen}
         mode={clockedIn ? 'out' : 'in'}
-        time={toHHMM(now)}
         onConfirm={confirmClock}
         isSubmitting={isClocking}
         onOpenChange={setDialogOpen}

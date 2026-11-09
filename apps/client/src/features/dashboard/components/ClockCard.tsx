@@ -1,9 +1,9 @@
 import { Play, Stop } from '@gravity-ui/icons';
 import { Button, Card, Chip } from '@heroui/react';
+import { useNow } from '@/features/dashboard/hooks/useNow';
 import { pad } from '@/features/dashboard/lib/clock';
 
 interface ClockCardProps {
-  now: Date;
   clockedIn: boolean;
   since: string;
   isLoading: boolean;
@@ -12,13 +12,13 @@ interface ClockCardProps {
 }
 
 export function ClockCard({
-  now,
   clockedIn,
   since,
   isLoading,
   isSubmitting,
   onClock,
 }: ClockCardProps) {
+  const now = useNow();
   let label = 'Pointer mon arrivée';
   if (isLoading) label = 'Chargement…';
   else if (isSubmitting) label = 'Enregistrement…';

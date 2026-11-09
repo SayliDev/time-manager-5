@@ -1,20 +1,30 @@
 import { Clock, Play, Stop } from '@gravity-ui/icons';
 import { Button, Kbd, Modal } from '@heroui/react';
+import { useNow } from '@/features/dashboard/hooks/useNow';
+import { toHHMM } from '@/features/dashboard/lib/clock';
 
 interface ClockDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   mode: 'in' | 'out';
-  time: string;
   isSubmitting: boolean;
   onConfirm: () => void;
+}
+
+// Rendu dans le corps du dialog : l'horloge ne tourne que s'il est ouvert.
+function CurrentTime() {
+  const now = useNow();
+  return (
+    <p className='tabular text-4xl font-semibold tracking-tight'>
+      {toHHMM(now)}
+    </p>
+  );
 }
 
 export function ClockDialog({
   isOpen,
   onOpenChange,
   mode,
-  time,
   isSubmitting,
   onConfirm,
 }: ClockDialogProps) {
@@ -42,9 +52,7 @@ export function ClockDialog({
           <Modal.Body>
             <div className='flex flex-col items-center gap-2 rounded-lg bg-default py-6'>
               <Clock className='size-5 text-muted' />
-              <p className='tabular text-4xl font-semibold tracking-tight'>
-                {time}
-              </p>
+              <CurrentTime />
               <p className='text-xs text-muted'>
                 Heure enregistrée par le serveur
               </p>
