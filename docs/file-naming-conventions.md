@@ -45,20 +45,22 @@ mots, utiliser le `kebab-case`.
 | --- | --- | --- |
 | Composant React | `PascalCase.tsx` | `EntriesTable.tsx` |
 | Page | `<Name>Page.tsx` | `TimePage.tsx` |
-| Hook React | `use<Name>.ts` | `useTimekeeping.ts` |
-| Client API centralisé | `shared/api/client.ts` | `shared/api/client.ts` |
+| Hook React | `use<Name>.ts` | `useUsers.ts` |
+| Appels API d'une fonctionnalité | `features/<feature>/api/<feature>Api.ts` | `features/users/api/usersApi.ts` |
+| Client HTTP partagé | `shared/api/client.ts` | `shared/api/client.ts` |
 | Utilitaire ou constantes | `camelCase.ts` | `format.ts`, `weeklyRows.ts` |
 | Types d'une fonctionnalité | `types.ts` | `features/time/types.ts` |
 | Feuille de style | `kebab-case.css` | `index.css` |
 
 Le fichier d'un composant ou d'un hook porte le même nom que son export
 principal. Les points d'entrée existants `main.tsx` et `App.tsx` conservent
-leur nom. Tous les appels HTTP, chemins de routes, paramètres et adaptateurs
-de réponses sont regroupés dans `shared/api/client.ts`. Les hooks des
-fonctionnalités importent ses fonctions ; ne pas créer de client API parallèle
-dans une fonctionnalité. `mockQueries.ts` est actuellement un
-adaptateur de compatibilité vers les API réelles ; son nom historique
-n'autorise pas l'ajout de données fictives aux écrans de production.
+leur nom. Chaque fonctionnalité regroupe ses appels HTTP (chemins, paramètres
+et adaptation des réponses) dans `features/<feature>/api/<feature>Api.ts`,
+qui passe par `request` de `shared/api/client.ts`. Les composants n'appellent
+pas `fetch` directement : ils utilisent les hooks de la fonctionnalité.
+`data/mock.ts` et `data/mockQueries.ts` contiennent des données fictives pour
+les écrans pas encore branchés sur l'API ; ne pas y ajouter de données pour un
+écran déjà branché.
 
 ## Base de données — SQL
 
