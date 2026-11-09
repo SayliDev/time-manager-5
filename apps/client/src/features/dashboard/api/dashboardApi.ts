@@ -1,0 +1,117 @@
+import { request } from '@/shared/api/client';
+import type {
+  DayHours,
+  EntryStatus,
+  TimeEntry,
+  WorkMode,
+} from '@/features/time/types';
+import { toHHMM } from '../lib/clock';
+
+export interface WeeklyDto {
+  week: number;
+  start: string;
+  end: string;
+  hours: number;
+  days_worked: number;
+}
+
+export interface DailyHoursDto {
+  date: string;
+  label: string;
+  hours: number;
+  onsite: number;
+  remote: number;
+}
+
+export interface WorkSessionDto {
+  id_work_session: number;
+  date: string;
+  start_at: string;
+  end_at: string | null;
+  hours: number | null;
+  mode: WorkMode;
+  status: EntryStatus;
+}
+
+function toDayHours(dto: DailyHoursDto): DayHours {
+  return {
+    day: dto.label,
+    hours: dto.hours,
+    onsite: dto.onsite,
+    remote: dto.remote,
+  };
+}
+
+export function toTimeEntry(dto: WorkSessionDto): TimeEntry {
+  return {
+    id: String(dto.id_work_session),
+    date: dto.date,
+    arrival: toHHMM(new Date(dto.start_at)),
+    departure: dto.end_at ? toHHMM(new Date(dto.end_at)) : null,
+    hours: dto.hours ?? 0,
+    status: dto.status,
+    mode: dto.mode,
+  };
+}
+
+export async function fetchWeekly(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<WeeklyDto[]> {
+  const params = new URLSearchParams({ from, to });
+  return await request<WeeklyDto[]>(
+    `/api/users/${userId}/hours/weekly?${params}`,
+  );
+}
+
+export async function fetchDailyHours(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<DayHours[]> {
+  const params = new URLSearchParams({ from, to });
+  const dailyHours = await request<DailyHoursDto[]>(
+    `/api/users/${userId}/hours/daily?${params}`,
+  );
+
+  return dailyHours.map(toDayHours);
+}
+
+export async function fetchWorkSessions(
+  userId: string,
+  from: string,
+  to: string,
+): Promise<WorkSessionDto[]> {
+  const params = new URLSearchParams({ from, to });
+  return await request<WorkSessionDto[]>(
+    `/api/users/${userId}/work-sessions?${params}`,
+  );
+}
+
+export const timeQueryKeys = {
+  user: (userId: string) => ['time', userId] as const,
+
+  daily: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'daily', from, to] as const,
+
+  sessions: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'sessions', from, to] as const,
+
+  weekly: (userId: string, from: string, to: string) =>
+    [...timeQueryKeys.user(userId), 'weekly', from, to] as const,
+};
+
+export async function clockIn(mode: WorkMode): Promise<WorkSessionDto> {
+  return await request<WorkSessionDto>('/api/work-sessions/clock-in', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
+}
+
+export async function clockOut(): Promise<WorkSessionDto> {
+  return await request<WorkSessionDto>('/api/work-sessions/clock-out', {
+    method: 'POST',
+  });
+}
