@@ -32,6 +32,16 @@ def contract(data, user_id, day):
     )
 
 
+def weekly_target(c):
+    """Objectif hebdomadaire d’un contrat, 35 heures par défaut."""
+    return float(c.get("weekly_hours", 35))
+
+
+def public_mode(session):
+    """Mode exposé par l’API : remote, ou onsite pour toute autre valeur."""
+    return "remote" if work_mode(session) == "remote" else "onsite"
+
+
 def hours(sessions, start, end):
     """Cumule les heures décimales entre deux journées, la dernière étant exclue."""
     return calc_work_time(sessions, start, end).total_seconds() / 3600
@@ -64,9 +74,8 @@ def session_view(session, data, now):
         completed = [
             s for s in peers if s["end_at"] and s["end_at"] <= session["end_at"]
         ]
-        if hours(completed, monday, monday + timedelta(days=7)) > float(
-            c.get("weekly_hours", 35)
-        ) + float(c.get("overtime_threshold_hours", 0)):
+        threshold = weekly_target(c) + float(c.get("overtime_threshold_hours", 0))
+        if hours(completed, monday, monday + timedelta(days=7)) > threshold:
             status = "overtime"
     return {
         "id_work_session": session["id_work_session"],
@@ -78,7 +87,7 @@ def session_view(session, data, now):
         )
         if session["end_at"]
         else None,
-        "mode": "remote" if work_mode(session) == "remote" else "onsite",
+        "mode": public_mode(session),
         "status": status,
     }
 
@@ -114,12 +123,7 @@ def user_time(data, user_id, start, end, now):
                 **{
                     mode: round(
                         hours(
-                            [
-                                s
-                                for s in completed
-                                if ("remote" if work_mode(s) == "remote" else "onsite")
-                                == mode
-                            ],
+                            [s for s in completed if public_mode(s) == mode],
                             day,
                             day + timedelta(days=1),
                         ),
@@ -145,15 +149,14 @@ def user_time(data, user_id, start, end, now):
         row["days_worked"] += int(total > 0)
         day += timedelta(days=1)
     total = sum(w["hours"] for w in weekly.values())
-    target = sum(
-        float(contract(data, user_id, m).get("weekly_hours", 35)) for m in weekly
-    )
+    contracts = {m: contract(data, user_id, m) for m in weekly}
+    target = sum(weekly_target(c) for c in contracts.values())
     overtime = sum(
         max(
             0,
             w["hours"]
-            - float(contract(data, user_id, m).get("weekly_hours", 35))
-            - float(contract(data, user_id, m).get("overtime_threshold_hours", 0)),
+            - weekly_target(contracts[m])
+            - float(contracts[m].get("overtime_threshold_hours", 0)),
         )
         for m, w in weekly.items()
     )
