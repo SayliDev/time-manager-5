@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.db.schemas.time_schema import (
     ClockIn,
@@ -26,7 +26,9 @@ def time_data(user_id, start, end, user):
     start = start or end.replace(day=1)
     if end < start or (end - start).days > 366:
         raise HTTPException(422, "Période invalide (367 jours maximum).")
-    data = load_scope(user, end)
+    # Statuses need the whole first week (overtime) but nothing older.
+    monday = start - timedelta(days=start.weekday())
+    data = load_scope(user, end, user_id=user_id, since=monday)
     if user_id not in [u["id_user"] for u in data["users"]]:
         raise HTTPException(403, "Employé non autorisé.")
     return user_time(data, user_id, start, end, now)
@@ -80,7 +82,14 @@ def clock_result(user, mode=None):
     """Applique le pointage au compte connecté et sérialise son résultat en UTC."""
     session = clock(user["id_user"], mode)
     now = datetime.now(timezone.utc)
-    return session_view(session, load_scope(user, now.astimezone(PARIS).date()), now)
+    day = session["start_at"].astimezone(PARIS).date()
+    data = load_scope(
+        user,
+        now.astimezone(PARIS).date(),
+        user_id=user["id_user"],
+        since=day - timedelta(days=day.weekday()),
+    )
+    return session_view(session, data, now)
 
 
 @router.post("/work-sessions/clock-in", status_code=201, response_model=WorkSession)

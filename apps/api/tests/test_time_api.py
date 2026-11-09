@@ -82,6 +82,45 @@ def test_leave_overrides_late_presence():
     )
 
 
+@pytest.mark.parametrize(
+    "now,status",
+    [("2026-10-02T06:30:00Z", "pending"), ("2026-10-02T07:10:00Z", "absent")],
+)
+def test_missing_arrival_is_pending_until_expected_start(now, status):
+    data = fixture_data()
+    data["sessions"] = []
+    assert presence(data, date(2026, 10, 2), instant(now))[0]["presence"] == status
+
+
+@pytest.mark.parametrize(
+    "now,status",
+    [("2026-10-02T06:00:00Z", "remote"), ("2026-10-02T09:00:00Z", "absent")],
+)
+def test_overnight_session_counts_while_in_progress(now, status):
+    data = fixture_data()
+    data["sessions"][0]["start_at"] = instant("2026-10-01T20:00:00Z")
+    data["sessions"][0]["end_at"] = None
+    assert presence(data, date(2026, 10, 2), instant(now))[0]["presence"] == status
+
+
+def test_overnight_session_is_ongoing_the_next_morning():
+    data = fixture_data()
+    data["sessions"][0]["start_at"] = instant("2026-10-01T20:00:00Z")
+    data["sessions"][0]["end_at"] = None
+    entry = user_time(
+        data, 3, date(2026, 10, 1), date(2026, 10, 2), instant("2026-10-02T06:00:00Z")
+    )["work-sessions"][0]
+    assert entry["status"] == "ongoing"
+
+
+def test_time_data_loads_only_requested_user_from_first_monday():
+    with patch("app.routers.time.load_scope", return_value=fixture_data()) as load:
+        time_data(3, date(2026, 10, 8), date(2026, 10, 9), {"id_user": 3})
+    load.assert_called_once_with(
+        {"id_user": 3}, date(2026, 10, 9), user_id=3, since=date(2026, 10, 5)
+    )
+
+
 def test_out_of_scope_user_is_forbidden():
     with patch("app.routers.time.load_scope", return_value={"users": []}):
         with pytest.raises(HTTPException) as error:
@@ -139,18 +178,21 @@ def test_clock_conflicts_lock_employee_before_reading_open_sessions(mode, active
 
 @pytest.mark.parametrize("mode", [None, "onsite"])
 @pytest.mark.parametrize(
-    "now_value,midnight_value",
+    "now_value,bound_value",
     [
-        ("2026-10-30T23:30:00Z", "2026-10-30T23:00:00Z"),
-        ("2026-07-01T22:30:00Z", "2026-07-01T22:00:00Z"),
-        ("2026-10-25T02:30:00Z", "2026-10-24T22:00:00Z"),
+        # During the day, sessions started since Paris midnight are current.
+        ("2026-10-31T15:00:00Z", "2026-10-30T23:00:00Z"),
+        ("2026-07-01T15:00:00Z", "2026-06-30T22:00:00Z"),
+        ("2026-10-25T20:00:00Z", "2026-10-24T22:00:00Z"),
+        # Shortly after midnight, last evening's arrival is still current.
+        ("2026-10-30T23:30:00Z", "2026-10-30T11:30:00Z"),
+        ("2026-07-01T22:30:00Z", "2026-07-01T10:30:00Z"),
+        ("2026-10-25T02:30:00Z", "2026-10-24T14:30:00Z"),
     ],
 )
-def test_clock_only_considers_sessions_started_today_in_paris(
-    mode, now_value, midnight_value
-):
+def test_clock_only_considers_sessions_still_in_progress(mode, now_value, bound_value):
     now = instant(now_value)
-    midnight = instant(midnight_value)
+    bound = instant(bound_value)
     conn = MagicMock()
     conn.__enter__.return_value = conn
     conn.execute.return_value.fetchall.return_value = []
@@ -170,7 +212,7 @@ def test_clock_only_considers_sessions_started_today_in_paris(
             assert conn.execute.call_args.args[1] == (3, mode, now)
     query, parameters = conn.execute.call_args_list[1].args
     assert "start_at >= %s AND start_at <= %s" in query
-    assert parameters == (3, midnight, now)
+    assert parameters == (3, bound, now)
 
 
 def test_employee_cannot_select_team_owned_by_another_manager():
@@ -228,7 +270,11 @@ def test_empty_scope_skips_timekeeping_queries():
     with patch("app.repositories.time_repository.get_connection", return_value=conn):
         data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
     assert data == {
-        "users": [], "teams": [], "sessions": [], "contracts": [], "leaves": []
+        "users": [],
+        "teams": [],
+        "sessions": [],
+        "contracts": [],
+        "leaves": [],
     }
     assert conn.execute.call_count == 2
 
@@ -241,13 +287,42 @@ def test_scope_loads_timekeeping_only_for_accessible_users():
     contracts = [{"id_contract": 2, "id_user": 3}]
     leaves = [{"id_user": 3}]
     conn.execute.return_value.fetchall.side_effect = [
-        [], users, sessions, contracts, leaves
+        [],
+        users,
+        sessions,
+        contracts,
+        leaves,
     ]
     with patch("app.repositories.time_repository.get_connection", return_value=conn):
         data = load_scope({"id_user": 3, "role": "employee"}, date(2026, 10, 2))
     assert data == {
-        "users": users, "teams": [], "sessions": sessions,
-        "contracts": contracts, "leaves": leaves,
+        "users": users,
+        "teams": [],
+        "sessions": sessions,
+        "contracts": contracts,
+        "leaves": leaves,
     }
     for call in conn.execute.call_args_list[2:]:
         assert call.args[1] == ([3],)
+
+
+def test_scope_since_bounds_sessions_and_leaves():
+    conn = MagicMock()
+    conn.__enter__.return_value = conn
+    conn.execute.return_value.fetchall.side_effect = [[], [{"id_user": 3}], [], [], []]
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
+        load_scope(
+            {"id_user": 11, "role": "admin"},
+            date(2026, 10, 9),
+            user_id=3,
+            since=date(2026, 10, 5),
+        )
+    users_call, sessions_call, contracts_call, leaves_call = (
+        conn.execute.call_args_list[1:]
+    )
+    assert users_call.args[1]["only"] == 3
+    assert "start_at >= %s" in sessions_call.args[0]
+    assert sessions_call.args[1] == ([3], instant("2026-10-03T22:00:00Z"))
+    assert contracts_call.args[1] == ([3],)
+    assert "end_date >= %s" in leaves_call.args[0]
+    assert leaves_call.args[1] == ([3], date(2026, 10, 5))

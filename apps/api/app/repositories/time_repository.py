@@ -1,23 +1,25 @@
 """Scoped reads and atomic clock operations."""
 
-from datetime import datetime, time, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, time, timedelta, timezone
 from fastapi import HTTPException
 from app.db.database_conn import get_connection
+from app.services.time_service import PARIS, open_since
 
 
-def load_scope(user, day, team_id=None):
+def load_scope(user, day, team_id=None, *, user_id=None, since=None):
     """Charge uniquement les données accessibles au compte à la date demandée.
 
     Un employé accède à lui-même ; un manager à ses équipes principales ou
     supplémentaires et à lui-même ; un admin aux comptes actifs. Un filtre
     d’équipe non autorisé produit 403. L’affectation retenue est la plus récente
     encore active ce jour-là ; les sessions annulées sont exclues.
+    user_id restreint le périmètre à ce compte, s’il y est autorisé ; since
+    (date de Paris) ignore les sessions et congés antérieurs.
     """
     with get_connection() as conn:
         teams = _load_allowed_teams(conn, user, team_id)
-        users = _load_scope_users(conn, user, day, team_id, teams)
-        timekeeping = _load_timekeeping_data(conn, users)
+        users = _load_scope_users(conn, user, day, team_id, teams, user_id)
+        timekeeping = _load_timekeeping_data(conn, users, since)
     return {"users": users, "teams": teams, **timekeeping}
 
 
@@ -39,10 +41,7 @@ def _load_allowed_teams(conn, user, team_id):
         if user["role"] == "admin"
         or (
             user["role"] == "manager"
-            and (
-                t["id_user"] == user["id_user"]
-                or t["id_team"] in additional_team_ids
-            )
+            and (t["id_user"] == user["id_user"] or t["id_team"] in additional_team_ids)
         )
     ]
     if team_id is not None and not any(t["id_team"] == team_id for t in allowed):
@@ -52,7 +51,7 @@ def _load_allowed_teams(conn, user, team_id):
     return allowed
 
 
-def _load_scope_users(conn, user, day, team_id, teams):
+def _load_scope_users(conn, user, day, team_id, teams, user_id=None):
     """Select active users using their latest allocation on the requested day."""
     ids = [team["id_team"] for team in teams]
     return conn.execute(
@@ -69,6 +68,7 @@ def _load_scope_users(conn, user, day, team_id, teams):
             (%(admin)s AND (%(team)s::integer IS NULL OR a.id_team=%(team)s))
             OR (NOT %(admin)s AND (a.id_team=ANY(%(ids)s)
                 OR (%(team)s::integer IS NULL AND u.id_user=%(self)s))))
+            AND (%(only)s::integer IS NULL OR u.id_user=%(only)s)
         ORDER BY u.last_name, u.first_name
     """,
         {
@@ -77,25 +77,43 @@ def _load_scope_users(conn, user, day, team_id, teams):
             "team": team_id,
             "ids": ids,
             "self": user["id_user"],
+            "only": user_id,
         },
     ).fetchall()
 
 
-def _load_timekeeping_data(conn, users):
-    """Load sessions, contracts and leave for the selected users."""
+def _load_timekeeping_data(conn, users, since=None):
+    """Load sessions, contracts and leave for the selected users.
+
+    since drops older sessions and leave; contracts are always loaded.
+    """
     if not users:
         return {"sessions": [], "contracts": [], "leaves": []}
     user_ids = [u["id_user"] for u in users]
+    session_filter = leave_filter = ""
+    session_params = leave_params = (user_ids,)
+    if since is not None:
+        # Start one day earlier to keep overnight sessions ending on `since`.
+        session_filter = " AND start_at >= %s"
+        session_params = (
+            user_ids,
+            datetime.combine(since - timedelta(days=1), time.min, PARIS),
+        )
+        leave_filter = " AND end_date >= %s"
+        leave_params = (user_ids, since)
     sessions = conn.execute(
-        "SELECT * FROM work_session WHERE id_user=ANY(%s) AND cancel_at IS NULL ORDER BY start_at",
-        (user_ids,),
+        "SELECT * FROM work_session WHERE id_user=ANY(%s) AND cancel_at IS NULL"
+        + session_filter
+        + " ORDER BY start_at",
+        session_params,
     ).fetchall()
     contracts = conn.execute(
         "SELECT * FROM contract WHERE id_user=ANY(%s) ORDER BY start_date DESC, id_contract DESC",
         (user_ids,),
     ).fetchall()
     leaves = conn.execute(
-        "SELECT * FROM leave_absence WHERE id_user=ANY(%s)", (user_ids,)
+        "SELECT * FROM leave_absence WHERE id_user=ANY(%s)" + leave_filter,
+        leave_params,
     ).fetchall()
     return {
         "sessions": sessions,
@@ -110,8 +128,9 @@ def clock(user_id, mode=None):
     Le verrou sur l’utilisateur sérialise aussi deux arrivées simultanées, même
     si aucune session n’existe encore. Une arrivée en double ou un départ sans
     session ouverte renvoie 409 ; le contexte annule alors la transaction.
-    Seules les sessions commencées aujourd’hui en heure de Paris sont retenues.
-    Une session oubliée la veille reste ouverte pour correction.
+    Seules les sessions encore en cours (voir open_since) sont retenues : une
+    arrivée de la veille au soir peut être clôturée, une session oubliée plus
+    ancienne reste ouverte pour correction.
     """
     with get_connection() as conn:
         # Serialize operations for this employee, including concurrent arrivals.
@@ -119,17 +138,12 @@ def clock(user_id, mode=None):
             "SELECT id_user FROM users WHERE id_user=%s FOR UPDATE", (user_id,)
         )
         now = datetime.now(timezone.utc)
-        day_start = datetime.combine(
-            now.astimezone(ZoneInfo("Europe/Paris")).date(),
-            time.min,
-            tzinfo=ZoneInfo("Europe/Paris"),
-        ).astimezone(timezone.utc)
         active = conn.execute(
             """SELECT * FROM work_session
             WHERE id_user=%s AND end_at IS NULL AND cancel_at IS NULL
                 AND start_at >= %s AND start_at <= %s
             ORDER BY start_at, id_work_session FOR UPDATE""",
-            (user_id, day_start, now),
+            (user_id, open_since(now), now),
         ).fetchall()
         if mode is not None:
             if active:

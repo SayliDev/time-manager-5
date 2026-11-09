@@ -24,7 +24,7 @@ class DashboardHours(BaseModel):
 
 class Presence(BaseModel):
     id_user: int
-    presence: Literal["present", "remote", "late", "absent", "off"]
+    presence: Literal["present", "remote", "late", "pending", "absent", "off"]
     weekly_hours: float
     last_clock_at: datetime | None
 
