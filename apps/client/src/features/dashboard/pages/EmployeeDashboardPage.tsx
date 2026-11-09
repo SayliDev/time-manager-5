@@ -8,7 +8,7 @@ import { MyWeekHoursCard } from '@/features/dashboard/components/MyWeekHoursCard
 import { RecentEntriesCard } from '@/features/dashboard/components/RecentEntriesCard';
 import { useNow } from '@/features/dashboard/hooks/useNow';
 import { toHHMM } from '@/features/dashboard/lib/clock';
-import { ClockDialog } from '@/features/time/components/ClockDialog';
+import { ClockDialog } from '@/features/dashboard/components/ClockDialog';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { useClockIn, useClockOut } from '../hooks/useClock';
 import { ApiError } from '@/shared/api/client';
