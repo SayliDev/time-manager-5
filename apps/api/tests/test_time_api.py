@@ -113,6 +113,14 @@ def test_overnight_session_is_ongoing_the_next_morning():
     assert entry["status"] == "ongoing"
 
 
+def test_time_data_loads_only_requested_user_from_first_monday():
+    with patch("app.routers.time.load_scope", return_value=fixture_data()) as load:
+        time_data(3, date(2026, 10, 8), date(2026, 10, 9), {"id_user": 3})
+    load.assert_called_once_with(
+        {"id_user": 3}, date(2026, 10, 9), user_id=3, since=date(2026, 10, 5)
+    )
+
+
 def test_out_of_scope_user_is_forbidden():
     with patch("app.routers.time.load_scope", return_value={"users": []}):
         with pytest.raises(HTTPException) as error:
@@ -296,3 +304,25 @@ def test_scope_loads_timekeeping_only_for_accessible_users():
     }
     for call in conn.execute.call_args_list[2:]:
         assert call.args[1] == ([3],)
+
+
+def test_scope_since_bounds_sessions_and_leaves():
+    conn = MagicMock()
+    conn.__enter__.return_value = conn
+    conn.execute.return_value.fetchall.side_effect = [[], [{"id_user": 3}], [], [], []]
+    with patch("app.repositories.time_repository.get_connection", return_value=conn):
+        load_scope(
+            {"id_user": 11, "role": "admin"},
+            date(2026, 10, 9),
+            user_id=3,
+            since=date(2026, 10, 5),
+        )
+    users_call, sessions_call, contracts_call, leaves_call = (
+        conn.execute.call_args_list[1:]
+    )
+    assert users_call.args[1]["only"] == 3
+    assert "start_at >= %s" in sessions_call.args[0]
+    assert sessions_call.args[1] == ([3], instant("2026-10-03T22:00:00Z"))
+    assert contracts_call.args[1] == ([3],)
+    assert "end_date >= %s" in leaves_call.args[0]
+    assert leaves_call.args[1] == ([3], date(2026, 10, 5))
