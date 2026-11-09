@@ -13,7 +13,6 @@ from app.routers.auth_microsoft import router as microsoft_auth_router
 from app.routers.time import router as time_router
 from app.routers.kpi import router as kpi_router
 from app.routers.teams import router as teams_router
-# from app.routers.register_routers import router as register_router
 
 # -----------------------------------------------------------------------------
 # Application
