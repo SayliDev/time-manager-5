@@ -47,8 +47,13 @@ export function EmployeeDashboardPage() {
 
   const now = useNow();
 
+  // Une session commencée la veille ne compte qu'à partir de minuit.
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
   const elapsedHours = openSession
-    ? (now.getTime() - new Date(openSession.start_at).getTime()) / 3_600_000
+    ? (now.getTime() -
+        Math.max(new Date(openSession.start_at).getTime(), midnight.getTime())) /
+      3_600_000
     : 0;
   const todayHours = (completedToday ?? 0) + elapsedHours;
 
