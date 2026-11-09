@@ -11,6 +11,7 @@ interface EmployeeStatsProps {
   openSessionStart: string | null;
   weekly: number;
   delta: number | undefined;
+  isTodayLoading: boolean;
   isLoading: boolean;
 }
 
@@ -20,15 +21,18 @@ export function EmployeeStats({
   openSessionStart,
   weekly,
   delta,
+  isTodayLoading,
   isLoading,
 }: EmployeeStatsProps) {
   return (
     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-2 3xl:gap-5 4xl:gap-6'>
-      <TodayStatCard
-        since={since}
-        completedToday={completedToday}
-        openSessionStart={openSessionStart}
-      />
+      <SkeletonSwap isLoading={isTodayLoading} skeleton={<StatCardSkeleton />}>
+        <TodayStatCard
+          since={since}
+          completedToday={completedToday}
+          openSessionStart={openSessionStart}
+        />
+      </SkeletonSwap>
       <SkeletonSwap
         isLoading={isLoading}
         skeleton={<StatCardSkeleton withDelta />}

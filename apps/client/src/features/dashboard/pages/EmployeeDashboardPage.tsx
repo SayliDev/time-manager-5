@@ -121,6 +121,7 @@ export function EmployeeDashboardPage() {
           openSessionStart={openSession?.start_at ?? null}
           weekly={weekly}
           delta={weeklyDelta}
+          isTodayLoading={sessionLoading}
           isLoading={weeklyLoading}
         />
       </section>
