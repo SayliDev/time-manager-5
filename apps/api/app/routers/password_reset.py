@@ -1,13 +1,23 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies import get_current_user
 from app.models.users import ResetPasswordRequest
-from app.services.password_reset_service import reset_password
+from app.services.password_reset_service import request_password_reset, reset_password
 from core.security import create_access_token
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/api", tags=["auth"])
 
 
-@router.post("/reset-password")
+@router.post("/me/password-reset", status_code=202)
+def request_reset(current_user: dict = Depends(get_current_user)):
+    try:
+        request_password_reset(user=current_user)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    return {"message": "Un lien de réinitialisation a été envoyé à votre adresse email."}
+
+
+@router.post("/auth/reset-password")
 def reset_password_endpoint(payload: ResetPasswordRequest):
     user = reset_password(token=payload.token, new_password=payload.new_password)
     if user is None:

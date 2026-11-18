@@ -1,7 +1,6 @@
 import {
   ChartColumn,
   Clock,
-  Gear,
   House,
   Layers3Diagonal,
   Persons,
@@ -69,17 +68,6 @@ export const navSections: NavSection[] = [
         label: 'Rapports & KPIs',
         icon: ChartColumn,
         roles: ['manager', 'admin'],
-      },
-    ],
-  },
-  {
-    title: 'Compte',
-    items: [
-      {
-        to: appPath('/profile'),
-        label: 'Mon compte',
-        icon: Gear,
-        roles: ['employee', 'manager', 'admin'],
       },
     ],
   },

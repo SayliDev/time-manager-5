@@ -1,3 +1,5 @@
+import { AccountPage } from '@/features/account/pages/AccountPage';
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '@/features/auth/components/RequireAuth';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
@@ -25,6 +27,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<LoginPage />} />
+        <Route path='/reset-password' element={<ResetPasswordPage />} />
         <Route path='/auth/callback' element={<MicrosoftCallbackPage />} />
         <Route element={<RequireAuth />}>
           <Route path='/dashboard' element={<AppShell />}>
@@ -38,7 +41,7 @@ export default function App() {
             />
             <Route
               path='profile'
-              element={<PlaceholderPage title='Mon compte' />}
+              element={<AccountPage />}
             />
           </Route>
         </Route>
