@@ -1,8 +1,10 @@
 """FastAPI application entry point."""
 
+import logging
 import os
 
-from fastapi import Depends, FastAPI
+import psycopg
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg import sql
 from app.routers.users_routers import UserResponse, router as users_router
