@@ -32,7 +32,7 @@ export function requestPasswordReset(): Promise<{ message: string }> {
   return request('/api/me/password-reset', { method: 'POST' });
 }
 
-export function resetPassword(payload: { token: string; password: string }): Promise<{ message: string }> {
+export function resetPassword(payload: { token: string; new_password: string }): Promise<TokenResponse & { message: string }> {
   return request('/api/auth/reset-password', {
     method: 'POST',
     auth: false,

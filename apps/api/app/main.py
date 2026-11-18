@@ -12,7 +12,6 @@ from app.routers.account import router as account_router
 from app.routers.password_reset import router as password_reset_router
 from app.routers.auth_routers import router as auth_router
 from app.routers.auth_microsoft import router as microsoft_auth_router
-from app.routers.password_reset import router as password_reset_router
 from app.routers.time import router as time_router
 from app.routers.kpi import router as kpi_router
 from app.routers.teams import router as teams_router
@@ -48,7 +47,6 @@ app.include_router(password_reset_router)
 app.include_router(account_router)
 app.include_router(microsoft_auth_router)
 # app.include_router(register_router)
-app.include_router(password_reset_router)
 app.include_router(register_router)
 app.include_router(time_router)
 app.include_router(kpi_router)
