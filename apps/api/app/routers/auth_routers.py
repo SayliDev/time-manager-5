@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -7,6 +9,7 @@ from core.logging import logger
 from app.services.users_service import (
     get_password_hash_by_id,
     get_user_by_email,
+    update_user,
 )
 
 router = APIRouter(
@@ -61,10 +64,19 @@ def login(
 
     access_token = create_access_token(
         {
+            "id": str(user["id_user"]),
             "sub": str(user["id_user"]),
             "email": user["email"],
+            "role": user["role"],
         }
     )
+
+    # update last login timestamp for the user if needed
+    try:
+        update_user(user_id=user["id_user"], last_login=datetime.now(timezone.utc))
+    except Exception as e:
+        logger.error("Failed to update last login for username=%s: %s", form_data.username, str(e))
+
     logger.info("Login succeeded for username=%s", form_data.username)
 
     return {

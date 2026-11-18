@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
@@ -12,7 +12,7 @@ ADMIN = "admin"
 MANAGER = "manager"
 EMPLOYEE = "employe"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
 
 def _unauthorized(detail: str) -> HTTPException:
@@ -23,8 +23,15 @@ def _unauthorized(detail: str) -> HTTPException:
     )
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
+def get_current_user(
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
+) -> dict[str, Any]:
     """Retourne l'utilisateur du token, s'il existe et n'est pas désactivé."""
+    token = token or request.cookies.get("access_token")
+    if not token:
+        raise _unauthorized("Token invalide")
+
     try:
         user_id = int(decode_access_token(token)["sub"])
     except (JWTError, KeyError, TypeError, ValueError):

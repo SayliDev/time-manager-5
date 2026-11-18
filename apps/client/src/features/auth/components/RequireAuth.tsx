@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 import { useSession } from '@/features/auth/hooks/useSession';
 import { AppLoader } from '@/shared/ui/AppLoader';
 
 export function RequireAuth() {
-  const token = tokenStorage.get();
+  const location = useLocation();
   const session = useSession();
 
   useEffect(() => {
@@ -14,8 +14,17 @@ export function RequireAuth() {
     }
   }, [session.isError]);
 
-  if (!token || session.isError) {
-    return <Navigate replace to='/' />;
+  if (session.isError) {
+    return (
+      <Navigate
+        replace
+        to='/'
+        state={{
+          message: 'Votre session est absente ou invalide. Veuillez vous reconnecter.',
+          from: location.pathname,
+        }}
+      />
+    );
   }
 
   if (session.isPending) {

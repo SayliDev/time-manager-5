@@ -7,8 +7,10 @@ const ACCENT_RE =
 const EMOJI_RE =
   /\p{Extended_Pictographic}|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
 const MERGE_RE = /^Merge /;
-// Commits authored by Dependabot use GitHub's own message format.
+// Commits authored or co-authored by GitHub bots use their own message formats.
 const BOT_EMAIL_RE = /^\d+\+dependabot\[bot\]@users\.noreply\.github\.com$/;
+const COPILOT_EMAIL_RE =
+  /\b\d+\+copilot(?:\[bot\])?@users\.noreply\.github\.com\b/i;
 
 const base = process.env.BASE_SHA;
 const head = process.env.HEAD_SHA || 'HEAD';
@@ -18,7 +20,7 @@ if (!base) {
   process.exit(1);
 }
 
-const log = execSync(`git log --format=%ae%x09%s ${base}..${head}`, {
+const log = execSync(`git log --format=%ae%x09%s%x09%b%x00 ${base}..${head}`, {
   encoding: 'utf8',
 }).trim();
 
@@ -28,15 +30,25 @@ if (!log) {
 }
 
 const subjects = log
-  .split('\n')
-  .filter(Boolean)
-  .map((line) => {
-    const tab = line.indexOf('\t');
-    return [line.slice(0, tab), line.slice(tab + 1)];
+  .split('\0')
+  .filter((record) => record.trim())
+  .map((record) => {
+    const firstTab = record.indexOf('\t');
+    const secondTab = record.indexOf('\t', firstTab + 1);
+    return {
+      email: record.slice(0, firstTab),
+      subject: record.slice(firstTab + 1, secondTab),
+      body: record.slice(secondTab + 1),
+    };
   })
-  .filter(([email]) => !BOT_EMAIL_RE.test(email))
-  .map(([, subject]) => subject)
-  .filter((s) => !MERGE_RE.test(s));
+  .filter(
+    ({ email, body }) =>
+      !BOT_EMAIL_RE.test(email) &&
+      !COPILOT_EMAIL_RE.test(email) &&
+      !COPILOT_EMAIL_RE.test(body),
+  )
+  .map(({ subject }) => subject)
+  .filter((subject) => !MERGE_RE.test(subject));
 
 const invalid = subjects.filter((s) => {
   if (!COMMIT_RE.test(s)) return true;

@@ -31,8 +31,6 @@ interface EmployeeDrawerProps {
   onEdit?: (user: User) => void;
 }
 
-const WEEKLY_TARGET = 35;
-
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', {
     weekday: 'short',
@@ -51,13 +49,14 @@ export function EmployeeDrawer({
   const entries = useTimeEntries(user?.id);
   const hoursLoading = hours.isPending || hours.isPlaceholderData;
   const entriesLoading = entries.isPending || entries.isPlaceholderData;
+  const weeklyTarget = user?.contractHours ?? 35;
   const weeklyHours = user?.weeklyHours ?? null;
   const progress =
     weeklyHours === null
       ? 0
-      : Math.min(100, (weeklyHours / WEEKLY_TARGET) * 100);
+      : Math.min(100, (weeklyHours / weeklyTarget) * 100);
   const overtime =
-    weeklyHours === null ? 0 : Math.max(0, weeklyHours - WEEKLY_TARGET);
+    weeklyHours === null ? 0 : Math.max(0, weeklyHours - weeklyTarget);
 
   return (
     <Drawer.Backdrop
@@ -139,7 +138,7 @@ export function EmployeeDrawer({
                           <strong className='text-base font-semibold text-foreground'>
                             {formatDecimal(weeklyHours)} h
                           </strong>{' '}
-                          / {WEEKLY_TARGET} h
+                          / {weeklyTarget} h
                         </span>
                       </div>
                       <ProgressBar.Track>

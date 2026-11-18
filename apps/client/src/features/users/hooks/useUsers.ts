@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  fetchTeams,
   fetchUser,
   fetchUsers,
   usersQueryKeys,
@@ -14,6 +15,13 @@ export function useUsers() {
     queryKey: usersQueryKeys.list(),
     queryFn: fetchUsers,
     select: selectActiveUsers,
+  });
+}
+
+export function useTeams() {
+  return useQuery({
+    queryKey: ['teams', 'options'],
+    queryFn: fetchTeams,
   });
 }
 

@@ -4,9 +4,11 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.routers.users_routers import ensure_can_manage_admin
 from core.security import create_access_token
 
 client = TestClient(app)
@@ -62,6 +64,24 @@ NEW_USER = {
 }
 
 
+@pytest.mark.parametrize(
+    ("actor_role", "target_role", "allowed"),
+    [
+        ("admin", "admin", True),
+        ("admin", "employe", True),
+        ("manager", "employe", True),
+        ("manager", "admin", False),
+    ],
+)
+def test_admin_management_guard(actor_role, target_role, allowed):
+    if allowed:
+        ensure_can_manage_admin({"role": actor_role}, target_role)
+    else:
+        with pytest.raises(HTTPException) as error:
+            ensure_can_manage_admin({"role": actor_role}, target_role)
+        assert error.value.status_code == 403
+
+
 # --- Authentification -------------------------------------------------------
 
 
@@ -71,7 +91,7 @@ NEW_USER = {
         ("get", "/me"),
         ("get", "/api/getAllUsers"),
         ("get", "/api/getUsers/1"),
-        ("get", "/api/userByEmail?email=a@b.c"),
+        ("get", "/api/teams"),
         ("post", "/api/addUsers"),
         ("put", "/api/updateUser/3"),
         ("delete", "/api/deactivateUser/3"),
@@ -97,6 +117,16 @@ def test_token_of_deactivated_user_is_rejected():
     assert client.get("/me", headers=auth(4)).status_code == 401
 
 
+def test_logout_expires_the_access_token_cookie():
+    response = client.post("/api/auth/logout")
+
+    assert response.status_code == 204
+    cookie = response.headers["set-cookie"]
+    assert "access_token=" in cookie
+    assert "Max-Age=0" in cookie
+    assert "httponly" in cookie.lower()
+
+
 # --- /me --------------------------------------------------------------------
 
 
@@ -106,9 +136,27 @@ def test_me_returns_the_profile_without_password():
     assert response.status_code == 200
     body = response.json()
     assert body["id_user"] == 2
+    assert body["username"] == "2"
     assert body["role"] == "manager"
     assert body["email"] == "user2@example.com"
     assert "password_hash" not in body
+
+
+def test_me_accepts_the_access_token_cookie():
+    token = create_access_token({"sub": "2"})
+    with TestClient(app) as cookie_client:
+        cookie_client.cookies.set("access_token", token)
+        response = cookie_client.get("/me")
+
+    assert response.status_code == 200
+    assert response.json()["id_user"] == 2
+
+
+def test_api_me_returns_the_user_id():
+    response = client.get("/api/me", headers=auth(2))
+
+    assert response.status_code == 200
+    assert response.json() == {"username": "2", "role": "manager"}
 
 
 # --- Lecture : tout utilisateur connecté ------------------------------------

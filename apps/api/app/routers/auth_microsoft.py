@@ -1,12 +1,14 @@
 import os
+from datetime import datetime, timezone
 
 import msal
 import requests
 from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
-from app.services.users_service import create_user, get_user_by_email
+from app.services.users_service import get_user_by_email, update_user
 from core.security import create_access_token
+from core.logging import logger
 
 
 router = APIRouter(
@@ -14,11 +16,14 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
-CLIENT_PORT= os.getenv("CLIENT_PORT")
 CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
 TENANT_ID = os.getenv("MICROSOFT_TENANT_ID")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
+CLIENT_URL = os.getenv(
+    "CLIENT_URL",
+    f"http://localhost:{os.getenv('CLIENT_PORT', '5173')}",
+)
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 SCOPES = ["User.Read"]
 
@@ -39,6 +44,7 @@ def microsoft_login():
     auth_url = microsoft_app.get_authorization_request_url(
         SCOPES,
         redirect_uri=REDIRECT_URI,
+        prompt="select_account",
     )
 
     return RedirectResponse(auth_url)
@@ -85,7 +91,7 @@ def callback(request: Request):
         )
 
     user_info = graph_response.json()
-    email = user_info.get("mail") or user_info.get("userPrincipalName")
+    email = (user_info.get("mail") or user_info.get("userPrincipalName") or "").strip()
     if not email:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -94,19 +100,48 @@ def callback(request: Request):
 
     user = get_user_by_email(email=email)
     if not user:
-        user = create_user(
-            first_name=user_info.get("givenName") or "Utilisateur",
-            last_name=user_info.get("surname") or "Microsoft",
-            email=user_info.get("userPrincipalName"),
-            role="employe",
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Utilisateur non autorisé ou non trouvé.",
         )
 
     jwt_token = create_access_token(
         {
+            "id": str(user["id_user"]),
             "sub": str(user["id_user"]),
             "email": user["email"],
+            "role": user["role"],
         }
     )
-    return RedirectResponse(
-        f"http://localhost:{CLIENT_PORT}/auth/callback#token={jwt_token}"
+
+    # Set the access token as a cookie in the response
+    # update last login for the user if needed
+    try:
+        update_user(user_id=user["id_user"], last_login=datetime.now(timezone.utc))
+    except Exception as e:
+        logger.error("Failed to update last login for username=%s: %s", email, str(e))
+
+    response = RedirectResponse(
+        f"{CLIENT_URL}/dashboard",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
+    response.set_cookie(
+        key="access_token",
+        value=jwt_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+    )
+    return response
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout():
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+    )
+    return response

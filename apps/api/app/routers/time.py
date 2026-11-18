@@ -1,3 +1,5 @@
+"""Time tracking routes."""
+    
 from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.db.schemas.time_schema import (

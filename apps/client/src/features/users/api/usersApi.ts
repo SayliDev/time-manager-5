@@ -14,8 +14,14 @@ export interface UserDto {
   email: string;
   role: string | null;
   phone: string | null;
+  contract_hours: User['contractHours'];
   creat_at: string | null;
   desactive_at: string | null;
+}
+
+export interface TeamOptionDto {
+  id_team: number;
+  name: string;
 }
 
 interface CreateUserDto {
@@ -25,6 +31,7 @@ interface CreateUserDto {
   password: string;
   role: ApiRole;
   phone: string | null;
+  contract_hours: User['contractHours'];
 }
 
 /* ------------------------------------------------------------------ */
@@ -53,6 +60,7 @@ export function toUser(dto: UserDto): User {
     teamId: null,
     presence: null,
     weeklyHours: null,
+    contractHours: dto.contract_hours,
     lastClock: null,
   };
 }
@@ -65,6 +73,7 @@ function toCreateUserDto(input: CreateUserInput): CreateUserDto {
     password: input.password,
     role: toApiRole(input.role),
     phone: input.phone,
+    contract_hours: input.contractHours ?? 35,
   };
 }
 
@@ -81,6 +90,10 @@ export const usersQueryKeys = {
 export async function fetchUsers(): Promise<User[]> {
   const users = await request<UserDto[]>('/api/getAllUsers');
   return users.map(toUser);
+}
+
+export async function fetchTeams(): Promise<TeamOptionDto[]> {
+  return request<TeamOptionDto[]>('/api/teams');
 }
 
 export async function fetchUser(id: string): Promise<User> {

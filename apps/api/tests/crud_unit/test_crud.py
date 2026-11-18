@@ -15,7 +15,7 @@ START = datetime(2026, 10, 13, 9, tzinfo=timezone.utc)
 END = datetime(2026, 10, 13, 12, tzinfo=timezone.utc)
 PUBLIC_USER_FIELDS = {
     "id_user", "first_name", "last_name", "email",
-    "role", "phone", "creat_at", "desactive_at",
+    "role", "phone", "contract_hours", "creat_at", "desactive_at",
 }
 
 # Adaptez uniquement "module" si vos fichiers portent d'autres noms.
@@ -23,7 +23,8 @@ CASES = [
     dict(module="users_repository", table="users", pk="id_user",
          create=dict(first_name="Alice", last_name="Martin",
                      email="alice@example.com"),
-         defaults=dict(password_hash=None, role="employe", phone=None),
+         defaults=dict(password_hash=None, role="employe", phone=None,
+                       contract_hours=35),
          nullable="phone", change="first_name",
          protected="creat_at", wrapped_delete=False),
     dict(module="departement", table="departement", pk="id_departement",
@@ -36,7 +37,7 @@ CASES = [
          nullable="end_date", change="contract_type",
          protected="id_contract", wrapped_delete=True),
     dict(module="team", table="team", pk="id_team",
-         create=dict(name="Dev", id_user=2, id_departement=1),
+            create=dict(name="Dev"),
          defaults=dict(description=None),
          nullable="description", change="name",
          protected="id_team", wrapped_delete=True),
@@ -343,4 +344,3 @@ def test_work_session_cancel_is_update(db, sql_text):
     assert_table(sql_text(db), "update", "work_session")
     assert '"cancel_at" = %s' in sql_text(db)
     assert db.cursor.execute.call_args.args[1] == (END, 42)
-

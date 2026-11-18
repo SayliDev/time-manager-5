@@ -1,13 +1,23 @@
 
 import logging
 
-from datetime import datetime
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from app.dependencies import ADMIN, get_current_user, require_management
-from app.services.users_service import create_user, get_user_by_id, get_all_users, update_user, deactivate_user, get_user_by_email
+from app.dependencies import ADMIN, get_current_user, require_management, require_roles
+from app.services.users_service import (
+    create_user,
+    deactivate_user,
+    get_all_users,
+    get_all_users_with_details,
+    get_user_by_id,
+    update_user,
+)
+from app.services.email_service import send_account_created_email
+from app.repositories import team_allocations
+from core.password_generator import generate_temporary_password
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +25,11 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     email: str
-    password: str
+    password: str | None = None
     role: str = "employe"
     phone: str | None = None
+    contract_hours: Literal[35, 20, 30, 25] = 35
+    team_name: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -27,8 +39,19 @@ class UserResponse(BaseModel):
     email: str
     role: str
     phone: str | None = None
+    contract_hours: Literal[35, 20, 30, 25] = 35
     creat_at: datetime | None = None
     desactive_at: datetime | None = None
+
+
+class UserDetailsResponse(UserResponse):
+    id_team: int | None = None
+    team_name: str | None = None
+    department_name: str | None = None
+    weekly_hours: float
+    last_clock_start: datetime | None = None
+    last_clock_end: datetime | None = None
+    presence: str
 
 router = APIRouter(
     prefix="/api",
@@ -71,14 +94,44 @@ def create_user_endpoint(
     ensure_can_manage_admin(current_user, payload.role)
 
     try:
+        temporary_password = payload.password or generate_temporary_password()
+        selected_team = None
+        if payload.team_name:
+            selected_team = team_allocations.get_team_by_name(payload.team_name)
+            if selected_team is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Équipe inconnue.",
+                )
+
         user = create_user(
             first_name=payload.first_name,
             last_name=payload.last_name,
             email=payload.email,
-            password=payload.password,
+            password=temporary_password,
             role=payload.role,
             phone=payload.phone,
+            contract_hours=payload.contract_hours,
         )
+
+        if selected_team is not None:
+            team_allocations.create(
+                id_user=user["id_user"],
+            id_team=selected_team["id_team"],
+                start_at=date.today(),
+            )
+
+        email_sent = send_account_created_email(
+            to_email=user["email"],
+            first_name=user["first_name"],
+            temporary_password=temporary_password,
+            cc_email=current_user.get("email"),
+        )
+        if not email_sent:
+            logger.warning(
+                "User created but account email could not be sent: %s",
+                user["email"],
+            )
 
         return user
 
@@ -104,6 +157,18 @@ def get_all_users_endpoint():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(error),
         )
+
+
+@router.get("/teams", status_code=status.HTTP_200_OK)
+def get_teams_endpoint():
+    try:
+        return team_allocations.get_teams()
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        )
+
 
 @router.delete("/deactivateUser/{user_id}",status_code=status.HTTP_204_NO_CONTENT,)
 def deactivate_user_endpoint(
@@ -146,6 +211,7 @@ def update_user_endpoint(
             password=payload.password,
             role=payload.role,
             phone=payload.phone,
+            contract_hours=payload.contract_hours,
         )
 
         if user is None:
@@ -165,17 +231,21 @@ def update_user_endpoint(
             detail=str(error),
         )
 
-@router.get("/userByEmail",response_model=UserResponse,status_code=status.HTTP_200_OK,)
-def get_user_by_email_endpoint(email: str):
-    try:
-        user = get_user_by_email(email=email)
+@router.get("/me", tags=["Authentication"])
+def me_endpoint(
+    current_user: dict = Depends(get_current_user),
+):
+    return {
+        "username": str(current_user["id_user"]),
+        "role": current_user["role"],
+    }
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-        return user
+@router.get("/all/details",response_model=list[UserDetailsResponse],status_code=status.HTTP_200_OK,)
+def all_users_details(
+    user=Depends(require_roles("admin", "manager")),
+):
+    try:
+        return get_all_users_with_details()
     except RuntimeError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

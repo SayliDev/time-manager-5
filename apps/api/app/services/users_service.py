@@ -1,9 +1,12 @@
+from datetime import datetime
+
 from psycopg.errors import UniqueViolation
 import traceback
 from app.repositories.users_repository import (
     create as repository_create,
     get_by_id,
     get_all,
+    get_all_with_details,
     update as repository_update,
     deactivate as repository_deactivate,
     get_by_email as repository_get_by_email,
@@ -21,6 +24,7 @@ def create_user(
     password: str | None = None,
     role: str = "employe",
     phone: str | None = None,
+    contract_hours: int = 35,
 ):
     # Crée un utilisateur en hachant le mot de passe avant de le stocker en bdd via createUser repository function
     try:
@@ -31,6 +35,7 @@ def create_user(
             password_hash=hash_password(password) if password else None,
             role=role,
             phone=phone,
+            contract_hours=contract_hours,
         )
 
     except UniqueViolation:
@@ -50,6 +55,14 @@ def get_all_users():
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération de tous les utilisateurs : {e}")
 
+def get_all_users_with_details():
+    try:
+        return get_all_with_details()
+    except Exception as e:
+        raise RuntimeError(
+            f"Erreur lors de la récupération détaillée des utilisateurs : {e}"
+        )
+
 def update_user(
     *,
     user_id: int,
@@ -59,17 +72,24 @@ def update_user(
     password: str | None = None,
     role: str | None = None,
     phone: str | None = None,
+    last_login: datetime | None = None,
+    contract_hours: int | None = None,
 ):
-    
+
     try:
+        changes = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "password_hash": hash_password(password) if password else None,
+            "role": role,
+            "phone": phone,
+            "contract_hours": contract_hours,
+            "last_login": last_login,
+        }
         return repository_update(
             record_id=user_id,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password_hash=hash_password(password) if password else None,
-            role=role,
-            phone=phone,
+            **{field: value for field, value in changes.items() if value is not None},
         )
     except UniqueViolation:
         raise ValueError(
