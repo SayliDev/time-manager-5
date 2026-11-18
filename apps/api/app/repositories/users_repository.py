@@ -169,6 +169,12 @@ def create(
     contract_hours: int = 35,
 ) -> dict[str, Any]:
 
+    """Insère un compte et retourne ses colonnes publiques.
+
+    Le hash fourni est stocké tel quel ; le hachage et les contrôles de rôle
+    relèvent de l’appelant, pas de cette fonction SQL.
+    Les erreurs SQL, notamment un email déjà utilisé, sont propagées.
+    """
     query = sql.SQL(
         """
         INSERT INTO {} (

@@ -6,8 +6,9 @@ export const formatDay = (iso: string) =>
   });
 
 export const formatHours = (h: number) => {
-  const hours = Math.floor(h);
-  const minutes = Math.round((h - hours) * 60);
+  const totalMinutes = Math.round(h * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   return `${hours} h ${String(minutes).padStart(2, '0')}`;
 };
 

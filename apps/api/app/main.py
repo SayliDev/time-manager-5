@@ -1,10 +1,8 @@
 """FastAPI application entry point."""
 
-import logging
 import os
 
-import psycopg
-from fastapi import (Depends,FastAPI,HTTPException,)
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg import sql
 from app.routers.users_routers import UserResponse, router as users_router
@@ -15,6 +13,10 @@ from app.routers.leave_requests import router as leave_requests_router
 from app.dependencies import get_current_user as get_authenticated_user
 # from app.routers.register_routers import router as register_router
 from app.db.database_conn import connexion
+from app.routers.password_reset import router as password_reset_router
+from app.routers.time import router as time_router
+from app.routers.kpi import router as kpi_router
+from app.routers.teams import router as teams_router
 
 # -----------------------------------------------------------------------------
 # Application
@@ -25,9 +27,7 @@ CLIENT_PORT = os.getenv("CLIENT_PORT", "5173")
 app = FastAPI(
     title="Time Manager API",
     version="1.0.0",
-    swagger_ui_parameters={
-        "persistAuthorization": True
-    },
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 app.add_middleware(
@@ -42,14 +42,17 @@ app.add_middleware(
 
 # -----------------------------------------------------------------------------
 # Include router
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(microsoft_auth_router)
 app.include_router(leave_requests_router)
 # app.include_router(register_router)
+app.include_router(password_reset_router)
 app.include_router(register_router)
-# app.include_router(test_work_time_router)
+app.include_router(time_router)
+app.include_router(kpi_router)
+app.include_router(teams_router)
 # -----------------------------------------------------------------------------
 # Constantes
 # -----------------------------------------------------------------------------
@@ -69,6 +72,7 @@ TABLES = (
 # -----------------------------------------------------------------------------
 # Routes publiques
 # -----------------------------------------------------------------------------
+
 
 @app.get("/", tags=["system"])
 def accueil():

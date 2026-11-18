@@ -7,9 +7,19 @@ import UnauthorizedPage from '@/features/auth/pages/UnauthorizedPage';
 import { ManagerDashboardPage } from '@/features/dashboard/pages/ManagerDashboardPage';
 import { LeavePage } from '@/features/leave/pages/LeavePage';
 import { TimePage } from '@/features/time/pages/TimePage';
+import { TeamsPage } from '@/features/teams/pages/TeamsPage';
+import { isManagerRole } from '@/features/users/lib/names';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { AppShell } from '@/features/widgets/layout/AppShell';
 import { PlaceholderPage } from '@/features/widgets/layout/PlaceholderPage';
+
+function DashboardHome() {
+  const { data: currentUser } = useCurrentUser();
+  if (currentUser && !isManagerRole(currentUser.role)) {
+    return <EmployeeDashboardPage />;
+  }
+  return <ManagerDashboardPage />;
+}
 
 export default function App() {
   return (
@@ -20,6 +30,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route path='/unauthorized' element={<UnauthorizedPage />} />
           <Route path='/dashboard' element={<AppShell />}>
+            <Route index element={<DashboardHome />} />
             <Route path='time' element={<TimePage />} />
             <Route path='leaves' element={<LeavePage />} />
             <Route element={<RequireRoles roles={['admin', 'manager']} />}>
