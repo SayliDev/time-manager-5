@@ -23,7 +23,6 @@ export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
   role: Role;
   phone: string | null;
 }

@@ -23,9 +23,13 @@ interface CreateUserDto {
   first_name: string;
   last_name: string;
   email: string;
-  password: string;
   role: ApiRole;
   phone: string | null;
+}
+
+export interface CreatedUser {
+  user: User;
+  emailSent: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,7 +68,6 @@ function toCreateUserDto(input: CreateUserInput): CreateUserDto {
     first_name: input.firstName,
     last_name: input.lastName,
     email: input.email,
-    password: input.password,
     role: toApiRole(input.role),
     phone: input.phone,
   };
@@ -92,13 +95,13 @@ export async function fetchUser(id: string): Promise<User> {
   return toUser(user);
 }
 
-export async function createUser(input: CreateUserInput): Promise<User> {
-  const user = await request<UserDto>('/api/addUsers', {
+export async function createUser(input: CreateUserInput): Promise<CreatedUser> {
+  const created = await request<UserDto & { email_sent: boolean }>('/api/addUsers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(toCreateUserDto(input)),
   });
-  return toUser(user);
+  return { user: toUser(created), emailSent: created.email_sent };
 }
 
 export async function deactivateUser(id: string): Promise<void> {

@@ -1,77 +1,379 @@
-import { useState, type FormEvent } from 'react';
-import { Button, Card, FieldError, Form, Input, Label, TextField } from '@heroui/react';
+import { Eye, EyeSlash } from '@gravity-ui/icons';
+import {
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  TextField,
+} from '@heroui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '@/features/auth/api/authApi';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
+import LoginHero from '@/features/auth/components/LoginHero';
+import {
+  passwordError,
+  passwordRules,
+} from '@/features/auth/lib/passwordPolicy';
+import { ApiError } from '@/shared/api/client';
 import { Brand } from '@/shared/branding/Brand';
 import { ThemeToggle } from '@/theme/ThemeToggle';
 
+const RESET_TOKEN_KEY = 'tm-reset-token';
+const TOKEN_MAX_LENGTH = 200;
+
+type FieldErrors = {
+  password?: string;
+  confirmation?: string;
+};
+
+function readStoredToken(): string {
+  return sessionStorage.getItem(RESET_TOKEN_KEY) ?? '';
+}
+
+function rememberToken(token: string) {
+  sessionStorage.setItem(RESET_TOKEN_KEY, token);
+}
+
+function forgetToken() {
+  sessionStorage.removeItem(RESET_TOKEN_KEY);
+}
+
+function resetFailure(error: unknown): string {
+  if (error instanceof ApiError && error.status === 400) {
+    return 'Ce lien est invalide ou a expiré. Demandez-en un nouveau depuis Mon compte.';
+  }
+  if (error instanceof ApiError && error.status === 422) {
+    return 'Le mot de passe ne respecte pas les règles demandées.';
+  }
+  if (error instanceof ApiError) {
+    return "Impossible d'enregistrer le mot de passe. Réessayez.";
+  }
+  return 'Impossible de contacter le serveur.';
+}
+
+function useTimedReveal(duration = 1000) {
+  const [shown, setShown] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  const toggle = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (shown) {
+      setShown(false);
+      return;
+    }
+    setShown(true);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      setShown(false);
+    }, duration);
+  };
+
+  return [shown, toggle] as const;
+}
+
+function PasswordVisibility({
+  shown,
+  onToggle,
+  label,
+}: {
+  shown: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  const Icon = shown ? EyeSlash : Eye;
+  return (
+    <Button
+      isIconOnly
+      aria-label={label}
+      aria-pressed={shown}
+      size='sm'
+      type='button'
+      variant='ghost'
+      onPress={onToggle}
+    >
+      <Icon className='size-4' />
+    </Button>
+  );
+}
+
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
-  const token = params.get('token') ?? '';
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [token, setToken] = useState(() => {
+    const fromQuery = params.get('token') ?? '';
+    if (fromQuery) {
+      rememberToken(fromQuery);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${url.pathname}${url.search}${url.hash}`,
+      );
+    }
+    return fromQuery || readStoredToken();
+  });
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [showPassword, togglePassword] = useTimedReveal();
+  const [showConfirmation, toggleConfirmation] = useTimedReveal();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const tokenUsable = token.length > 0 && token.length <= TOKEN_MAX_LENGTH;
+  const rules = passwordRules(password);
+  const sameLength =
+    confirmation.length > 0 && confirmation.length === password.length;
+  const confirmationMatches = sameLength && confirmation === password;
+  const confirmationError = !confirmation
+    ? fieldErrors.confirmation
+    : confirmationMatches
+      ? null
+      : 'Les mots de passe ne correspondent pas.';
+
   const reset = useMutation({
     mutationFn: resetPassword,
     onSuccess: (data) => {
+      setPassword('');
+      setConfirmation('');
+      forgetToken();
       queryClient.clear();
       tokenStorage.set(data.access_token);
     },
   });
 
+  const queryToken = params.get('token');
+  useEffect(() => {
+    if (!queryToken) return;
+    if (queryToken !== token) {
+      rememberToken(queryToken);
+      setToken(queryToken);
+      setPassword('');
+      setConfirmation('');
+      setFieldErrors({});
+      setFormError(null);
+      reset.reset();
+    }
+    navigate('/reset-password', { replace: true });
+  }, [navigate, queryToken, reset, token]);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
-    const data = new FormData(event.currentTarget);
-    const password = String(data.get('password') ?? '');
-    if (password !== data.get('confirmation')) {
-      setError('Les mots de passe ne correspondent pas.');
-      return;
+    if (reset.isPending || !tokenUsable) return;
+
+    const nextErrors: FieldErrors = {};
+    const policyError = passwordError(password);
+    if (policyError) nextErrors.password = policyError;
+    if (!confirmation) {
+      nextErrors.confirmation = 'Veuillez confirmer le mot de passe.';
+    } else if (confirmation !== password) {
+      nextErrors.confirmation = 'Les mots de passe ne correspondent pas.';
     }
-    if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
-      setError('Utilisez au moins 8 caractères et au maximum 72 octets.');
-      return;
-    }
-    if (!/\p{L}/u.test(password) || !/\p{Nd}/u.test(password)) {
-      setError('Utilisez au moins une lettre et un chiffre.');
-      return;
-    }
-    reset.mutate({ token, new_password: password });
+
+    setFieldErrors(nextErrors);
+    setFormError(null);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    reset.mutate(
+      { token, new_password: password },
+      {
+        onError: (error) => {
+          if (
+            error instanceof ApiError &&
+            (error.status === 400 || error.status === 422)
+          ) {
+            setPassword('');
+            setConfirmation('');
+          }
+          setFormError(resetFailure(error));
+        },
+      },
+    );
   }
 
   return (
-    <main className='min-h-screen bg-background px-6 py-8'>
-      <div className='mx-auto flex max-w-5xl items-center justify-between'><Brand /><ThemeToggle /></div>
-      <Card className='mx-auto mt-16 w-full max-w-md'>
-        <Card.Header><h1 className='text-2xl font-semibold tracking-tight'>Nouveau mot de passe</h1></Card.Header>
-        <Card.Content className='flex flex-col gap-5'>
-          {reset.isSuccess ? <p role='status' className='text-sm text-success'>Votre mot de passe a été modifié. Vous êtes connecté.</p> : !token ? (
-            <p role='alert' className='text-sm text-danger'>Le lien est incomplet. Demandez un nouveau lien depuis Mon compte.</p>
+    <div className='grid min-h-svh bg-background lg:grid-cols-[1.05fr_1fr]'>
+      <LoginHero />
+      <main className='relative flex flex-col px-6 py-8 sm:px-12'>
+        <div className='flex items-center justify-between lg:justify-end'>
+          <div className='lg:hidden'>
+            <Brand />
+          </div>
+          <ThemeToggle />
+        </div>
+
+        <div className='mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10'>
+          <h1 className='text-3xl font-semibold tracking-tight'>
+            Nouveau mot de passe
+          </h1>
+
+          {reset.isSuccess ? (
+            <div className='mt-6 flex flex-col gap-4'>
+              <p className='text-sm text-success' role='status'>
+                Votre mot de passe a été modifié. Vous êtes connecté.
+              </p>
+              <Button onPress={() => navigate('/dashboard')}>
+                Accéder à mon espace
+              </Button>
+            </div>
+          ) : !tokenUsable ? (
+            <div className='mt-6 flex flex-col gap-4'>
+              <p className='text-sm text-danger' role='alert'>
+                Ce lien est incomplet. Ouvrez le lien reçu par email, ou
+                demandez-en un nouveau depuis Mon compte. Il est valable 24
+                heures et ne sert qu’une fois.
+              </p>
+              <Link className='text-sm text-accent hover:underline' to='/'>
+                Retour à la connexion
+              </Link>
+            </div>
           ) : (
             <>
-              <p className='text-sm text-muted'>Choisissez un mot de passe d’au moins 8 caractères avec une lettre et un chiffre (72 octets maximum).</p>
-              <Form className='flex flex-col gap-4' onSubmit={submit}>
-                <TextField isRequired name='password' type='password' minLength={8}>
-                  <Label>Nouveau mot de passe</Label>
-                  <Input name='password' autoComplete='new-password' />
-                  <FieldError />
+              <p className='mt-2 text-sm text-muted'>
+                Choisissez un mot de passe pour votre compte.
+              </p>
+
+              <Form
+                className='mt-8 flex flex-col gap-4'
+                validationBehavior='aria'
+                onSubmit={submit}
+              >
+                <TextField
+                  isInvalid={Boolean(fieldErrors.password)}
+                  isRequired
+                  name='new-password'
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(value) => {
+                    setPassword(value);
+                    setFieldErrors((errors) => ({
+                      ...errors,
+                      password: undefined,
+                    }));
+                  }}
+                >
+                  <div className='flex items-center justify-between'>
+                    <Label>Nouveau mot de passe</Label>
+                    <PasswordVisibility
+                      label={
+                        showPassword
+                          ? 'Masquer le mot de passe'
+                          : 'Afficher le mot de passe'
+                      }
+                      shown={showPassword}
+                      onToggle={togglePassword}
+                    />
+                  </div>
+                  <Input
+                    autoCapitalize='off'
+                    autoComplete='new-password'
+                    autoCorrect='off'
+                    name='new-password'
+                    spellCheck={false}
+                  />
+                  <FieldError>{fieldErrors.password}</FieldError>
                 </TextField>
-                <TextField isRequired name='confirmation' type='password' minLength={8}>
-                  <Label>Confirmer le mot de passe</Label>
-                  <Input name='confirmation' autoComplete='new-password' />
-                  <FieldError />
+
+                <ul
+                  aria-label='Règles du mot de passe'
+                  className='flex flex-col gap-1 text-xs'
+                >
+                  {rules.map((rule) => (
+                    <li
+                      className={rule.met ? 'text-success' : 'text-muted'}
+                      key={rule.id}
+                    >
+                      <span className='sr-only'>
+                        {rule.met ? 'Respectée : ' : 'Manquante : '}
+                      </span>
+                      {rule.label}
+                    </li>
+                  ))}
+                </ul>
+
+                <TextField
+                  isInvalid={Boolean(confirmationError)}
+                  isRequired
+                  name='confirm-password'
+                  type={showConfirmation ? 'text' : 'password'}
+                  value={confirmation}
+                  onChange={setConfirmation}
+                >
+                  <div className='flex items-center justify-between'>
+                    <Label>Confirmer le mot de passe</Label>
+                    <PasswordVisibility
+                      label={
+                        showConfirmation
+                          ? 'Masquer la confirmation'
+                          : 'Afficher la confirmation'
+                      }
+                      shown={showConfirmation}
+                      onToggle={toggleConfirmation}
+                    />
+                  </div>
+                  <Input
+                    autoCapitalize='off'
+                    autoComplete='new-password'
+                    autoCorrect='off'
+                    name='confirm-password'
+                    spellCheck={false}
+                  />
+                  <FieldError>{confirmationError}</FieldError>
                 </TextField>
-                {(error || reset.isError) && <p role='alert' className='text-sm text-danger'>{error || reset.error?.message}</p>}
-                <Button type='submit' isDisabled={reset.isPending}>{reset.isPending ? 'Enregistrement…' : 'Enregistrer le mot de passe'}</Button>
+                {confirmationMatches ? (
+                  <p
+                    aria-live='polite'
+                    className='text-sm text-success'
+                    role='status'
+                  >
+                    Les mots de passe correspondent.
+                  </p>
+                ) : null}
+
+                {formError ? (
+                  <p className='text-sm text-danger' role='alert'>
+                    {formError}
+                  </p>
+                ) : null}
+
+                <Button
+                  className='mt-2 w-full'
+                  isDisabled={reset.isPending}
+                  size='lg'
+                  type='submit'
+                >
+                  {reset.isPending
+                    ? 'Enregistrement…'
+                    : 'Enregistrer le mot de passe'}
+                </Button>
               </Form>
+
+              <Link
+                className='mt-8 text-center text-sm text-accent hover:underline'
+                to='/'
+              >
+                Retour à la connexion
+              </Link>
             </>
           )}
-          <Link className='text-sm text-accent hover:underline' to={reset.isSuccess ? '/dashboard/profile' : '/'}>
-            {reset.isSuccess ? 'Retour à mon compte' : 'Retour à la connexion'}
-          </Link>
-        </Card.Content>
-      </Card>
-    </main>
+        </div>
+
+        <p className='text-center text-xs text-muted'>© 2026 Time Manager</p>
+      </main>
+    </div>
   );
 }

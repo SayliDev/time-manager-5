@@ -127,7 +127,7 @@ def test_employee_can_list_users():
 
 
 def test_employee_cannot_create_user():
-    with patch("app.routers.users_routers.create_user") as create:
+    with patch("app.routers.users_routers.create_employee") as create:
         response = client.post("/api/addUsers", json=NEW_USER, headers=auth(3))
     assert response.status_code == 403
     create.assert_not_called()
@@ -135,15 +135,16 @@ def test_employee_cannot_create_user():
 
 def test_manager_can_create_employee():
     with patch(
-        "app.routers.users_routers.create_user",
-        side_effect=lambda **kw: make_user(10, kw["role"]),
+        "app.routers.users_routers.create_employee",
+        side_effect=lambda **kw: (make_user(10, kw["role"]), True),
     ):
         response = client.post("/api/addUsers", json=NEW_USER, headers=auth(2))
     assert response.status_code == 201
+    assert response.json()["email_sent"] is True
 
 
 def test_manager_cannot_create_admin():
-    with patch("app.routers.users_routers.create_user") as create:
+    with patch("app.routers.users_routers.create_employee") as create:
         response = client.post(
             "/api/addUsers", json={**NEW_USER, "role": "admin"}, headers=auth(2)
         )
@@ -153,8 +154,8 @@ def test_manager_cannot_create_admin():
 
 def test_admin_can_create_admin():
     with patch(
-        "app.routers.users_routers.create_user",
-        side_effect=lambda **kw: make_user(10, kw["role"]),
+        "app.routers.users_routers.create_employee",
+        side_effect=lambda **kw: (make_user(10, kw["role"]), True),
     ):
         response = client.post(
             "/api/addUsers", json={**NEW_USER, "role": "admin"}, headers=auth(1)
