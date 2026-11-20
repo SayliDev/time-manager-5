@@ -15,7 +15,7 @@ client = TestClient(app)
 USER = {"id_user": 1, "email": "a@b.fr", "role": "employe"}
 ROUTER = "app.routers.password_reset.reset_password"
 URL = "/api/auth/reset-password"
-REPO = "app.services.password_reset_service.password_reset_repository"
+REPO = "app.services.password_reset_service.repository"
 
 
 def test_reset_request_accepts_valid_password():

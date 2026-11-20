@@ -15,7 +15,7 @@ START = datetime(2026, 10, 13, 9, tzinfo=timezone.utc)
 END = datetime(2026, 10, 13, 12, tzinfo=timezone.utc)
 PUBLIC_USER_FIELDS = {
     "id_user", "first_name", "last_name", "email",
-    "role", "phone", "creat_at", "desactive_at",
+    "role", "phone", "creat_at", "desactive_at", "password_set_at",
 }
 
 # Adaptez uniquement "module" si vos fichiers portent d'autres noms.
@@ -23,7 +23,7 @@ CASES = [
     dict(module="users_repository", table="users", pk="id_user",
          create=dict(first_name="Alice", last_name="Martin",
                      email="alice@example.com"),
-         defaults=dict(password_hash=None, role="employe", phone=None),
+         defaults=dict(password_hash=None, password_set_at=None, role="employe", phone=None),
          nullable="phone", change="first_name",
          protected="creat_at", wrapped_delete=False),
     dict(module="departement", table="departement", pk="id_departement",
@@ -312,9 +312,11 @@ def test_users_create_hash_not_returned(db, sql_text):
 def test_users_update_hash_not_returned(db, sql_text):
     users = db.load("users_repository")
     users.update(42, password_hash="HASH_TEST_NON_UTILISABLE", role="employe")
-    assert db.cursor.execute.call_args.args[1] == (
-        "HASH_TEST_NON_UTILISABLE", "employe", 42,
-    )
+    params = db.cursor.execute.call_args.args[1]
+    assert params[:2] == ("HASH_TEST_NON_UTILISABLE", "employe")
+    assert isinstance(params[2], datetime)
+    assert params[2].tzinfo == timezone.utc
+    assert params[3] == 42
     assert_public_projection(sql_text(db))
 
 

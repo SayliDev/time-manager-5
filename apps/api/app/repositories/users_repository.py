@@ -8,6 +8,7 @@ Les autorisations, notamment les changements de rôle, et le hachage
 des mots de passe sont gérés dans le service.
 """
 
+from datetime import datetime, timezone
 from typing import Any
 
 from psycopg import sql
@@ -18,7 +19,7 @@ from app.db.database_conn import get_connection
 
 PUBLIC_COLUMNS = sql.SQL(
     "id_user, first_name, last_name, email, "
-    "role, phone, creat_at, desactive_at"
+    "role, phone, creat_at, desactive_at, password_set_at"
 )
 
 TABLE = sql.Identifier("users")
@@ -84,10 +85,11 @@ def create(
             last_name,
             email,
             password_hash,
+            password_set_at,
             role,
             phone
         )
-        VALUES (%s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         RETURNING {}
         """
     ).format(TABLE, PUBLIC_COLUMNS)
@@ -101,6 +103,7 @@ def create(
                     last_name,
                     email,
                     password_hash,
+                    datetime.now(timezone.utc) if password_hash else None,
                     role,
                     phone,
                 ),
@@ -135,6 +138,11 @@ def update(
     if invalid_fields:
         raise ValueError(
             f"Champs non modifiables : {', '.join(sorted(invalid_fields))}"
+        )
+
+    if "password_hash" in changes:
+        changes["password_set_at"] = (
+            datetime.now(timezone.utc) if changes["password_hash"] else None
         )
 
     assignments = sql.SQL(", ").join(
@@ -248,3 +256,25 @@ def get_by_oid(oid: str) -> dict[str, Any] | None:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query, (oid,))
             return cursor.fetchone()
+
+def get_current_managers(user_id: int) -> list[dict[str, Any]]:
+    """Responsables actifs des équipes auxquelles l'employé est affecté aujourd'hui."""
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT DISTINCT manager.id_user, manager.first_name,
+                    manager.last_name, manager.email
+                FROM team_allocation allocation
+                JOIN team ON team.id_team = allocation.id_team
+                JOIN users manager ON manager.id_user = team.id_user
+                WHERE allocation.id_user = %s
+                    AND allocation.start_at <= CURRENT_DATE
+                    AND (allocation.end_at IS NULL OR allocation.end_at >= CURRENT_DATE)
+                    AND manager.desactive_at IS NULL
+                    AND manager.id_user <> allocation.id_user
+                ORDER BY manager.last_name, manager.first_name, manager.id_user
+                """,
+                (user_id,),
+            )
+            return cursor.fetchall()

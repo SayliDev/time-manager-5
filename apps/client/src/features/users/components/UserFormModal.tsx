@@ -24,7 +24,6 @@ interface UserFormModalProps {
 }
 
 const FORM_ID = 'user-form';
-const MIN_PASSWORD_LENGTH = 8;
 
 export function UserFormModal({
   isOpen,
@@ -45,16 +44,17 @@ export function UserFormModal({
       firstName: field('firstName'),
       lastName: field('lastName'),
       email: field('email'),
-      password: String(data.get('password') ?? ''),
       role: field('role') as Role,
       phone: field('phone') || null,
     };
 
     createUser.mutate(input, {
-      onSuccess: (created) => {
+      onSuccess: ({ user: created, emailSent }) => {
         sileo.success({
           title: 'Employé créé',
-          description: `${fullName(created)} peut se connecter avec son email professionnel.`,
+          description: emailSent
+            ? `Un email a été envoyé à ${created.email} pour choisir son mot de passe.`
+            : `${fullName(created)} a été créé, mais l'email n'a pas pu être envoyé.`,
         });
         onOpenChange(false);
       },
@@ -90,7 +90,7 @@ export function UserFormModal({
             <p className='text-sm text-muted'>
               {isEdit
                 ? 'Mettez à jour les informations du collaborateur.'
-                : 'Les comptes sont créés par les managers : aucune inscription publique.'}
+                : 'Un email est envoyé au collaborateur pour qu’il choisisse son mot de passe.'}
             </p>
           </Modal.Header>
 
@@ -139,25 +139,6 @@ export function UserFormModal({
                 </Description>
                 <FieldError />
               </TextField>
-
-              {isEdit ? null : (
-                <TextField
-                  isRequired
-                  className='sm:col-span-2'
-                  minLength={MIN_PASSWORD_LENGTH}
-                  name='password'
-                  type='password'
-                  variant='secondary'
-                >
-                  <Label>Mot de passe provisoire</Label>
-                  <Input autoComplete='new-password' />
-                  <Description>
-                    {MIN_PASSWORD_LENGTH} caractères minimum, à transmettre au
-                    collaborateur.
-                  </Description>
-                  <FieldError />
-                </TextField>
-              )}
 
               <TextField
                 defaultValue={user?.phone ?? undefined}

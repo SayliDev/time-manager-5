@@ -1,16 +1,23 @@
 from psycopg.errors import UniqueViolation
+import logging
 import traceback
 from app.repositories.users_repository import (
     create as repository_create,
     get_by_id,
     get_all,
+    get_current_managers,
     update as repository_update,
     deactivate as repository_deactivate,
     get_by_email as repository_get_by_email,
     get_password_hash_by_id as repository_get_password_hash_by_id,
     get_by_oid as repository_get_by_oid
 )
+from app.services.email_service import build_reset_url, send_account_created_email
+from app.services.password_reset_service import create_reset_token
+from core.password_generator import generate_temporary_password
 from core.passwords import hash_password
+
+logger = logging.getLogger(__name__)
 
 def create_user(
     *,
@@ -37,6 +44,39 @@ def create_user(
         raise ValueError(
             "Un utilisateur avec cet email existe déjà."
         )
+
+def create_employee(
+    *,
+    first_name: str,
+    last_name: str,
+    email: str,
+    role: str = "employe",
+    phone: str | None = None,
+) -> tuple[dict, bool]:
+    """Crée un compte et envoie le lien pour choisir le mot de passe.
+
+    Le mot de passe provisoire est aléatoire et n'est pas communiqué.
+    Retourne l'utilisateur et indique si le mail est parti.
+    """
+    user = create_user(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password=generate_temporary_password(),
+        role=role,
+        phone=phone,
+    )
+    token = create_reset_token(user_id=user["id_user"])
+    try:
+        email_sent = send_account_created_email(
+            to_email=user["email"],
+            first_name=user["first_name"],
+            reset_url=build_reset_url(token),
+        )
+    except RuntimeError:
+        logger.exception("Lien d'activation impossible à construire")
+        email_sent = False
+    return user, email_sent
 
 def get_user_by_id(*,user_id: int,):
     try:
@@ -102,3 +142,9 @@ def get_user_by_oid(*, oid: str):
         return repository_get_by_oid(oid=oid)
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur par oid : {e}")
+
+def get_account_managers(*, current_user: dict) -> list[dict]:
+    """L'identité des responsables est réservée au profil de l'employé connecté."""
+    if current_user['role'] != 'employe':
+        return []
+    return get_current_managers(user_id=current_user['id_user'])

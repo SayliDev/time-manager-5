@@ -1,57 +1,51 @@
-"""Jetons de reinitialisation de mot de passe (Psycopg 3).
-
-Seul le hash SHA-256 du jeton est stocke, jamais le jeton lui-meme.
-"""
-
+"""Persist hashed reset tokens and consume them in a single transaction."""
 from datetime import datetime
 
 from app.db.database_conn import get_connection
 
 
 def create(*, user_id: int, token_hash: str, expires_at: datetime) -> None:
-    """Invalide les anciens jetons de l'utilisateur, puis enregistre le nouveau."""
+    # Existing links remain usable if delivery of the new email fails.
     with get_connection() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                UPDATE password_reset_token
-                SET used_at = CURRENT_TIMESTAMP
-                WHERE id_user = %s AND used_at IS NULL
-                """,
-                (user_id,),
-            )
-            cursor.execute(
-                """
-                INSERT INTO password_reset_token (id_user, token_hash, expires_at)
-                VALUES (%s, %s, %s)
-                """,
-                (user_id, token_hash, expires_at),
-            )
+        connection.execute(
+            """INSERT INTO password_reset_token (id_user, token_hash, expires_at)
+            VALUES (%s, %s, %s)""",
+            (user_id, token_hash, expires_at),
+        )
+
+
+def delete(*, token_hash: str) -> None:
+    with get_connection() as connection:
+        connection.execute(
+            "DELETE FROM password_reset_token WHERE token_hash = %s", (token_hash,),
+        )
 
 
 def consume(*, token_hash: str, password_hash: str) -> dict | None:
-    """Marque le jeton comme utilise et change le mot de passe, en une requete.
-
-    Retourne l'utilisateur (id_user, email, role), ou None si le jeton est
-    inconnu, expire, deja utilise ou si le compte est desactive.
-    """
-    query = """
-        WITH used AS (
-            UPDATE password_reset_token
-            SET used_at = CURRENT_TIMESTAMP
-            WHERE token_hash = %s
-              AND used_at IS NULL
-              AND expires_at > CURRENT_TIMESTAMP
-            RETURNING id_user
-        )
-        UPDATE users
-        SET password_hash = %s,
-            password_set_at = CURRENT_TIMESTAMP
-        WHERE id_user IN (SELECT id_user FROM used)
-          AND desactive_at IS NULL
-        RETURNING id_user, email, role
-    """
     with get_connection() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(query, (token_hash, password_hash))
-            return cursor.fetchone()
+        # Lock the account first so two different links cannot both change it.
+        user = connection.execute(
+            """SELECT u.id_user FROM users u
+            JOIN password_reset_token t ON t.id_user = u.id_user
+            WHERE t.token_hash = %s AND u.desactive_at IS NULL
+            FOR UPDATE OF u""", (token_hash,),
+        ).fetchone()
+        if not user:
+            return None
+        token = connection.execute(
+            """UPDATE password_reset_token SET used_at = CURRENT_TIMESTAMP
+            WHERE token_hash = %s AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+            RETURNING id_user""", (token_hash,),
+        ).fetchone()
+        if not token:
+            return None
+        updated_user = connection.execute(
+            """UPDATE users SET password_hash = %s, password_set_at = CURRENT_TIMESTAMP
+            WHERE id_user = %s RETURNING id_user, email, role""",
+            (password_hash, user["id_user"]),
+        ).fetchone()
+        connection.execute(
+            """UPDATE password_reset_token SET used_at = CURRENT_TIMESTAMP
+            WHERE id_user = %s AND used_at IS NULL""", (user["id_user"],),
+        )
+        return updated_user

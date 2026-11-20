@@ -10,6 +10,7 @@ export interface User {
   phone: string | null;
   role: Role;
   createdAt: string | null;
+  passwordSetAt?: string | null;
   deactivatedAt: string | null;
   // renseignés uniquement dans les données de démo.
   teamId: string | null;
@@ -22,7 +23,6 @@ export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
   role: Role;
   phone: string | null;
 }

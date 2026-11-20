@@ -51,3 +51,28 @@ def send_account_created_email(
         logger.exception("Echec de l'envoi du mail de creation de compte")
         return False
     return True
+
+def send_password_reset_email(*, to_email: str, first_name: str, reset_url: str) -> bool:
+    """Send a reset link without logging the secret token."""
+    message = EmailMessage()
+    message["Subject"] = "Réinitialisation de votre mot de passe Time Manager"
+    message["From"] = os.getenv("MAIL_FROM", "no-reply@timemanager.local")
+    message["To"] = to_email
+    message.set_content(
+        f"Bonjour {first_name},\n\n"
+        "Vous avez demandé à réinitialiser votre mot de passe Time Manager.\n"
+        "Choisissez votre nouveau mot de passe via ce lien, valable 24 heures "
+        f"et utilisable une seule fois :\n{reset_url}\n\n"
+        "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.\n"
+    )
+    try:
+        with smtplib.SMTP(os.getenv("SMTP_HOST", "mailpit"), int(os.getenv("SMTP_PORT", "1025")), timeout=10) as smtp:
+            user = os.getenv("SMTP_USER")
+            if user:
+                smtp.starttls()
+                smtp.login(user, os.getenv("SMTP_PASSWORD", ""))
+            smtp.send_message(message)
+    except (smtplib.SMTPException, OSError, ValueError):
+        logger.exception("Echec de l'envoi du mail de réinitialisation")
+        return False
+    return True
