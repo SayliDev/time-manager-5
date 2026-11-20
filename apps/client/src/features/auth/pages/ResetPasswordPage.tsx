@@ -9,7 +9,12 @@ import {
 } from '@heroui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { resetPassword } from '@/features/auth/api/authApi';
 import { tokenStorage } from '@/features/auth/api/tokenStorage';
 import LoginHero from '@/features/auth/components/LoginHero';
@@ -111,22 +116,37 @@ function PasswordVisibility({
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryToken = params.get('token');
+  const [token, setToken] = useState(() => queryToken || readStoredToken());
+
+  if (queryToken && queryToken !== token) {
+    setToken(queryToken);
+  }
+
+  useEffect(() => {
+    if (!queryToken) return;
+    rememberToken(queryToken);
+    const search = new URLSearchParams(location.search);
+    search.delete('token');
+    const remaining = search.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: remaining ? `?${remaining}` : '',
+        hash: location.hash,
+      },
+      { replace: true },
+    );
+  }, [location.hash, location.pathname, location.search, navigate, queryToken]);
+
+  return <ResetPasswordForm key={token} token={token} />;
+}
+
+function ResetPasswordForm({ token }: { token: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [token, setToken] = useState(() => {
-    const fromQuery = params.get('token') ?? '';
-    if (fromQuery) {
-      rememberToken(fromQuery);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('token');
-      window.history.replaceState(
-        window.history.state,
-        '',
-        `${url.pathname}${url.search}${url.hash}`,
-      );
-    }
-    return fromQuery || readStoredToken();
-  });
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [showPassword, togglePassword] = useTimedReveal();
@@ -155,21 +175,6 @@ export default function ResetPasswordPage() {
       tokenStorage.set(data.access_token);
     },
   });
-
-  const queryToken = params.get('token');
-  useEffect(() => {
-    if (!queryToken) return;
-    if (queryToken !== token) {
-      rememberToken(queryToken);
-      setToken(queryToken);
-      setPassword('');
-      setConfirmation('');
-      setFieldErrors({});
-      setFormError(null);
-      reset.reset();
-    }
-    navigate('/reset-password', { replace: true });
-  }, [navigate, queryToken, reset, token]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
